@@ -50,3 +50,11 @@ demo-recordings/
 # Local tooling
 .coverage
 htmlcov/
+
+# Organizer-supplied material (added by Claude [relay], task 1.6).
+# The brief PDF and its screenshots are TikTok's material. This repository
+# becomes public, so redistributing them is a call for Mehul, not for an agent
+# to make silently. Ignoring them is the conservative, reversible default:
+# delete these two lines if the decision is to include them.
+Brief/
+docs/evidence/
