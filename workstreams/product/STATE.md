@@ -1,27 +1,28 @@
 # product — Gradio app, repo hygiene, README, video, Devpost
-**Owner: Codex · Status: 🔴 RELEASE BLOCKED · relay review complete**
+**Owner: Codex · Status: 🔴 RELEASE BLOCKED · repair re-review complete**
 
 ## ✅ Verified 2026-08-27
-- Live Gradio `/stress_test` succeeds on a real smoke image and returns all 20 conditions, SVG, table, and summary.
-- Escaping, table fallback, error gaps, and non-color-only flip markers are good.
-- Full review packet: `handoffs/2026-08-27_claude-relay-critical-review.md`.
+- Local reachable history no longer contains corpus images; result JSON/MD tracking and root MIT text are repaired.
+- Remote `main` is still old `714183e`; it retains raw blobs and is the only verified recovery point.
+- Full review packet: `handoffs/2026-08-27_claude-repair-review.md`.
 
 ## 🔴 Release blockers
-1. 1,200 raw SID-Set images (~829 MB) are tracked and pushed in commit 4046141; repo must remain private.
-2. Results ignore rules are broken; remote has no claimed JSON/MD artifacts.
-3. Root LICENSE is absent; license inventory omits/incorrectly states dependencies and new corpus redistribution.
-4. README overstates trained router/calibration/rescue, pinned model revision, one decision path, and committed artifacts.
-5. Stress path accepts NaN/invalid decisions and calls clean-only + 19 failures “stable”; chart theme can be low contrast.
+1. Remote history still contains 1,200 raw SID-Set images (~829 MB); repo must remain private.
+2. The local history rewrite preceded the required explicit approval; no claimed backup bundle was located.
+3. Mehul has not explicitly approved MIT licensing or a clean-history force-push.
+4. README links the wrong diagnostic filename and still overstates reproduction/status.
+5. `LICENSES.md` still overstates router weights, lacks full corpus/NPR treatment, and CF revision remains unpinned.
+6. NPR is license-blocked upstream and has no accepted adapter/performance evidence.
 
 ## ▶ NEXT ACTION
-1. Await Claude ACK/counters on B-015; do not make repo public.
-2. Prepare a clean-history/data-removal plan for Mehul approval before destructive history rewriting.
-3. Repair repo tracking/license truthfulness, then stress validation/theme and README.
-4. Re-run live E2E and request Claude product gate review.
+1. Await Claude ACK/counters on B-016; do not make repo public or force-push.
+2. Obtain Mehul's explicit decisions on MIT and force-pushing the verified clean local history.
+3. Locate/verify the claimed backup bundle or document remote `714183e` as the recovery point.
+4. Repair README/inventory truthfulness and second-expert claims; then repeat release audit and product gate.
 
 ## Literal next command
 ```
-cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && git ls-files 'data/corpus/images/**' | wc -l
+cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && git ls-remote https://github.com/MEHUL-MODI-Git/TechJam_2026_Track_5.git refs/heads/main
 ```
 
 ## Hard constraints

@@ -1,5 +1,9 @@
 # product — CHANGELOG (newest first)
 
+## 2026-08-27 — Claude release repair independently re-reviewed; publication still blocked
+Why: Claude rewrote local history, changed result tracking, added MIT text, and proposed NPR as LOTA replacement.
+What: verified local reachable history is clean and tracking improved, but remote `main` still retains the raw corpus and no backup bundle was found. MIT and force-push still need Mehul's explicit approval; README/inventory remain inaccurate. NPR's exact 1,447,897-parameter checkpoint is downloadable, but upstream has no license and a bounded clean-smoke sanity run scored AUROC 0.3174. Full packet: `handoffs/2026-08-27_claude-repair-review.md`; B-016 sent. No app/release production code changed.
+
 ## 2026-08-27 — Codex critical relay/release review: public release blocked
 Why: Mehul asked Codex to review Claude's provisional stress/repo work critically before acceptance.
 What: live stress API passed on a real image, but invalid-score/failure-semantics/theme issues remain. Release audit found 1,200 raw SID-Set images (~829 MB) tracked and pushed, broken result re-inclusion rules, no root license, incomplete inventory, unpinned model revision, and README claims ahead of implementation/artifacts. Repo must remain private. Full evidence: `handoffs/2026-08-27_claude-relay-critical-review.md`; B-015 posted. No app/release production code changed in the review.

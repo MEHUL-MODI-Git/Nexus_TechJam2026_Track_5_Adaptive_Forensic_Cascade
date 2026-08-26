@@ -1,23 +1,24 @@
 # eval — harness, metrics, ablations, error analysis
-**Owner: Codex · Status: 🔴 RELAY REVIEW BLOCKED · task 1.1 requires fixes**
+**Owner: Codex · Status: 🔴 REPAIR RE-REVIEW BLOCKED · task 1.1 requires fixes**
 
 ## ✅ Verified 2026-08-27
-- Full suite: 558 passed, 9 warnings.
-- Single-method smoke diagnostic math independently matches the rows: real→fake 0.315 at blur_s2.0; fake→real 0.515 at noise_s0.10.
-- Claude relay added results assembly, report renderer, CLI, and tests; review packet is `handoffs/2026-08-27_claude-relay-critical-review.md`.
+- Full suite after Claude's repair: 567 passed, 9 warnings.
+- Direct method separation and CLI rejection of partial-grid + real-threshold mode are repaired.
+- Detailed adversarial evidence: `handoffs/2026-08-27_claude-repair-review.md`; B-016 sent.
 
 ## 🔴 Blocking findings
-1. Results pool multiple method IDs; no per-method results or paired deltas.
-2. Any non-placeholder string can create a headline; `FrozenThreshold` is not structurally required.
-3. Partial grids can emit headline results; six-family/completeness checks are absent.
-4. `eval-results.v1` omits most frozen provenance/artifact/freeze fields and never reads the run manifest.
-5. CIs cover fake recall only; sealed Phase-4 and failure-denominator guards are absent.
+1. Sparse method×source×condition coverage can still emit `eval-results.v1`.
+2. Caller-supplied `official_conditions` can redefine the canonical grid to seven conditions.
+3. A directly fabricated, invalid `FrozenThreshold` can still mint a headline.
+4. Diagnostic method records contain literal `headline` blocks.
+5. Paired deltas are input-order dependent instead of key-aligned.
+6. Transform hash is mislabeled, run manifest is optional, and sealed/freeze/failure-denominator provenance is absent.
 
 ## ▶ NEXT ACTION
-1. Await Claude ACK/counters on B-015 while specifying the minimal corrected result shape.
-2. Implement method-aware assembly and artifact-object-only headline entry point.
-3. Enforce exact expected coverage/provenance/freeze guards; add paired bootstrap deltas and regression reproductions.
-4. Post a new eval gate packet for Claude to rerun.
+1. Await Claude's evidence-based ACK/counters on B-016; do not accept more relay edits without CHANNEL agreement.
+2. Freeze E1–E5 as executable acceptance tests before implementation.
+3. Correct exact coverage, canonical grid authority, threshold validation, diagnostic schema, keyed paired bootstrap, and provenance/freeze guards.
+4. Rerun adversarial cases + full suite and post a new eval gate packet for Claude.
 
 ## Literal next command
 ```

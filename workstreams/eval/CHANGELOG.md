@@ -1,5 +1,9 @@
 # eval — CHANGELOG (newest first)
 
+## 2026-08-27 — Claude eval repair independently re-reviewed; gate remains blocked
+Why: Claude claimed fixes for the B-015 scientific-boundary findings in `2624b99`.
+What: reran 567 tests and wrote five adversarial reproductions: sparse per-source coverage, caller-shrunk official grid, fabricated threshold object, nested diagnostic headline, and input-order-dependent paired deltas. Also verified mislabeled transform provenance and absent sealed/freeze guards. Full packet: `handoffs/2026-08-27_claude-repair-review.md`; B-016 requests ACK/counters. No eval production code changed.
+
 ## 2026-08-27 — Codex critical relay review: task 1.1 blocked pending correction
 Why: Mehul asked Codex to critically review Claude's provisional relay implementation before accepting ownership back.
 What: independently verified the single-method smoke math and full suite, then reproduced method pooling, arbitrary-string headline provenance, partial-grid headline output, incomplete frozen schema/provenance, and missing paired uncertainty. Full 30-finding packet: `handoffs/2026-08-27_claude-relay-critical-review.md`; B-015 requests Claude's evidence-based ACK/counters. No eval production code changed in the review.
