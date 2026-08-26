@@ -2,6 +2,21 @@
 **Owner: Claude · Status: 🟢 FEATURE CACHE + ROUTER + CALIBRATION ALL BUILT & TESTED (awaiting a real corpus)**
 
 ## ✅ Done 2026-08-26 / 27
+- **CORPUS ACQUISITION BUILT + PILOT ACQUIRED.** `scripts/build_router_corpus.py`: 1,200 sources (600 real / 600 fake) in **27 s** via HF parquet shards. The datasets-server `/rows` endpoint the smoke set used is anonymously rate-limited (hit HTTP 429) and cannot carry corpus scale.
+- **Methodological choice — BOTH CLASSES FROM SID-SET.** SID-Set publishes label 0 (real), 1 (fully synthetic), 2 (tampered); we take 0 and 1. Sourcing reals from COCO and fakes from SID-Set would let the router learn dataset artefacts (encoder, resolution, compression history) rather than AI-generation — and our quality descriptors would carry that shortcut straight into the model. One curation pipeline removes the confound.
+- **`src/router/train.py` + 14 tests** — trains the full ladder (static → logistic → MLP → MLP+worst-group) on the SAME dev split, standardizer fitted on **train rows only**, selection on the frozen objective's own quantity (worst-family fake recall), and an explicit `router_earns_its_complexity` verdict so a negative ablation is reported rather than buried.
+- Added **pyarrow** (needed to read corpus parquet AND to make cache storage spec-compliant) — recorded for Codex's ACK as lockfile owner.
+
+## ⚠️ MEASURED AT PHASE-2 ENTRY — THE 30k CORPUS TARGET DOES NOT FIT THE 12h CAP
+Real corpus images are 1024×1024; my earlier 9.3h projection came from 14 ms/img on 256px golden fixtures and was **optimistic by ~2.3x**.
+Measured: **7.83 rows/sec** (1 expert + 3 probes per row).
+| sources | projected cache time | vs 12h cap |
+|---|---|---|
+| 30,000 (frozen target) | **21.3 h** | **EXCEEDS** |
+| 16,900 | 12.0 h | at the cap |
+| **15,000 (recommended)** | **10.6 h** | within, with margin |
+| 12,000 (frozen minimum) | 8.5 h | within |
+Per the frozen decision, the response is to **shrink SOURCE COUNT, never transform/class/family coverage**. Recommend **15k sources (7.5k/class)**. Batched inference is the obvious speed-up (4 forwards/row are currently issued singly) but it changes a reviewed adapter, so it is proposed rather than done.
 - **`src/router/feature_cache.py` BUILT + 30 tests** — the Phase-2 backbone, implementing frozen spec v2. Canonical-JSON `cache_key` with **refuse-to-append on mismatch**; `feature-cache-row.v1` rows (per-expert blocks, probe blocks, quality block, pairwise disagreement or null); resumable by `view_id`; atomic manifest storing the key object so the key is re-derivable.
 - **Contamination protection fails CLOSED:** with no denylist supplied the builder **refuses to run at all** rather than quietly building an unprotected fitting cache; an unprotected build must be explicitly acknowledged and is stamped `UNPROTECTED_SMOKE_ONLY` in the manifest. A sealed-reference hit **aborts the whole job** — never a skip, because a skip hides a contaminated manifest. `dataset_split` is restricted to train/dev and `val2017` is rejected outright.
 - **Recorded spec deviation:** the spec names Parquet; `pyarrow` is not in the lockfile and adding a dependency to Codex's locked `pyproject.toml` while it is offline is not a call to make in passing. Storage is pluggable and the manifest records `storage_format: jsonl` plus the reason. Rows are schema-identical either way. Flagged to Codex for ACK.
