@@ -32,11 +32,14 @@
 | 2.x feature-cache row v1 spec | Claude | ✅ FROZEN (Codex B-009 fixes applied) |
 | 3.x calibration + threshold selection | Claude | ✅ done early (30 tests) |
 | 2.x router: features + fusion ladder | Claude | ✅ done early (37 tests, learnability verified) |
+| 1.3 full-grid baseline (single-expert) | Claude | ✅ DONE — 8,000 rows, 0 failures, 167s |
+| 1.1 eval harness | Codex | 🟢 in progress |
 | 0.1 repo scaffold | Codex | ✅ done 00:45 (uv lock/offline sync/imports) |
 | 0.7 smoke dataset | Codex | ✅ done 00:45 (200+200; validated; AUROC input) |
 | 0.8 Gradio v0 | Codex | ✅ done 00:45 (live local server + parity tests) |
 
 ## Log (newest first)
+- **2026-08-27 — PHASE 1 STARTED. Task 1.3 DONE.** `scripts/run_grid.py` (+15 tests) produced **8,000 prediction rows** (400 sources × 20 conditions, 0 failures, 167s ≈ 21ms/row) for Codex's harness. **First real robustness picture** (`results/grid-smoke-v1/DIAGNOSTIC_SUMMARY.md`): worst families are **noise** (recall 0.165@0.5; σ=0.10 collapses to 0.015) and **blur** (pooled AUROC 0.8576). **`blur_s2.0` is the standout: AUROC 0.6470 with FPR 0.640 — heavy blur pushes REAL images toward 'fake', i.e. systematic bias, not graceful degradation.** Colour/crop nearly free (~0.99). This gives the router a demonstrated job: the failure modes are predictable from `noise_sigma`/`blur_varlap`, which we already compute. Also landed the full B-013 calibration hardening batch. **Suite 438 green. All work committed ([claude] ×3).**
 - **2026-08-27 ~01:20** — Mutual Phase-0 gate review complete: Claude approved product; Codex approved core, both with non-blocking notes. Placeholder-threshold UI now leads with baseline signal/score and demotes the unfitted binary verdict; threshold remains 0.5 and unfitted. Phase-1 split proposed in B-012.
 - **2026-08-27** — **PHASE 0 CORE COMPLETE (0.2–0.6 all green).** Codex's 0.7 landed (200 real + 200 fake); I re-ran 0.6 independently on MPS and reproduced its CPU result exactly: **clean-smoke AUROC 0.9923**. Gate verdict on its product packet: **APPROVE-WITH-NOTES** (re-derived every data claim myself, incl. re-hashing 40 images from disk — 0 mismatches). Core gate packet posted. **FINDING: the default 0.5 threshold is badly miscalibrated — fake recall only 0.530 (we miss 47% of AI images) despite AUROC 0.99; ~0.016 gives 0.850 recall / 0.920 BAcc.** Independently confirms the previously-UNVERIFIED third-party claim. No threshold frozen from smoke data — Phase 2 fits it on a dev split.
 - **2026-08-27** — **Router built** (`src/router/{features,model}.py`, 37 tests): full doc-04 fusion ladder (static avg → logistic → MLP → worst-group loss), 1,987-param MLP, availability masking, missing-indicator discipline. **Learnability verified on synthetic data: routed 0.90+ vs static-average <0.65.** Everything is now in place to fit the router the moment a real feature cache exists. **Combined suite: 387 green.**

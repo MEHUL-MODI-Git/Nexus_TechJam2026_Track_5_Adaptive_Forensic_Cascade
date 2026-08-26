@@ -1,5 +1,14 @@
 # core — CHANGELOG (newest first)
 
+## 2026-08-27 — Phase 1 task 1.3: full-grid baseline (8,000 rows) + B-013 hardening
+- `scripts/run_grid.py` + `tests/test_run_grid.py` (**15 tests**): 20-condition grid over the smoke manifest → `prediction-row.v1` JSONL for Codex's harness. Decodes each source once then transforms 20×; `content_sha256` is the VIEW hash (per B-009 [F3]) so conditions are distinguishable while `source_id` stays shared for the bootstrap unit; `decision`/`reliability` emitted null so the harness recomputes at the frozen threshold; resumable; expert failures emit a typed `prediction-failure.v1` row rather than a fabricated score.
+- **Run:** 400 sources × 20 conditions = **8,000 rows, 0 decode failures, 0 expert failures, 167 s (~21 ms/row)**. Artifacts in `results/grid-smoke-v1/`.
+- **Findings** (`DIAGNOSTIC_SUMMARY.md`, diagnostic only — headline table is Codex's): worst families **noise** (pooled recall 0.165@0.5, σ=0.10 → 0.015) and **blur** (pooled AUROC 0.8576). **`blur_s2.0`: AUROC 0.6470 AND FPR 0.640** — heavy blur biases REAL images toward "fake"; the model is confidently wrong rather than uncertain. Colour/crop nearly free (~0.99 AUROC). A single global threshold provably cannot serve noise and blur simultaneously — a finding to report, not hide.
+- **B-013 calibration batch landed in full:** strict pre-artifact validation (score range, unknown/mismatched condition-family ids, inconsistent source labels, clean needing both classes, hard refusal to let the six-family objective become five), candidate validation, recorded deterministic tie-break (order-independence tested), atomic validated artifact save/load, helper guards, numerically stable sigmoid.
+- **B-012 service fixes:** `ExpertInitError` now actually caught (survivors continue, zero survivors fatal, registry injectable for tests); expert warnings aggregated into `PredictionRecord.warnings`; threshold/fusion fail closed.
+- Last Pillow `mode=` deprecation removed; goldens unchanged (no version bump). **Suite: 438 green**, warnings 47 → 5.
+
+
 ## 2026-08-27 — Calibration/threshold module + Pillow deprecation cleanup
 - `src/router/calibration.py` + `tests/test_calibration.py` (**30 tests**) — see `workstreams/training/STATE.md`; logged here because it lands in `src/router/` (core-adjacent, Claude-owned).
 - **Deprecation cleanup:** removed the deprecated `mode="RGB"` argument from every `Image.fromarray` call in my modules/tests (removed in Pillow 13, Oct 2026). **Golden tests still pass unchanged**, which is the proof the output is byte-identical — no `PIPELINE_VERSION` bump needed. Suite warnings fell 344 → 47 (the remainder are product-side gradio/`getdata` notices in Codex's lane).
