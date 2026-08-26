@@ -59,6 +59,7 @@ This is a smoke alarm only, not a headline estimate and not used for threshold f
 
 - `env GRADIO_SERVER_PORT=8960 .venv/bin/python -m src.app` served `http://127.0.0.1:8960` using the real configured CF-384 service.
 - HTTP response carried title `Adaptive Forensic Cascade`, custom theme CSS, 14 components, and exactly one `/analyze` dependency from image input to five outputs.
+- `gradio_client` uploaded `tests/golden/sources/photo.png` through `/analyze`; the live callback returned five outputs with `REAL`, baseline p_fake `0.0002`, CF-384 p_fake `0.0002`, measured latency, dimensions/hash/version/provenance, and the required probability disclaimer (`gradio-e2e-pass`).
 - `tests/test_app.py` asserts actual service score formatting equals direct `PredictionService.predict_image`, injected-service behavior, safe errors, invalid/non-finite/out-of-range rejection, and callback wiring.
 - No connected visual-browser surface was available in this Codex session; live server/config/handler behavior were verified, but pixel-level screenshot QA remains a Phase-1 polish note.
 
