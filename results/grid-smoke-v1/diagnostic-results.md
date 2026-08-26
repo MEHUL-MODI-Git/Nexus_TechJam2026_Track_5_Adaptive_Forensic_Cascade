@@ -7,7 +7,7 @@
 - **Threshold:** 0.5000 (`PLACEHOLDER-uncalibrated-phase0`, fitted on held-out dev: False)
 - **Sources:** 400 · **Views:** 8000 · **Conditions:** 20
 - **Methods:** commfor_384
-- **Bootstrap:** 1000 replicates, unit = source_id, stratified by label
+- **Bootstrap:** 300 replicates, unit = source_id, stratified by label
 
 ## Summary
 
@@ -23,20 +23,20 @@
 
 Selective/abstention metrics: **not emitted** — no validated reliability estimator exists yet (absence is explicit, not zero).
 
-## By transform family (severities pooled)
+### By transform family (severities pooled)
 
 | family | conditions | fake recall | 95% CI | FPR | BAcc | AUROC |
 |---|---:|---:|---|---:|---:|---:|
-| jpeg | 4 | 0.3275 | [0.2775, 0.3800] | 0.0000 | 0.6638 | 0.9595 |
-| blur | 3 | 0.5033 | [0.4400, 0.5717] | 0.1150 | 0.6942 | 0.8576 |
-| resize | 2 | 0.4075 | [0.3499, 0.4725] | 0.0225 | 0.6925 | 0.9348 |
-| noise | 3 | 0.1650 | [0.1333, 0.1967] | 0.0050 | 0.5800 | 0.8989 |
-| color | 6 | 0.5017 | [0.4408, 0.5642] | 0.0000 | 0.7508 | 0.9902 |
-| crop | 1 | 0.6200 | [0.5550, 0.6850] | 0.0000 | 0.8100 | 0.9899 |
+| jpeg | 4 | 0.3275 | [0.2812, 0.3770] | 0.0000 | 0.6638 | 0.9595 |
+| blur | 3 | 0.5033 | [0.4432, 0.5750] | 0.1150 | 0.6942 | 0.8576 |
+| resize | 2 | 0.4075 | [0.3537, 0.4700] | 0.0225 | 0.6925 | 0.9348 |
+| noise | 3 | 0.1650 | [0.1317, 0.1967] | 0.0050 | 0.5800 | 0.8989 |
+| color | 6 | 0.5017 | [0.4483, 0.5623] | 0.0000 | 0.7508 | 0.9902 |
+| crop | 1 | 0.6200 | [0.5600, 0.6850] | 0.0000 | 0.8100 | 0.9899 |
 
 *The worst family is the selection objective. `clean` is excluded from it by design and enters only through the constraints.*
 
-## By condition
+### By condition
 
 | condition | family | fake recall | FPR | BAcc | AUROC | Δrecall vs clean | real→fake | fake→real |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
@@ -61,7 +61,7 @@ Selective/abstention metrics: **not emitted** — no validated reliability estim
 | saturation_+20 | color | 0.5400 | 0.0000 | 0.7700 | 0.9929 | -0.0100 | 0.0000 | 0.0250 |
 | saturation_-20 | color | 0.4450 | 0.0000 | 0.7225 | 0.9901 | 0.0850 | 0.0000 | 0.0850 |
 
-## Raw counts (auditable)
+### Raw counts (auditable)
 
 | condition | TP | FN | FP | TN |
 |---|---:|---:|---:|---:|

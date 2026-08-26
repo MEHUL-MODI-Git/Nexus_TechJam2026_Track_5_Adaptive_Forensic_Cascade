@@ -49,16 +49,40 @@ def render_markdown(document: dict[str, Any]) -> str:
         f"fitted on held-out dev: {protocol['threshold_fitted_on_held_out_dev']})",
         f"- **Sources:** {dataset['source_count']} · **Views:** {dataset['view_count']} "
         f"· **Conditions:** {dataset['condition_count']}",
-        f"- **Methods:** {', '.join(dataset['methods'])}",
+        f"- **Methods:** {', '.join(document.get('method_ids', []))}",
         f"- **Bootstrap:** {protocol['bootstrap']['n_replicates']} replicates, "
         f"unit = {protocol['bootstrap']['unit']}, "
         f"stratified by {protocol['bootstrap']['stratified_by']}",
         "",
     ]
 
-    summary = document.get("headline") or document.get("diagnostic_summary")
+    for method in document.get("methods", []):
+        lines += _render_method(method, len(document.get("methods", [])) > 1)
+
+    if document.get("paired_deltas"):
+        lines += ["## Paired method deltas", "",
+                  "*Computed on identical bootstrap resamples, so the intervals are "
+                  "comparable.*", "",
+                  "| metric | A | B | delta (B-A) | 95% CI |", "|---|---|---|---:|---|"]
+        for d in document["paired_deltas"]:
+            lines.append(f"| {d['metric']} | {d['method_a']} | {d['method_b']} | "
+                         f"{_fmt(d['delta_mean'])} | [{_fmt(d['ci95_low'])}, "
+                         f"{_fmt(d['ci95_high'])}] |")
+        lines.append("")
+
+    if document.get("warnings"):
+        lines += ["## Warnings", ""] + [f"- {w}" for w in document["warnings"]] + [""]
+    return "\n".join(lines)
+
+
+def _render_method(method: dict[str, Any], multi: bool) -> list[str]:
+    """One method's tables. Methods are NEVER pooled (Codex R1)."""
+    lines: list[str] = []
+    summary = method["headline"]
+    if multi:
+        lines += [f"## Method: `{method['method_id']}`", ""]
     if summary:
-        lines += ["## Summary", "",
+        lines += ["#### Summary" if multi else "## Summary", "",
                   "| quantity | value |", "|---|---|",
                   f"| clean balanced accuracy | {_fmt(summary['clean']['balanced_accuracy'])} |",
                   f"| clean fake recall | {_fmt(summary['clean']['fake_recall'])} |",
@@ -79,12 +103,12 @@ def render_markdown(document: dict[str, Any]) -> str:
             lines += ["Selective/abstention metrics: **not emitted** — no validated "
                       "reliability estimator exists yet (absence is explicit, not zero).", ""]
 
-    if document.get("families"):
-        lines += ["## By transform family (severities pooled)", "",
+    if method.get("families"):
+        lines += ["### By transform family (severities pooled)", "",
                   "| family | conditions | fake recall | 95% CI | FPR | BAcc | AUROC |",
                   "|---|---:|---:|---|---:|---:|---:|"]
-        for fam in document["families"]:
-            m, ci = fam["metrics"], fam["ci95"]
+        for fam in method["families"]:
+            m, ci = fam["metrics"], fam["ci95"]["fake_recall"]
             lines.append(
                 f"| {fam['family']} | {fam['n_conditions']} | {_fmt(m['fake_recall'])} | "
                 f"[{_fmt(ci['ci95_low'])}, {_fmt(ci['ci95_high'])}] | "
@@ -95,11 +119,11 @@ def render_markdown(document: dict[str, Any]) -> str:
         lines += ["*The worst family is the selection objective. `clean` is excluded "
                   "from it by design and enters only through the constraints.*", ""]
 
-    lines += ["## By condition", "",
+    lines += ["### By condition", "",
               "| condition | family | fake recall | FPR | BAcc | AUROC | Δrecall vs clean "
               "| real→fake | fake→real |",
               "|---|---|---:|---:|---:|---:|---:|---:|---:|"]
-    for entry in document["conditions"]:
+    for entry in method["conditions"]:
         m = entry["metrics"]
         flips = entry.get("flips") or {}
         lines.append(
@@ -110,13 +134,11 @@ def render_markdown(document: dict[str, Any]) -> str:
         )
     lines.append("")
 
-    lines += ["## Raw counts (auditable)", "",
+    lines += ["### Raw counts (auditable)", "",
               "| condition | TP | FN | FP | TN |", "|---|---:|---:|---:|---:|"]
-    for entry in document["conditions"]:
+    for entry in method["conditions"]:
         c = entry["counts"]
         lines.append(f"| {entry['condition_id']} | {c['tp']} | {c['fn']} | {c['fp']} | {c['tn']} |")
     lines.append("")
 
-    if document.get("warnings"):
-        lines += ["## Warnings", ""] + [f"- {w}" for w in document["warnings"]] + [""]
-    return "\n".join(lines)
+    return lines
