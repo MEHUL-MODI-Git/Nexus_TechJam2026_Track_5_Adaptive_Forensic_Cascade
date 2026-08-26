@@ -3,10 +3,12 @@
 **Robust detection of AI-generated images under real-world transformations.**
 TikTok TechJam 2026 — Track 5.
 
-> **Status: work in progress (Phase 1 of 5).** This README describes what is
-> built and measured today. Sections marked *pending* are deliberately empty
-> rather than filled with placeholder numbers — every figure in this repository
-> traces to a committed artifact under `results/`.
+> **Status: work in progress (Phase 2 repair).** The current deployable path is
+> the frozen CF-384 baseline plus the diagnostic stress UI. Headline evaluation,
+> router deployment, licensing approval, and the clean remote-history push are
+> still blocked on review. Sections marked *pending* stay empty rather than being
+> filled with placeholder numbers; committed aggregate evidence lives in
+> `results/`.
 
 ---
 
@@ -24,7 +26,8 @@ primary detector's AUROC falls to 0.647 — near chance — while its false-posi
 rate rises to 0.640. The model does not become uncertain. It becomes
 *confidently wrong*, labelling genuine photographs as AI-generated.
 
-So we built a system around a frozen detector rather than another detector:
+The target architecture builds a system around frozen detectors rather than
+fine-tuning another detector:
 
 ```text
 image
@@ -32,16 +35,17 @@ image
   -> quality descriptors (blur / blockiness / noise / geometry)
   -> frozen expert detector(s)          <- downloaded, never fine-tuned
   -> mild self-probes on the primary    <- how fragile is this score, here?
-  -> OUR trained reliability/fusion router
+  -> OUR reliability/fusion router       <- implemented; real training not accepted yet
        reliable  -> calibrated verdict
        uncertain -> behavioural rescue -> rescued verdict
   -> calibrated score + reliability readout
 ```
 
-**The router and the reliability layer are our own contribution.** The expert
+**The router and the reliability layer are our proposed contribution.** The expert
 detectors are public, frozen checkpoints; we do not claim them. What we claim
-is the layer that decides how much to trust them on a given image, and the
-evaluation protocol that makes that claim checkable.
+today is their implementation and the evaluation protocol that will make any
+eventual performance claim checkable. The current app does not yet serve a
+trained router, calibrated verdict, abstention decision, or rescue path.
 
 ## 2. What is built today
 
@@ -50,13 +54,13 @@ evaluation protocol that makes that claim checkable.
 | Canonical decode (EXIF, RGB, provenance hashes) | ✅ built, tested |
 | All 20 official transform conditions, deterministic + golden-tested | ✅ built, tested |
 | Community Forensics 384 expert adapter | ✅ built, tested |
-| Importable prediction service (one decision path for CLI/UI/batch/eval) | ✅ built, tested |
+| Importable prediction service (one decision path for CLI/UI/batch) | ✅ built, tested |
 | Quality descriptors | ✅ built, tested |
 | Mild self-probes | ✅ built, tested |
-| Calibration + threshold selection under a frozen objective | ✅ built, tested |
-| Router (fusion ladder: static → logistic → MLP + worst-group loss) | ✅ built, synthetic-tested |
+| Calibration + threshold-selection code under a frozen objective | ✅ built, tested; no fitted artifact yet |
+| Router (fusion ladder: static → logistic → MLP + worst-group loss) | 🔴 implementation under repair; no accepted deployable checkpoint |
 | Full-grid baseline run (8,000 predictions) | ✅ complete |
-| Evaluation harness → headline tables | 🟡 in progress |
+| Evaluation harness | 🟡 diagnostic path works; headline path blocked on protocol repair |
 | Second expert | ⏸️ parked (see Limitations) |
 | Router trained on a real corpus | ⏳ Phase 2 |
 
@@ -104,7 +108,8 @@ score — so the output can always be zipped back to the input list. Use
 
 ## 5. Reproducing our results
 
-Every number we report comes from a committed artifact. To regenerate:
+Every public aggregate number must come from a committed artifact. To regenerate
+the current diagnostic after acquiring the git-ignored smoke images:
 
 ```bash
 # 1. Adapter sanity + backend consistency check
@@ -117,10 +122,18 @@ Every number we report comes from a committed artifact. To regenerate:
 
 # 3. Transform-protocol golden tests (fail if any transform changed)
 .venv/bin/pytest tests/test_transforms_golden.py -q
+
+# 4. Placeholder-threshold diagnostic (cannot emit a headline result)
+.venv/bin/python scripts/run_eval.py \
+    --rows results/grid-smoke-v1/prediction_rows.jsonl \
+    --diagnostic
 ```
 
-The smoke dataset is rebuilt from public sources with a recorded selection
-seed and pinned dataset revisions; raw images are not committed.
+The smoke dataset can be rebuilt with `scripts/download_smoke_sources.py` and
+`scripts/prepare_smoke_dataset.py`; use each command's `--help` for paths. Its
+selection seed and source revisions are recorded. Raw images are absent from the
+clean local history and must also be removed from the private remote's old
+history before publication.
 
 ### Reproducibility guarantees
 
@@ -132,9 +145,10 @@ seed and pinned dataset revisions; raw images are not committed.
   `PIPELINE_VERSION` bump.
 - **Backend consistency.** MPS and CPU agree to |Δlogit| < 5e-5 on this
   checkpoint (verified, not assumed).
-- **One decision path.** The CLI, the batch script, the UI, and the evaluation
-  harness all import the same prediction service; a parity test asserts they
-  return identical scores.
+- **Shared serving path.** The single-image CLI, directory batch script, and UI
+  import the same prediction service; a parity test asserts identical scores.
+  Grid extraction currently invokes the expert/transform interfaces directly
+  and is reconciled through the prediction-row contract.
 
 ## 6. Evaluation protocol
 
@@ -157,10 +171,11 @@ evaluation honest:
 
 ## 7. Results
 
-*Pending.* The evaluation harness that produces the headline tables is still in
-progress, and no threshold has been fitted yet. Diagnostic observations from the
-full-grid run are recorded in `results/grid-smoke-v1/DIAGNOSTIC_SUMMARY.md` and
-are explicitly **not** headline results.
+*Pending.* The headline path is blocked on exact-coverage, threshold-artifact,
+diagnostic-schema, keyed-pairing, and provenance guards, and no threshold has
+been fitted yet. Diagnostic observations from the full-grid run are recorded in
+`results/grid-smoke-v1/diagnostic-results.md` and are explicitly **not**
+headline results.
 
 ## 8. Limitations and honest reflection
 
@@ -189,12 +204,12 @@ The brief caps total model size at 2B parameters.
 | Component | Parameters | Trained by us? |
 |---|---:|---|
 | Community Forensics 384 (ViT-S/16) | 21,811,969 | No — frozen |
-| Reliability/fusion router (MLP) | ~2,000 | **Yes** |
-| **Total** | **~21.8M** | — |
+| Reliability/fusion router (MLP implementation) | 1,987 one-expert / 2,548 planned two-expert | Not yet accepted/trained for release |
+| **Current accepted model total** | **21,811,969** | — |
 
-Comfortably within the limit. Note that the trainable part of this system is
-roughly 0.01% of its parameters — the contribution is the decision layer, not
-scale.
+Comfortably within the limit. If the router clears its gate, its trainable
+parameters would be roughly 0.01% of the system — the intended contribution is
+the decision layer, not scale.
 
 ## 10. Licenses
 
@@ -203,10 +218,12 @@ scale.
 | Community Forensics 384 (code + weights) | MIT |
 | SID-Set (synthetic images) | CC BY 4.0 |
 | COCO train2017 (real images) | COCO Terms of Use |
-| This repository | See `LICENSE` |
+| This repository | MIT draft in `LICENSE`; owner approval pending before publication |
 
 Dataset licenses and redistribution terms are inventoried in
-`data/manifests/LICENSES.md`. No raw third-party images are committed.
+`data/manifests/LICENSES.md`. The clean local history contains no raw
+third-party images; the private remote still holds the pre-cleanup history and
+must not be made public yet.
 
 ## 11. Contributions
 

@@ -2,6 +2,7 @@
 **Owner: Codex · Status: 🔴 RELEASE BLOCKED · stress repair complete**
 
 ## ✅ Verified 2026-08-27
+- README and `LICENSES.md` now distinguish target architecture from accepted current behavior, link the tracked diagnostic, and disclose pending MIT approval, unpinned CF download, NPR's absent license, underfilled corpus, and dirty private remote.
 - Stress panel now rejects invalid/non-finite/inconsistent records, reports incomplete grids without a stability claim, and uses ≥4.5:1 text/status contrast on the forced dark surface (39 focused tests; Ruff clean).
 - Local reachable history no longer contains corpus images; result JSON/MD tracking and root MIT text are repaired.
 - Remote `main` is still old `714183e`; it retains raw blobs and is the only verified recovery point.
@@ -11,15 +12,15 @@
 1. Remote history still contains 1,200 raw SID-Set images (~829 MB); repo must remain private.
 2. The local history rewrite preceded the required explicit approval; no claimed backup bundle was located.
 3. Mehul has not explicitly approved MIT licensing or a clean-history force-push.
-4. README links the wrong diagnostic filename and still overstates reproduction/status.
-5. `LICENSES.md` still overstates router weights, lacks full corpus/NPR treatment, and CF revision remains unpinned.
-6. NPR is license-blocked upstream and has no accepted adapter/performance evidence.
+4. CF revision remains unpinned in the adapter/config; docs now disclose this accurately.
+5. Router/eval acceptance remains blocked, so no trained-router or headline claims may be restored yet.
+6. NPR remains license-blocked upstream and is explicitly listed as considered/not used.
 
 ## ▶ NEXT ACTION
 1. Request Claude's peer re-review of the completed task-1.5 stress repair; await ACK/counters on B-016.
 2. Obtain Mehul's explicit decisions on MIT and force-pushing the verified clean local history.
-3. Locate/verify the claimed backup bundle or document remote `714183e` as the recovery point.
-4. Repair README/inventory truthfulness and second-expert claims; then repeat release audit and product gate.
+3. Locate/verify the claimed backup bundle or retain remote `714183e` as the documented recovery point.
+4. Pin CF revision, then repeat release audit and product gate after eval/router repairs land.
 
 ## Literal next command
 ```

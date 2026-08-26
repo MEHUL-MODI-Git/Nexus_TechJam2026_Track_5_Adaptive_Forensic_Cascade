@@ -36,13 +36,14 @@
 | 1.3 full-grid baseline (single-expert) | Claude | ✅ DONE — 8,000 rows, 0 failures, 167s |
 | 1.1 eval harness | Codex (Claude relay re-reviewed) | 🔴 BLOCKED — E1–E5 coverage/grid/artifact/diagnostic/pairing fixes required |
 | 1.5 Gradio stress panel | Codex (Claude relay reviewed) | 🟢 REPAIRED — 39 focused tests + lint; peer re-review pending |
-| 1.6 repo mechanics | Codex (Claude relay re-reviewed) | 🔴 RELEASE BLOCKED — remote raw history; approvals/README/inventory incomplete |
-| 1.6 repo mechanics/license inventory | Codex | 🔴 review complete; repairs and Mehul approvals required |
+| 1.6 repo mechanics | Codex (Claude relay re-reviewed) | 🔴 RELEASE BLOCKED — docs repaired; remote raw history, approvals, CF pin remain |
+| 1.6 repo mechanics/license inventory | Codex | 🟡 truthfulness repaired; final audit waits on technical gates + owner approvals |
 | 0.1 repo scaffold | Codex | ✅ done 00:45 (uv lock/offline sync/imports) |
 | 0.7 smoke dataset | Codex | ✅ done 00:45 (200+200; validated; AUROC input) |
 | 0.8 Gradio v0 | Codex | ✅ done 00:45 (live local server + parity tests) |
 
 ## Log (newest first)
+- **2026-08-27 — PUBLIC DOCS CORRECTED.** README/inventory now describe the target vs current baseline honestly, link the tracked diagnostic, add its reproduction command, and disclose the unpinned CF revision, no accepted router weights, NPR's absent license, underfilled router corpus, pending MIT approval, and still-dirty private remote. No remote/license decision was taken for Mehul.
 - **2026-08-27 — ROUTER REPAIR REVIEW: BLOCK.** Full suite **601 passed**, but direct tests show unchecked `raw_logit=NaN` crashes training, unknown splits/inconsistent source labels pass validation, and the new bias head changes one-expert scores by up to **0.2747413** while the artifact still calls every rung necessarily unchanged. No checkpoint loader/parity exists, and placeholder-threshold reliability fitting remains unresolved. Packet: `handoffs/2026-08-27_router-repair-review.md`; B-018 sent.
 - **2026-08-27 — STRESS PANEL REPAIRED.** Invalid/non-finite/inconsistent service records now become explicit error gaps; incomplete grids cannot claim stability; chart/status text meets ≥4.5:1 contrast on the forced dark UI surface. Focused app suite **39 passed**, Ruff clean. Peer re-review pending.
 - **2026-08-27 — CODEX REPAIR REVIEW: BLOCK REMAINS.** Independently reran **567 tests** and verified local history cleanup, result tracking, root MIT text, and NPR's exact 1,447,897-parameter checkpoint. Adversarial tests still mint headlines from sparse method×source×condition coverage, a caller-shrunk seven-condition grid, and a fabricated `FrozenThreshold`; diagnostic method records contain `headline`; paired deltas change when method-B rows are shuffled. Remote still retains raw data, with no verified backup bundle. NPR has no upstream license and scored AUROC 0.3174 in a bounded clean-smoke sanity run; it is not an accepted second expert. Full packet: `handoffs/2026-08-27_claude-repair-review.md`; B-016 sent. **KEEP REPO PRIVATE.**

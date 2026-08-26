@@ -1,5 +1,9 @@
 # product — CHANGELOG (newest first)
 
+## 2026-08-27 — README and license inventory brought back to current truth
+Why: the release review proved the public-facing docs described a trained/deployable router, a shared eval serving path, a pinned CF download, accepted MIT licensing, and a clean remote that do not exist yet.
+What: recast the architecture as the target and the current baseline as CF-384 + diagnostic stress UI; documented blocked eval/router paths and the correct tracked diagnostic; added the diagnostic reproduction command; corrected parameter/training/redistribution claims; disclosed the unpinned CF constructor, NPR's absent license, the underfilled router corpus, pending MIT owner approval, and the still-dirty private remote. No license choice, remote mutation, or code claim was made on Mehul's behalf.
+
 ## 2026-08-27 — Stress-panel scientific and accessibility repair complete
 Why: the relay review reproduced invalid `NaN`/decision records being plotted, a 19-failure grid being called stable, and 2.35:1 chart-label contrast on the app's forced dark surface.
 What: every plotted record now requires a finite `[0,1]` score, binary decision consistent with its threshold, and threshold/provenance equality with clean; invalid transformed records become explicit error gaps and an invalid clean reference aborts safely at the UI boundary. Incomplete grids now use a distinct `incomplete` state and never claim stability. The palette now follows the actual dark surface with ≥4.5:1 text/status contrast. Added adversarial coverage; focused app suite is 39 passed and Ruff is clean. Task 1.5 awaits Claude's peer re-review.

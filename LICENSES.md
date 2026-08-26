@@ -13,24 +13,28 @@ everything at once.
 | Model | Role | Parameters | License | Source | Redistributed here? |
 |---|---|---:|---|---|---|
 | Community Forensics 384 (ViT-S/16) | Primary expert | 21,811,969 | **MIT** (code + weights) | [`OwensLab/commfor-model-384`](https://huggingface.co/OwensLab/commfor-model-384), revision `6076002bf0d9dd37537f965ee2f06f826c333b61` | No — downloaded at runtime from the Hugging Face Hub |
-| Reliability/fusion router (MLP) | **Our contribution** | ~2,000 | Same as this repository | Trained by us | Yes (weights are small) |
+| Reliability/fusion router (MLP implementation) | Proposed contribution; no accepted deployable weights yet | 1,987 (one expert) / 2,548 (two experts) | Same as this repository, pending owner approval | Local prototype only | **No accepted weights redistributed** |
 
 **Total: ~21.8M parameters**, against the brief's `<2B` limit.
 
 Notes:
 - The primary expert is **frozen**: never fine-tuned, never adapted. We claim no
   authorship of it.
-- The trainable portion of this system is roughly **0.01%** of its parameters.
-  The contribution is the decision layer, not scale.
+- If accepted and trained, the router would be roughly **0.01%** of the total
+  parameters. The intended contribution is the decision layer, not scale.
 - Checkpoints are not committed (`.gitignore` excludes `checkpoints/`, `models/`,
-  and Hub caches). The exact revision is pinned in code and recorded in every
-  run manifest, so a rerun resolves the same weights.
+  and Hub caches). Revision `6076002bf0d9dd37537f965ee2f06f826c333b61`
+  is recorded in the committed grid run manifest, but the adapter constructor
+  still defaults to `revision=None`; pinning the download in configuration/code
+  remains a release task.
 
 ### Considered and not used
 
 | Model | Why not | License |
 |---|---|---|
 | LOTA (ICCV 2025) | Pretrained weights are published only through a login-walled cloud drive with no public mirror. Excluded on reproducibility grounds: a dependency reviewers cannot download is one we should not ship. | MIT (code) |
+| NPR DeepfakeDetection | Downloaded only for a bounded local diagnostic; no adapter or submission dependency. Official repository has no license, so code/weights cannot be adopted or redistributed without permission. | **No license published** |
+| OmniAID | Considered only. MIT model card, but ~3.2 GB checkpoints and no measured runtime/parameter pilot in this project. | MIT |
 
 ## 2. Datasets
 
@@ -38,6 +42,7 @@ Notes:
 |---|---|---|---|
 | COCO **train2017** | Real images, smoke set | [COCO Terms of Use](https://cocodataset.org/#termsofuse) | No — fetched by script; raw images git-ignored |
 | SID-Set (`label=1`) | Synthetic images, smoke set | CC BY 4.0 (attribution required) | No — streamed by script; raw images git-ignored |
+| SID-Set (`label=0` and `label=1`) | Router-corpus manifest (same-source pipeline for both classes) | CC BY 4.0 (attribution required) | Manifest only; raw images absent from clean local history. The 14,999-row acquisition is underfilled and not approved for fitting. |
 | WildFake reference subset | **Sealed** organizer reference | Organizer-provided | No — and never used for any fitting |
 
 Row-level terms, revisions, and redistribution policy: `data/manifests/LICENSES.md`.
@@ -92,18 +97,19 @@ Regenerate this table with:
 
 ## 5. This repository
 
-See `LICENSE` (MIT). Our own contributions are the pipeline, adapters,
-evaluation protocol, router, calibration, and application code.
+An MIT `LICENSE` draft is present, but Mehul's explicit approval to publish his
+project under MIT is still pending. The repository remains private meanwhile.
 
 ## 6. Redistribution audit
 
-An earlier commit accidentally tracked 1,200 raw SID-Set images (~826 MB),
+An earlier commit accidentally tracked 1,200 raw SID-Set images (~829 MB),
 contradicting the "not redistributed" claim above. This was caught in peer
-review (Codex R5). The git history was **rewritten** with `git filter-repo` to
-remove the blobs entirely rather than deleting them in a later commit, which
-would have left them in every clone. Verify with:
+review (Codex R5). The **local** history was rewritten with `git filter-repo` to
+remove the blobs entirely rather than deleting them in a later commit. The
+private remote still points to old commit `714183e` and retains those blobs; it
+must stay private until Mehul approves a clean-history force-push. Verify the
+local reachable history with:
 
 ```bash
 git log --all --name-only --pretty=format: | grep -c 'data/corpus/images'   # expect 0
 ```
-
