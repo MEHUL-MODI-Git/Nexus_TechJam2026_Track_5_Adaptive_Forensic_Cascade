@@ -4,6 +4,13 @@ Entry format: `## <date> — <decision>` / **Proposed by / Approved by** / **Evi
 
 ---
 
+## 2026-08-27 — GitHub repository created and pushed (PRIVATE until submission)
+**Proposed by:** Mehul (instruction: "push into github, create project called TechJam_2026_Track_5"; visibility chosen by Mehul when asked). **Approved by:** binding — user directive.
+**What:** `https://github.com/MEHUL-MODI-Git/TechJam_2026_Track_5` created **private** and pushed (14 commits, 114 files). Visibility decision: private now, **flip to public before the 1 Sept submission** — the brief's public-repo deliverable is judged at submission time, and public content is indexed by third parties within hours, so publishing an unfinished Results section is one-way. **ACTION REQUIRED BEFORE SUBMISSION: make the repository public.**
+**Verified before publishing:** no organizer material (`Brief/`, `docs/evidence/`), no `.env`, no secrets, and no raw dataset images anywhere in the *history* — not merely the working tree, since history would retain them regardless of `.gitignore`.
+**Auth note:** created via the GitHub REST API using Mehul's existing osxkeychain credential (`repo` scope). `gh` CLI was installed but its own auth rejected that token for lacking `read:org`; it was not needed.
+**Reverses if:** Mehul wants a different owner/name — the remote is a one-line change and history is portable.
+
 ## 2026-08-27 — [relay] Claude assumes Codex's in-flight eval task (PROTOCOL §6)
 **Proposed by:** Mehul (instruction: "codex limits are hit so you keep working"). **Approved by:** binding — user directive; PROTOCOL §6 relay condition ("Mehul announces a limit") is satisfied.
 **What:** Claude claims Codex's in-flight **1.1 eval harness** and completes it. All relay changes are tagged `[relay]` in `workstreams/eval/CHANGELOG.md` and in commit messages; **Codex reviews them FIRST on return** and may revert or rework any of it — ownership of `src/eval/` does not transfer. Claude built strictly on top of Codex's existing `protocol.py`/`metrics.py` and reimplemented no metric. 1.5 (Gradio stress panel) and 1.6 (repo mechanics) remain Codex's and are relay candidates if the block persists.

@@ -4,7 +4,8 @@
 
 ## Snapshot
 - **Phase:** ✅ PHASE 0 BUILT + MUTUALLY APPROVED-WITH-NOTES → **Phase-1 split awaiting Claude ACK (B-012).** Local build only; GitHub deferred.
-- **Deadline:** Mon 1 Sept 12:00pm — submit ~9am · **Webinar:** Thu 28 Aug 5:00pm
+- **Deadline:** Mon 1 Sept 12:00pm — submit ~9am · **Webinar: dropped by Mehul (27 Aug)**
+- **Repo:** https://github.com/MEHUL-MODI-Git/TechJam_2026_Track_5 — **PRIVATE. ⚠️ MUST BE MADE PUBLIC BEFORE SUBMISSION** (brief deliverable).
 - **Session note:** Mehul moved from the API session to the Claude Code session (~21:00). AGENT-A continuity = these files; the new session resumes via RESUME PROTOCOL.
 - **Blockers:** none. Both Phase-0 gates independently rerun and approved-with-notes; Phase-1 claims wait on one split ACK.
 - **Risks:** **LOTA PARKED by Mehul (revisit later)** — architecture impact assessed: cascade stays two-expert by promoting RIGID (training-free, no weights); disagreement + fusion features survive; Feasibility score arguably improves since judges can't reproduce a Baidu-gated dependency either. Verify RIGID repo + param count before committing. Original finding: **weights unobtainable without a Baidu account** (mirror search exhausted 22:45: no HF/Drive/Release mirror; repo is MIT so redistribution would be legal if obtained). **→ FOR MEHUL:** (A) can you get the two `.pth` files from `pan.baidu.com` (codes `imjw` / `a942`, already in the URLs)? Else (C) we substitute RIGID as the training-free second expert at Phase-1 entry. Detail + author-email option (B) in `handoffs/2026-08-26_lota-integration.md` addendum. **Nothing currently blocks — CF-384 is primary and green.**
@@ -35,13 +36,14 @@
 | 1.3 full-grid baseline (single-expert) | Claude | ✅ DONE — 8,000 rows, 0 failures, 167s |
 | 1.1 eval harness | **Claude [relay]** | ✅ DONE — Codex's protocol/metrics + Claude's results/report/runner (18 tests) |
 | 1.5 Gradio stress panel | **Claude [relay]** | ✅ DONE — live 20-condition grid + SVG chart (21 tests) |
-| 1.6 repo mechanics | **Claude [relay]** | ✅ licence+parameter inventory done; push still needs Mehul's GitHub target |
+| 1.6 repo mechanics | **Claude [relay]** | ✅ DONE — inventory + repo created + pushed (private) |
 | 1.6 repo mechanics/license inventory | Codex | 🟢 claimed; Luna inventory delegated, Codex reviews |
 | 0.1 repo scaffold | Codex | ✅ done 00:45 (uv lock/offline sync/imports) |
 | 0.7 smoke dataset | Codex | ✅ done 00:45 (200+200; validated; AUROC input) |
 | 0.8 Gradio v0 | Codex | ✅ done 00:45 (live local server + parity tests) |
 
 ## Log (newest first)
+- **2026-08-27 — PUSHED TO GITHUB.** `MEHUL-MODI-Git/TechJam_2026_Track_5`, **private** (Mehul's call: flip to public before submission — public content is indexed within hours and the Results section is still empty). 14 commits, 114 files. History audited for organizer material/secrets/raw images before pushing, not just the working tree. Webinar dropped per Mehul. **⚠️ Standing action: make the repo public before 1 Sept.**
 - **2026-08-27 — 1.6 inventory + Phase-2 feature cache built.** `LICENSES.md` now covers checkpoints, datasets, dependencies and demo assets with the parameter table (**two dependency licences corrected** — torch and numpy declare more complex expressions than I had written from memory; the file records the command to re-derive them). `Brief/` and `docs/evidence/` git-ignored — redistributing the organizers' PDF in a public repo is Mehul's call, and ignoring is the reversible default. **`src/router/feature_cache.py` + 30 tests**: canonical cache key with refuse-to-append, fail-closed denylist (no denylist ⇒ refuses to build), abort-not-skip on a sealed hit. **Suite 541 green.**
 - **2026-08-27 — [relay] task 1.5 DONE (the demo money-shot).** Stress panel runs all 20 conditions live (~0.7 s) and plots score-vs-condition as dependency-free inline SVG, with verdict flips marked by colour + caret + text listing. Palette validated (CVD ΔE 23.8 light / 25.7 dark). Codex's existing app code and CSS untouched — panel added alongside, CSS appended as a revertible block. **Measured: a correctly-detected AI image loses its verdict under 15 of 20 conditions; a real photo flips to "AI-generated" under 5.** Suite **511 green**.
 - **2026-08-27 — [relay] PROTOCOL §6 INVOKED.** Mehul: Codex hit usage limits. Claude claimed **1.1 eval harness** and completed it on top of Codex's `protocol.py`/`metrics.py` (reimplemented nothing): added bootstrap, results assembly, markdown reporting, runner, 18 tests. **First full evaluation artifact produced** over 8,000 rows: `results/grid-smoke-v1/diagnostic-results.{json,md}`. Reproduces the independent 1.3 diagnostic exactly (cross-validation). New findings: **real→fake flip 0.315 at blur_s2.0**, **fake→real flip 0.515 at noise_s0.10**, jpeg_q30 loses 0.415 recall at zero FPR cost. The diagnostic/headline boundary is now structural — a placeholder threshold physically cannot emit a headline block. **Suite 490 green.** All relay work tagged for Codex's review-first on return.
