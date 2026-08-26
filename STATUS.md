@@ -14,7 +14,7 @@
 | Workstream | Owner | Status | Next (see its STATE.md) |
 |---|---|---|---|
 | core | Claude | ✅ PHASE-0 GATE APPROVED-WITH-NOTES | service notes in B-012 before named consumers |
-| training | Claude | 🟢 router + calibration built (synthetic-tested) | needs real corpus → feature cache → fit |
+| training | Claude | 🟢 cache + router + calibration ALL built | needs a real corpus to run against |
 | eval | Codex | ⚪ ready (Phase 1) | harness + results-JSON implementation after Phase-0 gate |
 | product | Codex | ✅ PHASE-0 GATE APPROVED-WITH-NOTES | placeholder-verdict mitigation done; await Phase-1 split |
 
@@ -35,13 +35,14 @@
 | 1.3 full-grid baseline (single-expert) | Claude | ✅ DONE — 8,000 rows, 0 failures, 167s |
 | 1.1 eval harness | **Claude [relay]** | ✅ DONE — Codex's protocol/metrics + Claude's results/report/runner (18 tests) |
 | 1.5 Gradio stress panel | **Claude [relay]** | ✅ DONE — live 20-condition grid + SVG chart (21 tests) |
-| 1.6 repo mechanics | Codex → **relay candidate** | ⏸️ Codex limit-blocked |
+| 1.6 repo mechanics | **Claude [relay]** | ✅ licence+parameter inventory done; push still needs Mehul's GitHub target |
 | 1.6 repo mechanics/license inventory | Codex | 🟢 claimed; Luna inventory delegated, Codex reviews |
 | 0.1 repo scaffold | Codex | ✅ done 00:45 (uv lock/offline sync/imports) |
 | 0.7 smoke dataset | Codex | ✅ done 00:45 (200+200; validated; AUROC input) |
 | 0.8 Gradio v0 | Codex | ✅ done 00:45 (live local server + parity tests) |
 
 ## Log (newest first)
+- **2026-08-27 — 1.6 inventory + Phase-2 feature cache built.** `LICENSES.md` now covers checkpoints, datasets, dependencies and demo assets with the parameter table (**two dependency licences corrected** — torch and numpy declare more complex expressions than I had written from memory; the file records the command to re-derive them). `Brief/` and `docs/evidence/` git-ignored — redistributing the organizers' PDF in a public repo is Mehul's call, and ignoring is the reversible default. **`src/router/feature_cache.py` + 30 tests**: canonical cache key with refuse-to-append, fail-closed denylist (no denylist ⇒ refuses to build), abort-not-skip on a sealed hit. **Suite 541 green.**
 - **2026-08-27 — [relay] task 1.5 DONE (the demo money-shot).** Stress panel runs all 20 conditions live (~0.7 s) and plots score-vs-condition as dependency-free inline SVG, with verdict flips marked by colour + caret + text listing. Palette validated (CVD ΔE 23.8 light / 25.7 dark). Codex's existing app code and CSS untouched — panel added alongside, CSS appended as a revertible block. **Measured: a correctly-detected AI image loses its verdict under 15 of 20 conditions; a real photo flips to "AI-generated" under 5.** Suite **511 green**.
 - **2026-08-27 — [relay] PROTOCOL §6 INVOKED.** Mehul: Codex hit usage limits. Claude claimed **1.1 eval harness** and completed it on top of Codex's `protocol.py`/`metrics.py` (reimplemented nothing): added bootstrap, results assembly, markdown reporting, runner, 18 tests. **First full evaluation artifact produced** over 8,000 rows: `results/grid-smoke-v1/diagnostic-results.{json,md}`. Reproduces the independent 1.3 diagnostic exactly (cross-validation). New findings: **real→fake flip 0.315 at blur_s2.0**, **fake→real flip 0.515 at noise_s0.10**, jpeg_q30 loses 0.415 recall at zero FPR cost. The diagnostic/headline boundary is now structural — a placeholder threshold physically cannot emit a headline block. **Suite 490 green.** All relay work tagged for Codex's review-first on return.
 - **2026-08-27 — PHASE 1 STARTED. Task 1.3 DONE.** `scripts/run_grid.py` (+15 tests) produced **8,000 prediction rows** (400 sources × 20 conditions, 0 failures, 167s ≈ 21ms/row) for Codex's harness. **First real robustness picture** (`results/grid-smoke-v1/DIAGNOSTIC_SUMMARY.md`): worst families are **noise** (recall 0.165@0.5; σ=0.10 collapses to 0.015) and **blur** (pooled AUROC 0.8576). **`blur_s2.0` is the standout: AUROC 0.6470 with FPR 0.640 — heavy blur pushes REAL images toward 'fake', i.e. systematic bias, not graceful degradation.** Colour/crop nearly free (~0.99). This gives the router a demonstrated job: the failure modes are predictable from `noise_sigma`/`blur_varlap`, which we already compute. Also landed the full B-013 calibration hardening batch. **Suite 438 green. All work committed ([claude] ×3).**
