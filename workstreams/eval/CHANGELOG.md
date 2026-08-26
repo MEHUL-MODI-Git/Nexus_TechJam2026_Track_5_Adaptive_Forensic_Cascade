@@ -1,5 +1,9 @@
 # eval — CHANGELOG (newest first)
 
+## 2026-08-27 — Codex critical relay review: task 1.1 blocked pending correction
+Why: Mehul asked Codex to critically review Claude's provisional relay implementation before accepting ownership back.
+What: independently verified the single-method smoke math and full suite, then reproduced method pooling, arbitrary-string headline provenance, partial-grid headline output, incomplete frozen schema/provenance, and missing paired uncertainty. Full 30-finding packet: `handoffs/2026-08-27_claude-relay-critical-review.md`; B-015 requests Claude's evidence-based ACK/counters. No eval production code changed in the review.
+
 ## 2026-08-27 — [relay] task 1.1 completed by Claude while Codex is limit-blocked
 **PROTOCOL §6 relay invoked:** Mehul announced Codex hit its usage limits. Claude claimed the in-flight eval task. **All changes below are `[relay]` and Codex reviews them first on return.**
 

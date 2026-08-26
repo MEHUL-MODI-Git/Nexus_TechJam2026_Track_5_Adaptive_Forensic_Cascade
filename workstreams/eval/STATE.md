@@ -1,35 +1,30 @@
 # eval — harness, metrics, ablations, error analysis
-**Owner: Codex · Status: 🟢 PHASE 1 · task 1.1 in progress**
+**Owner: Codex · Status: 🔴 RELAY REVIEW BLOCKED · task 1.1 requires fixes**
 
-## ✅ Done 2026-08-26
-- Nothing built. Full protocol pre-specified in `docs/05-evaluation-and-ablations.md` (metrics, stress matrix, table templates, ablation matrix, error taxonomy, statistical rules).
-- Drafted cross-agent contracts/sequencing/freeze proposal in `handoffs/2026-08-26_codex-prebuild-plan.md`; sent for Claude peer review in MSG-005.
-- `specs/phase0-eval.md` frozen v1 after A-010/B-008; no metric code starts before the Phase-0 gate.
+## ✅ Verified 2026-08-27
+- Full suite: 558 passed, 9 warnings.
+- Single-method smoke diagnostic math independently matches the rows: real→fake 0.315 at blur_s2.0; fake→real 0.515 at noise_s0.10.
+- Claude relay added results assembly, report renderer, CLI, and tests; review packet is `handoffs/2026-08-27_claude-relay-critical-review.md`.
+
+## 🔴 Blocking findings
+1. Results pool multiple method IDs; no per-method results or paired deltas.
+2. Any non-placeholder string can create a headline; `FrozenThreshold` is not structurally required.
+3. Partial grids can emit headline results; six-family/completeness checks are absent.
+4. `eval-results.v1` omits most frozen provenance/artifact/freeze fields and never reads the run manifest.
+5. CIs cover fake recall only; sealed Phase-4 and failure-denominator guards are absent.
 
 ## ▶ NEXT ACTION
-1. Implement the frozen `specs/phase0-eval.md` contract against Claude's 8,000-row artifact.
-2. Keep metric/protocol logic with Codex heavy; delegate only bounded mechanical scaffolding after an exact spec.
-3. Verify source-level bootstrap, directional flip rates, single global threshold, and deterministic results JSON.
-
-## Other open threads (do not lose)
-- Bootstrap resamples SOURCE images, never transformed views as independent.
-- Phase 4 owns the one sealed WildFake run + Robustness Summary + Error Analysis Note (required deliverables).
-- Selective/abstention metrics needed once training ships the reliability head (coverage table, risk-coverage curve).
+1. Await Claude ACK/counters on B-015 while specifying the minimal corrected result shape.
+2. Implement method-aware assembly and artifact-object-only headline entry point.
+3. Enforce exact expected coverage/provenance/freeze guards; add paired bootstrap deltas and regression reproductions.
+4. Post a new eval gate packet for Claude to rerun.
 
 ## Literal next command
 ```
-cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && sed -n '1,260p' specs/phase0-eval.md
+cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && tail -120 coordination/CHANNEL.md
 ```
 
 ## Hard constraints
-- One threshold across all conditions; abstentions never silently counted correct — report coverage.
-- Sealed WildFake subset: exactly one evaluation run, Phase 4, after freeze.
-- Every reported number must be reproducible via `scripts/run_eval.py --config configs/frozen.yaml`.
-
-## Read next
-| Task | Read |
-|---|---|
-| Metrics + templates | `docs/05-evaluation-and-ablations.md` |
-| What feeds the harness | ExpertOutput contract in `docs/03-recommended-architecture.md`; cache schema in `docs/04-training-and-data.md` |
-| Acceptance gates | doc 05 "Acceptance gates" + `06-build-plan.md` exit tests |
-| Current pre-build proposal | `handoffs/2026-08-26_codex-prebuild-plan.md` |
+- One frozen threshold across all conditions; incomplete/partial is diagnostic-only.
+- Sealed WildFake subset: exactly one evaluation run, Phase 4, after production freeze.
+- Every public number needs method/data/code/config/artifact hashes and source-level uncertainty.

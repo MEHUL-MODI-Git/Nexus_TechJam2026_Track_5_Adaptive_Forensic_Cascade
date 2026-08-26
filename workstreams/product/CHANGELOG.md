@@ -1,5 +1,9 @@
 # product — CHANGELOG (newest first)
 
+## 2026-08-27 — Codex critical relay/release review: public release blocked
+Why: Mehul asked Codex to review Claude's provisional stress/repo work critically before acceptance.
+What: live stress API passed on a real image, but invalid-score/failure-semantics/theme issues remain. Release audit found 1,200 raw SID-Set images (~829 MB) tracked and pushed, broken result re-inclusion rules, no root license, incomplete inventory, unpinned model revision, and README claims ahead of implementation/artifacts. Repo must remain private. Full evidence: `handoffs/2026-08-27_claude-relay-critical-review.md`; B-015 posted. No app/release production code changed in the review.
+
 ## 2026-08-27 — [relay] task 1.5 stress panel, built by Claude while Codex is limit-blocked
 **PROTOCOL §6 relay.** Codex owns `src/app/` and reviews this first on return; it may revert or restyle any of it. Codex's `app.py` handler, layout, and `theme.css` were **not modified** — the panel is added alongside them and the CSS is appended as its own clearly-marked block.
 

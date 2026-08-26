@@ -3,11 +3,11 @@
 > 30-second orientation only. Detail lives in `workstreams/<ws>/STATE.md`. Messages in `coordination/CHANNEL.md`. Rules in `CLAUDE.md` / `AGENTS.md`.
 
 ## Snapshot
-- **Phase:** ✅ PHASE 0 BUILT + MUTUALLY APPROVED-WITH-NOTES → **Phase-1 split awaiting Claude ACK (B-012).** Local build only; GitHub deferred.
+- **Phase:** Phase 1 relay review complete; Phase-2 pilot running. **Eval/product acceptance and public release are BLOCKED by B-015 pending fixes + peer re-review.**
 - **Deadline:** Mon 1 Sept 12:00pm — submit ~9am · **Webinar: dropped by Mehul (27 Aug)**
 - **Repo:** https://github.com/MEHUL-MODI-Git/TechJam_2026_Track_5 — **PRIVATE. ⚠️ MUST BE MADE PUBLIC BEFORE SUBMISSION** (brief deliverable).
 - **Session note:** Mehul moved from the API session to the Claude Code session (~21:00). AGENT-A continuity = these files; the new session resumes via RESUME PROTOCOL.
-- **Blockers:** none. Both Phase-0 gates independently rerun and approved-with-notes; Phase-1 claims wait on one split ACK.
+- **Blockers:** **Do not make repo public:** commit `4046141` tracks/pushed 1,200 raw SID-Set images (~829 MB). Current eval pools methods and permits fail-open headline/partial-grid output; fitting denylist/cache resume/router objective also fail frozen requirements. Evidence: `handoffs/2026-08-27_claude-relay-critical-review.md`; Claude reply requested in B-015.
 - **Risks:** **LOTA PARKED by Mehul (revisit later)** — architecture impact assessed: cascade stays two-expert by promoting RIGID (training-free, no weights); disagreement + fusion features survive; Feasibility score arguably improves since judges can't reproduce a Baidu-gated dependency either. Verify RIGID repo + param count before committing. Original finding: **weights unobtainable without a Baidu account** (mirror search exhausted 22:45: no HF/Drive/Release mirror; repo is MIT so redistribution would be legal if obtained). **→ FOR MEHUL:** (A) can you get the two `.pth` files from `pan.baidu.com` (codes `imjw` / `a942`, already in the URLs)? Else (C) we substitute RIGID as the training-free second expert at Phase-1 entry. Detail + author-email option (B) in `handoffs/2026-08-26_lota-integration.md` addendum. **Nothing currently blocks — CF-384 is primary and green.**
 - **Compute decision (MEASURED at Phase-2 entry):** local extraction runs at **7.83 rows/sec** on real 1024×1024 corpus images. **The frozen 30k-source target projects to 21.3 h and EXCEEDS the agreed 12 h cap.** Per the frozen rule, shrink SOURCE COUNT never coverage → **recommend 15k sources (10.6 h)**. Earlier 9.3 h estimate came from 256px fixtures and was optimistic by ~2.3x. GPU escalation would be the alternative.
 
@@ -16,8 +16,8 @@
 |---|---|---|---|
 | core | Claude | ✅ PHASE-0 GATE APPROVED-WITH-NOTES | service notes in B-012 before named consumers |
 | training | Claude | 🟢 cache + router + calibration ALL built | needs a real corpus to run against |
-| eval | Codex | ⚪ ready (Phase 1) | harness + results-JSON implementation after Phase-0 gate |
-| product | Codex | ✅ PHASE-0 GATE APPROVED-WITH-NOTES | placeholder-verdict mitigation done; await Phase-1 split |
+| eval | Codex | 🔴 relay review blocked | method-aware/provenanced/full-grid harness corrections + new gate |
+| product | Codex | 🔴 public release blocked | clean raw-data history, tracking/licenses, stress/README corrections |
 
 ## Task claims (claim BEFORE starting; release when done/parked)
 | Task (id from 06-build-plan) | Owner | State |
@@ -34,15 +34,16 @@
 | 3.x calibration + threshold selection | Claude | ✅ done early (30 tests) |
 | 2.x router: features + fusion ladder | Claude | ✅ done early (37 tests, learnability verified) |
 | 1.3 full-grid baseline (single-expert) | Claude | ✅ DONE — 8,000 rows, 0 failures, 167s |
-| 1.1 eval harness | **Claude [relay]** | ✅ DONE — Codex's protocol/metrics + Claude's results/report/runner (18 tests) |
-| 1.5 Gradio stress panel | **Claude [relay]** | ✅ DONE — live 20-condition grid + SVG chart (21 tests) |
-| 1.6 repo mechanics | **Claude [relay]** | ✅ DONE — inventory + repo created + pushed (private) |
+| 1.1 eval harness | Codex (Claude relay reviewed) | 🔴 BLOCKED — method pooling/headline/provenance/completeness/CI fixes required |
+| 1.5 Gradio stress panel | Codex (Claude relay reviewed) | 🟡 WORKS E2E; invalid-score/failure-semantics/theme fixes required |
+| 1.6 repo mechanics | Codex (Claude relay reviewed) | 🔴 RELEASE BLOCKED — raw data in pushed history; results/license/README audit fails |
 | 1.6 repo mechanics/license inventory | Codex | 🟢 claimed; Luna inventory delegated, Codex reviews |
 | 0.1 repo scaffold | Codex | ✅ done 00:45 (uv lock/offline sync/imports) |
 | 0.7 smoke dataset | Codex | ✅ done 00:45 (200+200; validated; AUROC input) |
 | 0.8 Gradio v0 | Codex | ✅ done 00:45 (live local server + parity tests) |
 
 ## Log (newest first)
+- **2026-08-27 — CODEX RELAY REVIEW: BLOCK.** Full suite **558 passed**, live stress E2E passed, and single-method diagnostic math is correct. However, direct reproductions found multi-method pooling, arbitrary-string/partial-grid headline output, incomplete frozen result provenance, malformed/trusted-hash denylist bypass, unsafe cache resume, non-frozen router selection/loss, and invalid stress stability. Release audit found **1,200 raw SID-Set images / ~829 MB already tracked and pushed**, broken result tracking, no root license, incomplete inventory, and README overclaims. Full packet: `handoffs/2026-08-27_claude-relay-critical-review.md`; B-015 sent to Claude. **KEEP REPO PRIVATE.**
 - **2026-08-27 — Phase 2 data chain built; pilot running.** Corpus acquisition (`build_router_corpus.py`) pulled **1,200 balanced sources in 27 s** from SID-Set parquet shards (the datasets-server endpoint the smoke set used is rate-limited and won't scale). **Both classes now come from SID-Set deliberately** — COCO-reals + SID-fakes would let the router learn dataset artefacts instead of AI-generation, and our quality descriptors would carry that shortcut into the model. Router trainer built (full ladder, train-only standardizer, honest negative-ablation verdict; 14 tests). Added pyarrow. **⚠️ Measured throughput says the 30k corpus target busts the 12 h cap (21.3 h) — recommend 15k.** Pilot feature cache extracting in background (~50 min). **Suite 555 green.**
 - **2026-08-27 — PUSHED TO GITHUB.** `MEHUL-MODI-Git/TechJam_2026_Track_5`, **private** (Mehul's call: flip to public before submission — public content is indexed within hours and the Results section is still empty). 14 commits, 114 files. History audited for organizer material/secrets/raw images before pushing, not just the working tree. Webinar dropped per Mehul. **⚠️ Standing action: make the repo public before 1 Sept.**
 - **2026-08-27 — 1.6 inventory + Phase-2 feature cache built.** `LICENSES.md` now covers checkpoints, datasets, dependencies and demo assets with the parameter table (**two dependency licences corrected** — torch and numpy declare more complex expressions than I had written from memory; the file records the command to re-derive them). `Brief/` and `docs/evidence/` git-ignored — redistributing the organizers' PDF in a public repo is Mehul's call, and ignoring is the reversible default. **`src/router/feature_cache.py` + 30 tests**: canonical cache key with refuse-to-append, fail-closed denylist (no denylist ⇒ refuses to build), abort-not-skip on a sealed hit. **Suite 541 green.**
