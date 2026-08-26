@@ -1,0 +1,36 @@
+# Mild self-probes (doc 03 step 4) -- UNOFFICIAL diagnostics.
+#
+# NOT part of the Track-5 transform protocol. These live in a separate
+# namespace on purpose (eval spec: "Unofficial/chained suites use a separate
+# protocol namespace") so a probe can never be mistaken for an official
+# condition or leak into the stress-matrix results table.
+#
+# Purpose: if a TINY, label-preserving change swings an expert's score, that
+# expert's evidence is locally fragile on this input. That fragility is a
+# reliability signal for the router -- not a class label.
+#
+# Deliberately capped at three. Re-running the full severity grid at inference
+# would multiply latency and turn evaluation transforms into expensive
+# test-time augmentation (doc 03 step 4, explicit warning).
+
+probe_version: "0.1.0"
+
+probes:
+  # Mild recompression: doc 03 allows quality 92 or 90.
+  probe_jpeg_q92:
+    kind: jpeg
+    quality: 92
+  # Mild reframing: doc 03 allows retaining 95-98% of each side.
+  probe_crop_0.96:
+    kind: crop
+    keep: 0.96
+  # Mild resampling: doc 03 specifies scale 0.90, down then back up.
+  probe_resize_0.90:
+    kind: resize
+    scale: 0.90
+
+# Optional fourth probe (doc 03: "after ablation"), disabled until measured.
+deferred_probes:
+  probe_blur_s0.3:
+    kind: blur
+    sigma: 0.3

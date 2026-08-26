@@ -1,0 +1,23 @@
+# Prediction-path configuration (core spec v2 §6).
+#
+# PHASE 0 STATUS: the decision threshold below is a PLACEHOLDER, not a
+# calibrated value. It exists so the pipeline is end-to-end runnable; it has
+# not been fitted on any dev set. The real threshold is selected in Phase 2 by
+# the frozen objective (bootstrap-mean worst transformation-FAMILY fake recall
+# subject to the clean FPR/BAcc constraints, per DECISIONS 2026-08-26) and
+# arrives as a threshold artifact with its own provenance. Until then, nothing
+# derived from this number may be reported as a headline result.
+schema_version: "predict-config.v1"
+
+threshold: 0.5
+threshold_provenance: "PLACEHOLDER-uncalibrated-phase0"
+
+experts:
+  - id: commfor_384
+    enabled: true
+    device: null        # null = auto (mps when available, else cpu)
+
+# Phase 0 fusion is a naive mean over available experts; the trained router
+# replaces it in Phase 2. Recorded explicitly so no reader mistakes the demo
+# number for the cascade's real output.
+fusion: naive_mean

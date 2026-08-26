@@ -1,0 +1,583 @@
+{
+  "pipeline_version": "0.1.0",
+  "golden_version": "0.1.0",
+  "condition_ids": [
+    "clean",
+    "jpeg_q90",
+    "jpeg_q70",
+    "jpeg_q50",
+    "jpeg_q30",
+    "blur_s0.5",
+    "blur_s1.0",
+    "blur_s2.0",
+    "resize_0.5",
+    "resize_0.25",
+    "noise_s0.02",
+    "noise_s0.05",
+    "noise_s0.10",
+    "bright_-20",
+    "bright_+20",
+    "contrast_-20",
+    "contrast_+20",
+    "saturation_-20",
+    "saturation_+20",
+    "crop_0.8"
+  ],
+  "sources": {
+    "gradient.png": {
+      "source_sha256": "72a1cad10e153edb7e0a6510533a3b060dd963d7661fbfa28a3daf380abd5c2b",
+      "conditions": {
+        "clean": {
+          "sha256": "5e42a4baf5e3a2819be1280fa95701a37c7107926641dfc9c47f278aace98487",
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "jpeg_q90": {
+          "sha256": "9d834a7b76337fac62664281eb923f520f94167f51249006cbfae7c1278358fd",
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "jpeg_q70": {
+          "sha256": "edab5dc1c4d7444272e6087b5a64df4b226dde82f3de09fee01b597a1f462c02",
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "jpeg_q50": {
+          "sha256": "d569c1431716c77550c158057bbed8e59c462d77d57a5e10c3786559c804c8d3",
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "jpeg_q30": {
+          "sha256": "7a7e69f058c3ab9880435e50db243da8401ce2085a0a03b5da88df4b7657322a",
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "blur_s0.5": {
+          "sha256": "5e42a4baf5e3a2819be1280fa95701a37c7107926641dfc9c47f278aace98487",
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "blur_s1.0": {
+          "sha256": "9b1da1d0738f7a8175e15696c56ba281faedd9e5a376fc87bd02e1515db1da98",
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "blur_s2.0": {
+          "sha256": "56c7dfd1ee0af5a03becdf797db7a123e881b428a0f34c703cf8b959e579ae7c",
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "resize_0.5": {
+          "sha256": "9b1da1d0738f7a8175e15696c56ba281faedd9e5a376fc87bd02e1515db1da98",
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "resize_0.25": {
+          "sha256": "1777873037c7f77e8e940a0a5f0f48456b5441818911f5a656880a2cd0676476",
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "noise_s0.02": {
+          "sha256": "45fdc4f261bc7cb68ee0733a011330cd89d51444a72a8574e850000da3e8af86",
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "noise_s0.05": {
+          "sha256": "e89d10a42f154bb56ccb2f321300b3062ac7e7afefb80a9a2d979dc9d501f23c",
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "noise_s0.10": {
+          "sha256": "46324728bbdb0e1cff2b9f40048994f3837d967a8aa34426db4a77494376d857",
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "bright_-20": {
+          "sha256": "45d9bded41a81dd0d07bb515cf02133ae08ecda98c53cdc78551c42ccfce8002",
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "bright_+20": {
+          "sha256": "cfbab2ad5705a3b8210ccc677ba075b957c409460fd996944d2ae8ca3d53fc4d",
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "contrast_-20": {
+          "sha256": "2c9dfb6f1ce9ca5682287c87e4d7e730dd574c664d18bd34607f05f251718db9",
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "contrast_+20": {
+          "sha256": "8e55e5a5720a8630202f724e07f5393c9b03714d28f88586ccd74dfd4f5dacab",
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "saturation_-20": {
+          "sha256": "9a6d973256c97ee6e658bc1bef089af88a18da532322ddfc25499e4d9e940aaa",
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "saturation_+20": {
+          "sha256": "1a111c13abce4b60db3e4c68644559b39ccb21377f4b3d742dc61a91e029d4cd",
+          "shape": [
+            128,
+            128,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "crop_0.8": {
+          "sha256": "dbfad1e232ff65da9edab9b4df8cb1fac14f48e3a01477d73c25fe84e389d446",
+          "shape": [
+            102,
+            102,
+            3
+          ],
+          "mode": "RGB"
+        }
+      }
+    },
+    "photo.png": {
+      "source_sha256": "dc9c36dbbed10684d08c1c6c890d005d0c991df5d26397e59f70f5dfdd60a35c",
+      "conditions": {
+        "clean": {
+          "sha256": "77f8ab554622489004515124abb36b3f2fe25f6185054e6f37094be30d6be069",
+          "shape": [
+            192,
+            256,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "jpeg_q90": {
+          "sha256": "7bf7243584c67dc5949a7fec20f762546a2eb3925a105443c62a87a1f6d025b1",
+          "shape": [
+            192,
+            256,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "jpeg_q70": {
+          "sha256": "b05ad00f2a9124ca7ffc153a765ec7838a1fb17b8db936114580df6003981a7e",
+          "shape": [
+            192,
+            256,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "jpeg_q50": {
+          "sha256": "cfccbadb8656e1589658cc63140196189a0165377b3df0862746dd4980340c4d",
+          "shape": [
+            192,
+            256,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "jpeg_q30": {
+          "sha256": "49dbdeb59267e34218ee149069a63524bc465d4e85a7cb7e0a7258d78710733e",
+          "shape": [
+            192,
+            256,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "blur_s0.5": {
+          "sha256": "49eb2c08e22c4b63667c759a92342fc4616c9919c1962a5ab26839efbde750bc",
+          "shape": [
+            192,
+            256,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "blur_s1.0": {
+          "sha256": "766749fc9cc6af9e8f999c48b271781818dd780f6713dc083f4594a391bb80ad",
+          "shape": [
+            192,
+            256,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "blur_s2.0": {
+          "sha256": "a61481f5ab7df19d05e72d45ec799aac0e8a01dd194c6fee50337e96dae8fd3d",
+          "shape": [
+            192,
+            256,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "resize_0.5": {
+          "sha256": "f0a88832224f547604be6ab13d92860736ecdab220e2fcbea4cdef87da1602db",
+          "shape": [
+            192,
+            256,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "resize_0.25": {
+          "sha256": "d0f25d74a312ce8633d7e0137c7db0655cb902429007125fb5b727b28d3878b5",
+          "shape": [
+            192,
+            256,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "noise_s0.02": {
+          "sha256": "8c61ef5ae88dd150ccb460efdb169676edb13c198b7b0f30d43a0b333f1f5e3e",
+          "shape": [
+            192,
+            256,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "noise_s0.05": {
+          "sha256": "a9da415090b80409a54cd669de8bfdac7150dcf55656e98529e40c011c6151fc",
+          "shape": [
+            192,
+            256,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "noise_s0.10": {
+          "sha256": "8f7c9727089b02e0655887b1b8ca2737f8ccd384bbca92c8ef7a1aaa27ab330a",
+          "shape": [
+            192,
+            256,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "bright_-20": {
+          "sha256": "dda2db8a31afc34d49c77cc799f5f769e48b5fc915d38acff0a2be70cf3cada6",
+          "shape": [
+            192,
+            256,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "bright_+20": {
+          "sha256": "31f8a2c277e05c4cd8b509a28fa7da6a8693c4d638005cc7cb9072ef2babb5f9",
+          "shape": [
+            192,
+            256,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "contrast_-20": {
+          "sha256": "3975489bcb451e881b1cee1a6038ee708e325047fce5358de1e8fbe1ffba2a21",
+          "shape": [
+            192,
+            256,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "contrast_+20": {
+          "sha256": "c18055ffb1e005206149e4c05d98769e3cbf85baa8c50e98b9c8a64f40245f1d",
+          "shape": [
+            192,
+            256,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "saturation_-20": {
+          "sha256": "8888bb683b9292b7324b2365681d1680083f4e92b8ff501d0ed7df54c55fc0d8",
+          "shape": [
+            192,
+            256,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "saturation_+20": {
+          "sha256": "dcff497e3614ec7588c57bc6b909c8f1e987bc1b5937421d0e0a546ba7352a87",
+          "shape": [
+            192,
+            256,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "crop_0.8": {
+          "sha256": "44edc9608a6eb8c962eeb20d998b5613a0fa97e38ca19eec0db663138226b9fb",
+          "shape": [
+            154,
+            205,
+            3
+          ],
+          "mode": "RGB"
+        }
+      }
+    },
+    "texture.png": {
+      "source_sha256": "6ce1ce6d032a5b48d303a842f7342f11fe2da7d7b6f629ea172cfe70b96c92d9",
+      "conditions": {
+        "clean": {
+          "sha256": "f398617f1385be1818a94a9ba417d3fc49e374c20898a288fc512dd9dc45d561",
+          "shape": [
+            128,
+            160,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "jpeg_q90": {
+          "sha256": "3943f9266a35f7ec8db6633038f57c70187c351f2f7e83d4d1d97fa1d246cbdc",
+          "shape": [
+            128,
+            160,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "jpeg_q70": {
+          "sha256": "b8f75f8d60495fe5b355fae2c0732bb80e407ebdbe67ad8e6b239229a34611e6",
+          "shape": [
+            128,
+            160,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "jpeg_q50": {
+          "sha256": "07d5a56ae0f4323f8b58bff1a73bf5bfe57c141e20a403ff4c341d0104dd5262",
+          "shape": [
+            128,
+            160,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "jpeg_q30": {
+          "sha256": "8da4e0664e3595300f53bf80d69dc7b5692816ce1b5d9ef4bb2de052a66ed842",
+          "shape": [
+            128,
+            160,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "blur_s0.5": {
+          "sha256": "3193d77080f6f80879d3ef68714c3916b067b28ca61980ff9e0c95a72361aa9b",
+          "shape": [
+            128,
+            160,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "blur_s1.0": {
+          "sha256": "ffc51964434b2e3c7bde7de693a2881c09458da37f0ea41581ef371613ec2d98",
+          "shape": [
+            128,
+            160,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "blur_s2.0": {
+          "sha256": "eca766169e6b8029f504a095df40baef310a8347aa4932499e218c4f2f387f5e",
+          "shape": [
+            128,
+            160,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "resize_0.5": {
+          "sha256": "c8f112ddeea28adefe2851b38cd0fb04e475106201e189ce3310cb99164e7e75",
+          "shape": [
+            128,
+            160,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "resize_0.25": {
+          "sha256": "bbb27367baaa545cb7ae021c42f847254409d066df6de08a7c35d6d5296b3b52",
+          "shape": [
+            128,
+            160,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "noise_s0.02": {
+          "sha256": "0c1dca8a95554399b3ae81518069b6afbe2dcf84d0f47a00807c845ccb6c82e2",
+          "shape": [
+            128,
+            160,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "noise_s0.05": {
+          "sha256": "dfcf38c4db7ae32a6db2ce1a5b4d3d2f1ebaf16433bd4c58f04b99a38708a11f",
+          "shape": [
+            128,
+            160,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "noise_s0.10": {
+          "sha256": "a49e91ba461bc641a7b1f17011c20343708e8ddba2cc0aab09829bfaca62bb91",
+          "shape": [
+            128,
+            160,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "bright_-20": {
+          "sha256": "cf4c1be041364be36616f96aba01c5c97caabf026f154ac532d1b5e45a5faa4d",
+          "shape": [
+            128,
+            160,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "bright_+20": {
+          "sha256": "0f2108e1aeb5343778809cc41637e66d2f91856197ff7e65083646976ffa6173",
+          "shape": [
+            128,
+            160,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "contrast_-20": {
+          "sha256": "4bcf4e5ced8d4e261612bdcc553a5932bf0be8c59a9f8f2b50da59d664a2e2fa",
+          "shape": [
+            128,
+            160,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "contrast_+20": {
+          "sha256": "78c2048fcf69b8509c5e328c98c2bba8c468a7d6142b90a5a0d566b0fba8c723",
+          "shape": [
+            128,
+            160,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "saturation_-20": {
+          "sha256": "7350b455c584b5b065d47b8b23b9108249453fb320c182ce69df3f710323f4e3",
+          "shape": [
+            128,
+            160,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "saturation_+20": {
+          "sha256": "376b61d84163186cc5de929d50003096ad0431d16d1fcbf446eaade31040f443",
+          "shape": [
+            128,
+            160,
+            3
+          ],
+          "mode": "RGB"
+        },
+        "crop_0.8": {
+          "sha256": "536c523766c41214b6ef3d28041b67ef4e8925e255289120e359abd57e8836c6",
+          "shape": [
+            102,
+            128,
+            3
+          ],
+          "mode": "RGB"
+        }
+      }
+    }
+  }
+}

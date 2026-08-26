@@ -1,0 +1,100 @@
+# Transform protocol v1 -- FROZEN 2026-08-26 (specs/phase0-core.md v2 §2, §7).
+#
+# THIS FILE IS THE SINGLE AUTHORITATIVE SOURCE for every numeric transform
+# parameter (review note: "avoid duplicating transform numeric parameters
+# between Python and YAML"). src/pipeline/transforms.py reads these values;
+# it holds no duplicate literals. A startup assertion checks that the key set
+# here equals the 20 registry condition ids and that pipeline_version matches
+# src/pipeline/version.py.
+#
+# Any change here is a protocol change: bump pipeline_version, regenerate
+# goldens, bump the feature-cache version, and record it in DECISIONS.md.
+
+pipeline_version: "0.1.0"
+
+# Library pins that materially affect pixel output. Recorded for the manifest;
+# asserted loosely (major.minor) at load time.
+library_pins:
+  pillow: "12.3"
+  torch: "2.13"
+  torchvision: "0.28"
+
+# Global numeric conventions (specs/phase0-core.md "Global decisions").
+conventions:
+  float_dtype: float32
+  float_range: [0.0, 1.0]
+  # uint8 round-trip: np.round(x * 255).clip(0, 255).astype(uint8)
+  uint8_rounding: round_half_to_even_numpy
+  # Every computed output dimension passes through max(1, round(...)) (note N7).
+  min_dimension_guard: 1
+
+conditions:
+  clean:
+    family: clean
+    kind: identity
+
+  # --- jpeg family: PIL encoder, 4:2:0 chroma subsampling, no optimize/progressive
+  jpeg_q90: {family: jpeg, kind: jpeg, quality: 90}
+  jpeg_q70: {family: jpeg, kind: jpeg, quality: 70}
+  jpeg_q50: {family: jpeg, kind: jpeg, quality: 50}
+  jpeg_q30: {family: jpeg, kind: jpeg, quality: 30}
+
+  # --- blur family: true Gaussian conv (torchvision), NOT PIL box approximation
+  blur_s0.5: {family: blur, kind: blur, sigma: 0.5}
+  blur_s1.0: {family: blur, kind: blur, sigma: 1.0}
+  blur_s2.0: {family: blur, kind: blur, sigma: 2.0}
+
+  # --- resize family: down to scale, then back UP to original size
+  resize_0.5:  {family: resize, kind: resize, scale: 0.5}
+  resize_0.25: {family: resize, kind: resize, scale: 0.25}
+
+  # --- noise family: sigma in [0,1] units (stated assumption, webinar Q5)
+  noise_s0.02: {family: noise, kind: noise, sigma: 0.02}
+  noise_s0.05: {family: noise, kind: noise, sigma: 0.05}
+  noise_s0.10: {family: noise, kind: noise, sigma: 0.10}
+
+  # --- color family: ONE property per condition, +/-20% endpoints
+  bright_-20:     {family: color, kind: color, property: brightness, factor: 0.8}
+  bright_+20:     {family: color, kind: color, property: brightness, factor: 1.2}
+  contrast_-20:   {family: color, kind: color, property: contrast,   factor: 0.8}
+  contrast_+20:   {family: color, kind: color, property: contrast,   factor: 1.2}
+  saturation_-20: {family: color, kind: color, property: saturation, factor: 0.8}
+  saturation_+20: {family: color, kind: color, property: saturation, factor: 1.2}
+
+  # --- crop family: 80% of EACH SIDE (64% area; stated assumption, webinar Q7).
+  # Output stays at the cropped size; adapters apply their own input policy.
+  crop_0.8: {family: crop, kind: crop, keep: 0.8}
+
+# Encoder / kernel manifest -- the exact settings docs 05 requires us to state.
+manifest:
+  jpeg:
+    encoder: PIL
+    subsampling: 2          # 4:2:0
+    optimize: false
+    progressive: false
+  blur:
+    implementation: torchvision.transforms.v2.functional.gaussian_blur
+    kernel_size_rule: "2*ceil(3*sigma)+1"
+    # Tiny-image clamp: reflect padding needs pad < min(H,W), so the kernel is
+    # capped at 2*min(H,W)-1 (sigma unchanged, Gaussian truncated harder).
+    # Engages only below ceil(3*sigma)+1 px; k<=1 is the identity.
+    kernel_size_clamp: "min(k, 2*min(H,W)-1)"
+    sigma_passed_explicitly: true
+    padding_mode: reflect   # torchvision's boundary behavior (note N6)
+  resize:
+    interpolation: bilinear
+    antialias: true
+    order: "down_then_up_to_original"
+  noise:
+    distribution: gaussian
+    per_channel: true
+    clip: [0.0, 1.0]
+    # seed = int(sha256(f"{orig_sha256}:{condition_id}".encode("ascii")).hexdigest()[:16], 16)
+    seed_rule: "sha256_ascii_origsha_colon_condid__first16hex_bigendian"
+    rng: "numpy.random.default_rng"
+  color:
+    implementation: torchvision.transforms.v2.functional.adjust_{property}
+  crop:
+    anchor: center
+    offset_rule: "floor((size - target) / 2)"
+    resize_back: false

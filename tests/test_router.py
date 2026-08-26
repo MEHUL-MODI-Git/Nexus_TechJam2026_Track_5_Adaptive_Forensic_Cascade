@@ -1,0 +1,304 @@
+"""Router feature-assembly and model tests (doc 03 steps 5-6).
+
+The assembly tests all circle one rule: absence must be encoded, never
+invented. The model tests all circle another: an unavailable expert must
+receive exactly zero weight.
+"""
+
+import numpy as np
+import pytest
+import torch
+
+from src.router.features import (
+    PROBE_KEYS,
+    QUALITY_KEYS,
+    FeatureSpec,
+    Standardizer,
+    binary_entropy_array,
+    row_to_vector,
+    rows_to_matrix,
+)
+from src.router.model import (
+    LogisticRouter,
+    MLPRouter,
+    StaticAverageFusion,
+    reliability_targets,
+    worst_group_loss,
+)
+
+SPEC1 = FeatureSpec(expert_ids=("commfor_384",))
+SPEC2 = FeatureSpec(expert_ids=("commfor_384", "rigid"))
+
+
+def good_row(p_fake=0.12, flip=False):
+    return {
+        "experts": {"commfor_384": {"ok": True, "raw_logit": -2.0, "p_fake": p_fake}},
+        "probes": {"commfor_384": {"probe_mean": 0.13, "probe_std": 0.01,
+                                   "probe_range": 0.03, "probe_max_delta": 0.02,
+                                   "probe_flip": flip, "n_probes_ok": 3}},
+        "disagreement": None,
+        "quality": {"width": 256, "height": 192, "aspect_ratio": 4 / 3,
+                    "megapixels": 0.049, "is_portrait": False,
+                    **{k: 0.1 for k in QUALITY_KEYS}},
+    }
+
+
+def _idx(spec, name):
+    return spec.names.index(name)
+
+
+# --- feature spec ---------------------------------------------------------
+def test_dim_matches_names():
+    assert SPEC1.dim == len(SPEC1.names)
+    assert SPEC2.dim == len(SPEC2.names)
+    assert SPEC2.dim > SPEC1.dim
+
+
+def test_vector_length_matches_spec():
+    assert row_to_vector(good_row(), SPEC1).shape == (SPEC1.dim,)
+
+
+def test_every_optional_feature_has_a_presence_flag():
+    names = SPEC1.names
+    for key in QUALITY_KEYS:
+        assert f"quality.{key}__present" in names
+    for key in PROBE_KEYS:
+        assert f"commfor_384.{key}__present" in names
+
+
+# --- missing-value discipline --------------------------------------------
+def test_failed_expert_yields_zero_value_and_zero_indicator():
+    row = {"experts": {"commfor_384": {"ok": False, "reason_code": "x", "message": "y"}},
+           "probes": {}, "disagreement": None, "quality": {}}
+    v = row_to_vector(row, SPEC1)
+    assert v[_idx(SPEC1, "commfor_384.p_fake")] == 0.0
+    assert v[_idx(SPEC1, "commfor_384.p_fake__present")] == 0.0
+    assert np.isfinite(v).all()
+
+
+def test_present_expert_sets_indicator():
+    v = row_to_vector(good_row(p_fake=0.7), SPEC1)
+    assert v[_idx(SPEC1, "commfor_384.p_fake")] == pytest.approx(0.7)
+    assert v[_idx(SPEC1, "commfor_384.p_fake__present")] == 1.0
+
+
+def test_probe_flip_is_tri_state():
+    """True / False / unknown must be three distinguishable encodings."""
+    t = row_to_vector(good_row(flip=True), SPEC1)
+    f = row_to_vector(good_row(flip=False), SPEC1)
+    vi, pi = _idx(SPEC1, "commfor_384.probe_flip"), _idx(SPEC1, "commfor_384.probe_flip__present")
+    assert (t[vi], t[pi]) == (1.0, 1.0)
+    assert (f[vi], f[pi]) == (0.0, 1.0)
+
+    unknown = good_row()
+    unknown["probes"]["commfor_384"]["probe_flip"] = None      # all probes failed
+    u = row_to_vector(unknown, SPEC1)
+    assert (u[vi], u[pi]) == (0.0, 0.0)                        # distinct from False
+
+
+def test_missing_disagreement_cannot_read_as_agreement():
+    """The single-expert case: zeros must come with a zero indicator."""
+    v = row_to_vector(good_row(), SPEC1)
+    assert v[_idx(SPEC1, "disagreement.max_abs_p_diff")] == 0.0
+    assert v[_idx(SPEC1, "disagreement.max_abs_p_diff__present")] == 0.0
+
+
+def test_present_disagreement_sets_indicator():
+    row = good_row()
+    row["disagreement"] = {"max_abs_p_diff": 0.4, "mean_abs_p_diff": 0.4, "n_experts_ok": 2}
+    v = row_to_vector(row, SPEC1)
+    assert v[_idx(SPEC1, "disagreement.max_abs_p_diff")] == pytest.approx(0.4)
+    assert v[_idx(SPEC1, "disagreement.max_abs_p_diff__present")] == 1.0
+    assert v[_idx(SPEC1, "disagreement.n_experts_ok")] == 2.0
+
+
+def test_non_finite_values_are_treated_as_missing():
+    row = good_row()
+    row["experts"]["commfor_384"]["raw_logit"] = float("inf")
+    v = row_to_vector(row, SPEC1)
+    assert v[_idx(SPEC1, "commfor_384.raw_logit")] == 0.0
+    assert v[_idx(SPEC1, "commfor_384.raw_logit__present")] == 0.0
+
+
+def test_entropy_is_computed_not_read_from_cache():
+    """A stored entropy must never override the value implied by p_fake."""
+    row = good_row(p_fake=0.5)
+    row["experts"]["commfor_384"]["entropy"] = 999.0      # poisoned cache value
+    v = row_to_vector(row, SPEC1)
+    assert v[_idx(SPEC1, "commfor_384.entropy")] == pytest.approx(np.log(2))
+
+
+def test_binary_entropy_endpoints():
+    out = binary_entropy_array(np.array([0.0, 0.5, 1.0]))
+    assert out[0] == 0.0 and out[2] == 0.0
+    assert out[1] == pytest.approx(np.log(2))
+
+
+def test_empty_row_still_produces_finite_vector():
+    v = row_to_vector({}, SPEC1)
+    assert v.shape == (SPEC1.dim,) and np.isfinite(v).all()
+
+
+# --- standardizer ---------------------------------------------------------
+def test_standardizer_leaves_indicator_columns_untouched():
+    rows = [good_row(p_fake=p) for p in (0.1, 0.5, 0.9)]
+    M = rows_to_matrix(rows, SPEC1)
+    std = Standardizer.fit(M, SPEC1)
+    pi = _idx(SPEC1, "commfor_384.p_fake__present")
+    assert std.mean[pi] == 0.0 and std.scale[pi] == 1.0
+    assert std.transform(M)[:, pi].tolist() == [1.0, 1.0, 1.0]
+
+
+def test_standardizer_zscores_real_columns():
+    rows = [good_row(p_fake=p) for p in (0.1, 0.5, 0.9)]
+    M = rows_to_matrix(rows, SPEC1)
+    Z = Standardizer.fit(M, SPEC1).transform(M)
+    vi = _idx(SPEC1, "commfor_384.p_fake")
+    assert Z[:, vi].mean() == pytest.approx(0.0, abs=1e-9)
+    assert Z[:, vi].std() == pytest.approx(1.0, abs=1e-6)
+
+
+def test_standardizer_survives_zero_variance_column():
+    M = rows_to_matrix([good_row(), good_row()], SPEC1)   # identical rows
+    Z = Standardizer.fit(M, SPEC1).transform(M)
+    assert np.isfinite(Z).all()
+
+
+def test_standardizer_rejects_wrong_width():
+    M = rows_to_matrix([good_row()], SPEC1)
+    std = Standardizer.fit(M, SPEC1)
+    with pytest.raises(ValueError):
+        std.transform(np.zeros((1, SPEC1.dim + 3)))
+
+
+def test_standardizer_rejects_empty_fit():
+    with pytest.raises(ValueError):
+        Standardizer.fit(np.empty((0, SPEC1.dim)), SPEC1)
+
+
+# --- model: availability masking -----------------------------------------
+@pytest.mark.parametrize("cls", [StaticAverageFusion, LogisticRouter, MLPRouter])
+def test_unavailable_expert_gets_exactly_zero_weight(cls):
+    model = cls(2) if cls is StaticAverageFusion else cls(SPEC2.dim, 2)
+    features = torch.randn(4, SPEC2.dim)
+    p = torch.rand(4, 2)
+    available = torch.ones(4, 2, dtype=torch.bool)
+    available[0, 1] = False
+    out = model(features, p, available)
+    assert out.weights[0, 1].item() == 0.0
+    assert out.weights[0].sum().item() == pytest.approx(1.0)
+
+
+@pytest.mark.parametrize("cls", [StaticAverageFusion, LogisticRouter, MLPRouter])
+def test_no_available_expert_yields_zero_weights(cls):
+    model = cls(2) if cls is StaticAverageFusion else cls(SPEC2.dim, 2)
+    available = torch.zeros(1, 2, dtype=torch.bool)
+    out = model(torch.randn(1, SPEC2.dim), torch.rand(1, 2), available)
+    assert out.weights.sum().item() == 0.0     # no verdict, not a uniform guess
+
+
+def test_static_average_is_the_plain_mean():
+    p = torch.tensor([[0.2, 0.8]])
+    out = StaticAverageFusion(2)(torch.randn(1, SPEC2.dim), p, torch.ones(1, 2, dtype=torch.bool))
+    assert out.p_fake.item() == pytest.approx(0.5)
+
+
+def test_static_average_ignores_unavailable_expert():
+    p = torch.tensor([[0.2, 0.8]])
+    available = torch.tensor([[True, False]])
+    out = StaticAverageFusion(2)(torch.randn(1, SPEC2.dim), p, available)
+    assert out.p_fake.item() == pytest.approx(0.2)
+
+
+@pytest.mark.parametrize("cls", [LogisticRouter, MLPRouter])
+def test_fused_score_is_a_convex_combination(cls):
+    model = cls(SPEC2.dim, 2)
+    p = torch.rand(16, 2)
+    out = model(torch.randn(16, SPEC2.dim), p, torch.ones(16, 2, dtype=torch.bool))
+    assert (out.p_fake >= p.min(dim=1).values - 1e-6).all()
+    assert (out.p_fake <= p.max(dim=1).values + 1e-6).all()
+
+
+@pytest.mark.parametrize("cls", [LogisticRouter, MLPRouter])
+def test_reliability_is_a_probability(cls):
+    out = cls(SPEC2.dim, 2)(torch.randn(8, SPEC2.dim), torch.rand(8, 2),
+                            torch.ones(8, 2, dtype=torch.bool))
+    assert ((out.reliability >= 0) & (out.reliability <= 1)).all()
+
+
+def test_static_average_has_no_parameters():
+    assert sum(p.numel() for p in StaticAverageFusion(2).parameters()) == 0
+
+
+def test_router_is_tiny():
+    # "tens of thousands of parameters or fewer" (doc 03) -- negligible vs <2B.
+    assert MLPRouter(SPEC2.dim, 2).param_count < 20_000
+
+
+# --- worst-group loss + reliability targets -------------------------------
+def test_worst_group_loss_selects_the_worst_group():
+    losses = torch.tensor([0.1, 0.1, 5.0, 5.0])
+    groups = torch.tensor([0, 0, 1, 1])
+    assert worst_group_loss(losses, groups, 2).item() == pytest.approx(5.0)
+
+
+def test_worst_group_loss_skips_empty_groups():
+    losses = torch.tensor([1.0, 3.0])
+    groups = torch.tensor([0, 2])          # group 1 absent from this batch
+    assert worst_group_loss(losses, groups, 3).item() == pytest.approx(3.0)
+
+
+def test_worst_group_loss_raises_when_no_groups_present():
+    with pytest.raises(ValueError):
+        worst_group_loss(torch.tensor([]), torch.tensor([], dtype=torch.long), 2)
+
+
+def test_reliability_target_is_correctness_not_confidence():
+    fused = torch.tensor([0.9, 0.9, 0.1, 0.1])
+    labels = torch.tensor([1.0, 0.0, 0.0, 1.0])
+    t = reliability_targets(fused, labels, threshold=0.5)
+    assert t.tolist() == [1.0, 0.0, 1.0, 0.0]   # confident-and-wrong scores 0
+
+
+def test_reliability_target_threshold_boundary():
+    t = reliability_targets(torch.tensor([0.5]), torch.tensor([1.0]), threshold=0.5)
+    assert t.item() == 1.0      # p == threshold predicts fake
+
+
+# --- learnability: the claim the whole project rests on -------------------
+def test_router_can_learn_to_beat_static_average():
+    """Synthetic world where one expert is right on group A, the other on group B.
+
+    A static average is stuck near chance; a router that reads the context
+    feature should approach perfect. If this ever fails, the architecture's
+    core premise is not implementable and we would need to know immediately.
+    """
+    torch.manual_seed(0)
+    n = 2000
+    context = torch.randint(0, 2, (n,))                  # which expert is reliable
+    labels = torch.randint(0, 2, (n,)).float()
+    expert_a = torch.where(context == 0, labels, 1 - labels).float()
+    expert_b = torch.where(context == 1, labels, 1 - labels).float()
+    p = torch.stack([expert_a, expert_b], dim=1).clamp(0.02, 0.98)
+    features = torch.stack([context.float(), torch.randn(n)], dim=1)
+    available = torch.ones(n, 2, dtype=torch.bool)
+
+    model = MLPRouter(n_features=2, n_experts=2)
+    opt = torch.optim.Adam(model.parameters(), lr=0.02)
+    for _ in range(300):
+        opt.zero_grad()
+        out = model(features, p, available)
+        loss = torch.nn.functional.binary_cross_entropy(out.p_fake.clamp(1e-6, 1 - 1e-6), labels)
+        loss.backward()
+        opt.step()
+
+    model.eval()
+    with torch.no_grad():
+        routed = model(features, p, available).p_fake
+        baseline = StaticAverageFusion(2)(features, p, available).p_fake
+    routed_acc = ((routed >= 0.5).float() == labels).float().mean().item()
+    baseline_acc = ((baseline >= 0.5).float() == labels).float().mean().item()
+
+    assert baseline_acc < 0.65          # averaging cancels the two experts out
+    assert routed_acc > 0.90            # routing recovers the signal
+    assert routed_acc > baseline_acc + 0.25
