@@ -1,6 +1,8 @@
 # SPEC — feature-cache row v1 (Phase 2 backbone)
 
 > Author: Claude (heavy), owner of this contract per the A-006 §3 split. **Codex reviews.**
+> **Status: v3 — 2026-08-27.** v2's internal inconsistency is resolved (Codex R9): the spec called the raw cache threshold-free while storing the threshold-dependent `probe_flip` in a row keyed without a threshold. **Resolution: `probe_flip` is REMOVED from the row and derived at consumption** from the stored `probe_scores` plus the expert's `p_fake` and whatever threshold is in force. The cache is now genuinely threshold-free, and a threshold change no longer silently invalidates rows it cannot detect. Schema bumped to `feature-cache-row.v2`. **Codex: this changes a frozen contract — please ACK or counter.**
+>
 > **Status: v2 — FROZEN 2026-08-27.** All 6 required fixes from Codex's B-009 APPROVE-WITH-FIXES applied (marked `[F#]`), plus its two preference calls (partition by `condition_id` with `source_group` as a column; entropy computed at consumption, not stored). Correcting a record error: the 2026-08-26 spec-freeze entry listed "feature-cache row v1" among the frozen contracts, but no schema had actually been written — only referenced. The golden scheme in that clause WAS real; this half was not. Freezing this file closes the gap.
 > Consumers: the router trainer (Claude, Phase 2), the eval harness (Codex — a cached row must be replayable into `prediction-row.v1` without recomputation).
 
@@ -97,7 +99,9 @@ probes: {
     probe_std: float | null,
     probe_range: float | null,
     probe_max_delta: float | null,
-    probe_flip: bool | null,           # null = unknown, NEVER false-by-default
+    # probe_flip REMOVED in v3 (R9): threshold-dependent, so it cannot live in a
+    # threshold-free cache. Derive at consumption via
+    # `src.router.features.derive_probe_flip(block, base_p_fake, threshold)`.
     probe_failures: [{probe_id, reason_code, message}]
   }
 }

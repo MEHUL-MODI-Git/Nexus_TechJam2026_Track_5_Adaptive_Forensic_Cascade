@@ -94,7 +94,22 @@ class FeatureSpec:
         return len(self.names)
 
 
-def row_to_vector(row: dict, spec: FeatureSpec) -> np.ndarray:
+def derive_probe_flip(probe_block: dict, base_p_fake: float | None,
+                      threshold: float) -> bool | None:
+    """Did any probe cross the decision boundary relative to the base score?
+
+    Returns None when it cannot be known — no base score, or no probe scored.
+    None must stay distinct from False: telling the router "stable" about an
+    image we could not probe is the most dangerous imputation available here.
+    """
+    scores = (probe_block or {}).get("probe_scores") or {}
+    if base_p_fake is None or not scores:
+        return None
+    base_side = base_p_fake >= threshold
+    return any((float(v) >= threshold) != base_side for v in scores.values())
+
+
+def row_to_vector(row: dict, spec: FeatureSpec, threshold: float = 0.5) -> np.ndarray:
     """Convert one `feature-cache-row.v1` dict into a feature vector.
 
     Never raises on missing sub-structures: absence is a legitimate outcome and
@@ -119,9 +134,12 @@ def row_to_vector(row: dict, spec: FeatureSpec) -> np.ndarray:
         for key in PROBE_KEYS:
             v = pblock.get(key)
             values += list(_pair(v, v is not None))
-        flip = pblock.get("probe_flip")
-        # probe_flip is tri-state: True / False / None(unknown). The indicator
-        # keeps "unknown" distinct from "measured and stable".
+        # R9: probe_flip is DERIVED here, not read from the cache. The cache is
+        # threshold-free by contract, and a stored flip would silently describe
+        # whatever threshold happened to be in force when the row was written.
+        flip = derive_probe_flip(pblock, p_fake if ok else None, threshold)
+        # Tri-state: True / False / None(unknown). The indicator keeps "unknown"
+        # distinct from "measured and stable".
         values += list(_pair(1.0 if flip else 0.0, flip is not None))
         values.append(float(pblock.get("n_probes_ok", 0) or 0))
 
@@ -155,10 +173,11 @@ def row_to_vector(row: dict, spec: FeatureSpec) -> np.ndarray:
     return vector
 
 
-def rows_to_matrix(rows: list[dict], spec: FeatureSpec) -> np.ndarray:
+def rows_to_matrix(rows: list[dict], spec: FeatureSpec,
+                   threshold: float = 0.5) -> np.ndarray:
     if not rows:
         return np.empty((0, spec.dim), dtype=np.float64)
-    return np.vstack([row_to_vector(r, spec) for r in rows])
+    return np.vstack([row_to_vector(r, spec, threshold) for r in rows])
 
 
 @dataclass

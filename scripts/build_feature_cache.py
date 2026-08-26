@@ -54,7 +54,6 @@ def main() -> int:
             rows, args.out, experts,
             {"transforms": ROOT / "configs/transforms.yaml",
              "probes": ROOT / "configs/probes.yaml"},
-            threshold=float(config["threshold"]),
             conditions=conditions,
             denylist=load_denylist(args.denylist),
             denylist_acknowledged_absent=args.acknowledge_no_denylist,

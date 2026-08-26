@@ -30,12 +30,15 @@ SPEC1 = FeatureSpec(expert_ids=("commfor_384",))
 SPEC2 = FeatureSpec(expert_ids=("commfor_384", "rigid"))
 
 
-def good_row(p_fake=0.12, flip=False):
+def good_row(p_fake=0.12, probe_scores=None):
+    """probe_flip is DERIVED from probe_scores at consumption (R9), never stored."""
+    if probe_scores is None:
+        probe_scores = {"probe_jpeg_q92": p_fake, "probe_crop_0.96": p_fake}
     return {
         "experts": {"commfor_384": {"ok": True, "raw_logit": -2.0, "p_fake": p_fake}},
         "probes": {"commfor_384": {"probe_mean": 0.13, "probe_std": 0.01,
                                    "probe_range": 0.03, "probe_max_delta": 0.02,
-                                   "probe_flip": flip, "n_probes_ok": 3}},
+                                   "probe_scores": probe_scores, "n_probes_ok": 3}},
         "disagreement": None,
         "quality": {"width": 256, "height": 192, "aspect_ratio": 4 / 3,
                     "megapixels": 0.049, "is_portrait": False,
@@ -83,17 +86,24 @@ def test_present_expert_sets_indicator():
 
 
 def test_probe_flip_is_tri_state():
-    """True / False / unknown must be three distinguishable encodings."""
-    t = row_to_vector(good_row(flip=True), SPEC1)
-    f = row_to_vector(good_row(flip=False), SPEC1)
-    vi, pi = _idx(SPEC1, "commfor_384.probe_flip"), _idx(SPEC1, "commfor_384.probe_flip__present")
-    assert (t[vi], t[pi]) == (1.0, 1.0)
-    assert (f[vi], f[pi]) == (0.0, 1.0)
+    """True / False / unknown must be three distinguishable encodings.
 
-    unknown = good_row()
-    unknown["probes"]["commfor_384"]["probe_flip"] = None      # all probes failed
-    u = row_to_vector(unknown, SPEC1)
-    assert (u[vi], u[pi]) == (0.0, 0.0)                        # distinct from False
+    The flip is derived from stored probe scores against the threshold in force,
+    so the cache never has to carry a threshold-dependent value (R9).
+    """
+    vi, pi = _idx(SPEC1, "commfor_384.probe_flip"), _idx(SPEC1, "commfor_384.probe_flip__present")
+
+    # base 0.12 is below 0.5; a probe at 0.9 crosses the boundary -> flip
+    flipped = row_to_vector(
+        good_row(probe_scores={"probe_jpeg_q92": 0.9}), SPEC1, threshold=0.5)
+    assert (flipped[vi], flipped[pi]) == (1.0, 1.0)
+
+    stable = row_to_vector(
+        good_row(probe_scores={"probe_jpeg_q92": 0.11}), SPEC1, threshold=0.5)
+    assert (stable[vi], stable[pi]) == (0.0, 1.0)
+
+    unknown = row_to_vector(good_row(probe_scores={}), SPEC1, threshold=0.5)
+    assert (unknown[vi], unknown[pi]) == (0.0, 0.0)            # distinct from False
 
 
 def test_missing_disagreement_cannot_read_as_agreement():

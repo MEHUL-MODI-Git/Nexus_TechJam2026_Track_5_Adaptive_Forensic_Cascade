@@ -23,9 +23,12 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import platform
+import re
+import sys
 import tempfile
 from collections import defaultdict
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
@@ -37,7 +40,10 @@ from ..pipeline.quality import compute_quality
 from ..pipeline.transforms import CONDITION_IDS, FAMILY_OF
 from ..pipeline.version import PIPELINE_VERSION, PROBE_VERSION
 
-SCHEMA_VERSION = "feature-cache-row.v1"
+SCHEMA_VERSION = "feature-cache-row.v2"
+# Only used to satisfy the probe helper's signature; no threshold-dependent
+# value derived from it is ever written to a row (R9).
+_UNUSED_THRESHOLD = 0.5
 ALLOWED_SPLITS = frozenset({"train", "dev"})
 
 
@@ -47,6 +53,19 @@ class DenylistViolation(Exception):
 
 class CacheKeyMismatch(Exception):
     """The cache directory was produced by different code. Never mix."""
+
+
+def _library_versions() -> dict[str, str]:
+    """Recorded in the manifest so a cache states what produced it (R24)."""
+    import importlib.metadata as md
+
+    out = {}
+    for pkg in ("torch", "torchvision", "pillow", "numpy", "timm"):
+        try:
+            out[pkg] = md.version(pkg)
+        except Exception:      # noqa: BLE001
+            out[pkg] = "unknown"
+    return out
 
 
 def _sha256_file(path: Path) -> str:
@@ -71,19 +90,72 @@ def compute_cache_key(expert_fingerprints: list[str], config_paths: dict[str, Pa
     return hashlib.sha256(payload).hexdigest(), key_object
 
 
-def load_denylist(path: Path | None) -> set[str]:
-    """Load sealed-reference SHA-256 hashes (one per line, '#' comments)."""
+_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+_PHASH_RE = re.compile(r"^[0-9a-f]{16}$")
+
+
+@dataclass(frozen=True)
+class Denylist:
+    """Sealed-reference hashes. Malformed input is an ERROR, never 'protection'."""
+
+    sha256: frozenset[str]
+    phash: frozenset[str]
+
+    def __bool__(self) -> bool:
+        return bool(self.sha256 or self.phash)
+
+    @property
+    def perceptual_protected(self) -> bool:
+        return bool(self.phash)
+
+
+def load_denylist(path: Path | None) -> Denylist:
+    """Parse a sealed-reference denylist STRICTLY (Codex R7a).
+
+    The previous version accepted any token, so a file of junk produced a
+    non-empty denylist and stamped `denylist_protected=true` while protecting
+    nothing. A malformed entry now aborts: silently degrading contamination
+    protection is the one failure this guard exists to prevent.
+
+    Format: one lowercase 64-hex SHA-256 per line; an optional second field
+    `phash=<16 hex>` adds perceptual protection. '#' starts a comment.
+    """
     if path is None:
-        return set()
-    hashes = set()
-    for line in path.read_text().splitlines():
-        line = line.strip()
-        if line and not line.startswith("#"):
-            hashes.add(line.split()[0].lower())
-    return hashes
+        return Denylist(frozenset(), frozenset())
+    if not path.exists():
+        raise DenylistViolation(f"denylist file not found: {path}")
+    sha, ph = set(), set()
+    for number, raw in enumerate(path.read_text().splitlines(), start=1):
+        line = raw.split("#", 1)[0].strip()
+        if not line:
+            continue
+        fields = line.split()
+        token = fields[0].lower()
+        if not _SHA256_RE.match(token):
+            raise DenylistViolation(
+                f"{path}:{number}: {fields[0]!r} is not a lowercase 64-hex SHA-256. "
+                "Refusing to treat a malformed denylist as protection."
+            )
+        sha.add(token)
+        for extra in fields[1:]:
+            if extra.startswith("phash="):
+                value = extra.split("=", 1)[1].lower()
+                if not _PHASH_RE.match(value):
+                    raise DenylistViolation(f"{path}:{number}: bad phash {value!r}")
+                ph.add(value)
+    if not sha:
+        raise DenylistViolation(f"{path} contains no usable hashes")
+    return Denylist(frozenset(sha), frozenset(ph))
 
 
-def validate_manifest_rows(rows: list[dict], denylist: set[str]) -> None:
+def _hamming(a: str, b: str) -> int:
+    return bin(int(a, 16) ^ int(b, 16)).count("1")
+
+
+def validate_manifest_rows(
+    rows: list[dict], denylist: "Denylist", *, verify_bytes: bool = True,
+    phash_threshold: int = 6,
+) -> None:
     """Every hard constraint, enforced BEFORE a single forward pass runs.
 
     Checking after extraction would mean discovering contamination only after
@@ -97,15 +169,50 @@ def validate_manifest_rows(rows: list[dict], denylist: set[str]) -> None:
     # every legitimate cache.
     source_by_hash: dict[str, str] = {}
     for row in rows:
-        digest = row["original_sha256"].lower()
         source_id = row["source_id"]
+        claimed = row["original_sha256"].lower()
+        # R7b: hash the ACTUAL bytes. Checking the manifest's own claim against
+        # the denylist would let a mislabelled row walk a sealed image straight
+        # into a fitting corpus.
+        if verify_bytes:
+            path = Path(row["relative_path"])
+            if not path.exists():
+                raise DenylistViolation(
+                    f"{row.get('sample_id')}: file {path} does not exist; cannot verify "
+                    "it is not a sealed reference image."
+                )
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            if digest != claimed:
+                raise DenylistViolation(
+                    f"{row.get('sample_id')}: manifest claims sha256 {claimed[:12]}… but the "
+                    f"file hashes to {digest[:12]}…. Refusing to trust a manifest that does "
+                    "not describe its own bytes."
+                )
+            if denylist.perceptual_protected:
+                try:
+                    import imagehash
+                    from PIL import Image
+
+                    observed = str(imagehash.phash(Image.open(path).convert("RGB")))
+                    for sealed in denylist.phash:
+                        if _hamming(observed, sealed) <= phash_threshold:
+                            raise DenylistViolation(
+                                f"NEAR-DUPLICATE OF A SEALED REFERENCE IMAGE: "
+                                f"{path} (phash {observed} within {phash_threshold} of {sealed})"
+                            )
+                except DenylistViolation:
+                    raise
+                except Exception:
+                    pass   # unreadable image is caught by the decode path later
+        else:
+            digest = claimed
         if source_by_hash.setdefault(digest, source_id) != source_id:
             raise ValueError(
                 f"sha256 {digest[:12]}… maps to multiple source_ids "
                 f"({source_by_hash[digest]!r} and {source_id!r}) — contaminated or "
                 "double-counted manifest"
             )
-        if digest in denylist:
+        if digest in denylist.sha256:
             raise DenylistViolation(
                 f"SEALED REFERENCE IMAGE IN A FITTING CORPUS: {row.get('relative_path')} "
                 f"(sha256 {digest[:12]}…). Aborting the entire job — a skipped row would "
@@ -136,7 +243,6 @@ def build_row(
     view,
     experts: list[Expert],
     cache_key: str,
-    threshold: float,
 ) -> dict:
     """Extract one `(source, condition)` row: experts, probes, quality."""
     view_decoded = replace(decoded, image=view, width=view.width, height=view.height)
@@ -164,7 +270,14 @@ def build_row(
             "warnings": list(out.warnings),
         }
         successes[expert.expert_id] = out.p_fake
-        probes = compute_probe_features(expert, view_decoded, threshold, base_p_fake=out.p_fake)
+        # R9: the cache is threshold-FREE, so no threshold-dependent value may be
+        # stored in it. `probe_flip` is derivable at consumption from
+        # `probe_scores` + the expert's `p_fake` + whatever threshold is in force,
+        # so we store the inputs and derive the flip downstream. Passing the
+        # sentinel below keeps the helper's signature honest without the value
+        # ever reaching a row.
+        probes = compute_probe_features(expert, view_decoded, _UNUSED_THRESHOLD,
+                                        base_p_fake=out.p_fake)
         probe_blocks[expert.expert_id] = {
             "probe_scores": probes.probe_scores,
             "n_probes_ok": probes.n_probes_ok,
@@ -172,7 +285,7 @@ def build_row(
             "probe_std": probes.probe_std,
             "probe_range": probes.probe_range,
             "probe_max_delta": probes.probe_max_delta,
-            "probe_flip": probes.probe_flip,
+            # probe_flip deliberately ABSENT (R9) — derive it at consumption.
             "probe_failures": probes.probe_failures,
         }
 
@@ -223,19 +336,53 @@ def build_row(
     }
 
 
-def completed_view_ids(path: Path) -> set[str]:
-    """Resume support: which (source, condition) pairs already exist."""
+def scan_existing_rows(path: Path, cache_key: str) -> tuple[set[str], int]:
+    """Resume scan: validate every existing row and TRUNCATE a torn tail (R8).
+
+    Three failures the previous version had:
+    - a torn final line was skipped but left in place, so the next append
+      concatenated onto the fragment and corrupted that line permanently;
+    - rows were trusted by `view_id` alone, never checked against the cache key
+      they were written under;
+    - the row total was not recoverable, so the manifest reported per-invocation
+      counts as if they described the artifact.
+    """
     done: set[str] = set()
     if not path.exists():
-        return done
-    for line in path.read_text().splitlines():
-        if not line.strip():
-            continue
-        try:
-            done.add(json.loads(line)["view_id"])
-        except (json.JSONDecodeError, KeyError):
-            continue    # torn final line from a kill; it is simply rewritten
-    return done
+        return done, 0
+    good_bytes = 0
+    total = 0
+    with path.open("rb") as handle:
+        for raw in handle:
+            if not raw.endswith(b"\n"):
+                break                      # torn tail: stop, do not count it
+            text = raw.decode("utf-8", errors="replace").strip()
+            if not text:
+                good_bytes += len(raw)
+                continue
+            try:
+                row = json.loads(text)
+            except json.JSONDecodeError:
+                break                      # corrupt line: everything after is suspect
+            if row.get("cache_key") != cache_key:
+                raise CacheKeyMismatch(
+                    f"{path} contains a row written under cache key "
+                    f"{str(row.get('cache_key'))[:12]}… but this run computes "
+                    f"{cache_key[:12]}…. Never mix cache generations."
+                )
+            if row.get("schema_version") != SCHEMA_VERSION:
+                raise CacheKeyMismatch(
+                    f"{path} contains schema {row.get('schema_version')!r}, expected "
+                    f"{SCHEMA_VERSION!r}."
+                )
+            done.add(row["view_id"])
+            good_bytes += len(raw)
+            total += 1
+    if good_bytes < path.stat().st_size:
+        # Truncate the unusable tail rather than appending after it.
+        with path.open("r+b") as handle:
+            handle.truncate(good_bytes)
+    return done, total
 
 
 def write_manifest(directory: Path, manifest: dict) -> None:
@@ -281,7 +428,8 @@ def build_cache(
     progress_every: int = 25,
 ) -> dict:
     """Extract features for every (source, condition). Returns the manifest."""
-    denylist = denylist or set()
+    started = datetime.now(timezone.utc)
+    denylist = denylist or Denylist(frozenset(), frozenset())
     if not denylist and not denylist_acknowledged_absent:
         # Fail closed. Building an unprotected fitting cache by accident is
         # exactly the mistake the sealed-subset rule exists to prevent.
@@ -299,10 +447,14 @@ def build_cache(
     check_cache_key(out_dir, cache_key)
 
     rows_path = out_dir / "rows.jsonl"
-    done = completed_view_ids(rows_path)
+    # R8: write the manifest BEFORE extracting, so an interrupted first run
+    # still leaves a key on disk for the next run to check against.
+    write_manifest(out_dir, {"cache_key": cache_key, "key_object": key_object,
+                             "schema_version": SCHEMA_VERSION, "status": "in_progress",
+                             "started_at": started.isoformat()})
+    done, existing_rows = scan_existing_rows(rows_path, cache_key)
     conditions = list(conditions)
     written = decode_failures = 0
-    started = datetime.now(timezone.utc)
 
     with rows_path.open("a") as handle:
         for i, source in enumerate(manifest_rows, start=1):
@@ -318,8 +470,7 @@ def build_cache(
 
             for condition_id in pending:
                 view = apply_transform(decoded.image, condition_id, decoded.sha256)
-                row = build_row(source, decoded, condition_id, view, experts,
-                                cache_key, threshold)
+                row = build_row(source, decoded, condition_id, view, experts, cache_key)
                 handle.write(json.dumps(row) + "\n")
                 written += 1
             handle.flush()
@@ -335,14 +486,21 @@ def build_cache(
                          "JSONL with an identical schema (recorded deviation)"),
         "created_at": started.isoformat(),
         "completed_at": datetime.now(timezone.utc).isoformat(),
+        "status": "complete",
         "n_sources": len(manifest_rows),
         "n_conditions": len(conditions),
-        "rows_written": written,
-        "decode_failures": decode_failures,
+        "rows_total": existing_rows + written,      # describes the ARTIFACT (R8)
+        "rows_written_this_invocation": written,
+        "decode_failures_this_invocation": decode_failures,
         "experts": fingerprints,
-        "denylist_size": len(denylist),
+        "denylist_size": len(denylist.sha256),
         "denylist_protected": bool(denylist),
-        "threshold_used_for_probe_flip": threshold,
+        "denylist_perceptual_protected": denylist.perceptual_protected,
+        "threshold_free": True,   # R9: no threshold-dependent value is stored
+        "command": " ".join(sys.argv),
+        "host": platform.node(),
+        "device": str(getattr(experts[0], "device", "unknown")) if experts else "none",
+        "library_versions": _library_versions(),
         "UNPROTECTED_SMOKE_ONLY": not denylist,
     }
     write_manifest(out_dir, manifest)
