@@ -127,8 +127,14 @@ def test_selection_metric_is_the_frozen_objective():
 
 
 def test_verdict_is_reported_honestly_when_router_does_not_help():
-    """With one expert and no context signal, routing cannot beat averaging."""
-    result = run_ladder(make_rows(), threshold=0.5, expert_ids=EXPERTS)
+    """With TWO experts the comparison is real, so a null result must be stated
+    as a reportable negative ablation rather than quietly dropped."""
+    rows = make_rows()
+    for row in rows:                       # a second expert that adds no signal
+        row["experts"]["e2"] = dict(row["experts"]["e1"])
+        row["probes"]["e2"] = dict(row["probes"]["e1"])
+    result = run_ladder(rows, threshold=0.5, expert_ids=("e1", "e2"))
+    assert result["fusion_comparison_degenerate"] is False
     assert isinstance(result["router_earns_its_complexity"], bool)
     assert result["improvement_over_baseline"] == pytest.approx(
         result["best_worst_family_recall"] - result["baseline_worst_family_recall"]
@@ -167,3 +173,34 @@ def test_failed_expert_is_marked_unavailable_in_the_batch():
     batch = build_batch(rows, spec, std)
     assert batch.available[0, 0].item() is False
     assert batch.expert_p[0, 0].item() == 0.0     # zero WITH an unavailable flag
+
+
+# --- degeneracy guard -----------------------------------------------------
+def test_single_expert_fusion_is_flagged_as_vacuous():
+    """One expert ⇒ softmax weight 1.0 ⇒ every rung emits the primary score.
+
+    Reporting that as "the router did not beat the baseline" would present a
+    configuration artefact as a scientific finding.
+    """
+    result = run_ladder(make_rows(), threshold=0.5, expert_ids=("e1",))
+    assert result["fusion_comparison_degenerate"] is True
+    assert result["router_earns_its_complexity"] is False
+    assert "VACUOUS" in result["verdict_note"]
+    scores = {r["dev_worst_family_fake_recall"] for r in result["results"]}
+    assert len(scores) == 1          # identical by construction, as claimed
+
+
+def test_two_experts_are_not_flagged_degenerate():
+    rows = make_rows()
+    for row in rows:
+        p = row["experts"]["e1"]["p_fake"]
+        row["experts"]["e2"] = {"ok": True, "raw_logit": 0.0, "p_fake": 1.0 - p}
+        row["probes"]["e2"] = dict(row["probes"]["e1"])
+    result = run_ladder(rows, threshold=0.5, expert_ids=("e1", "e2"))
+    assert result["fusion_comparison_degenerate"] is False
+
+
+def test_degenerate_flag_overrides_a_spurious_improvement():
+    result = run_ladder(make_rows(), threshold=0.5, expert_ids=("e1",))
+    # even if delta were positive, N=1 must never claim the router earned its keep
+    assert result["router_earns_its_complexity"] is False

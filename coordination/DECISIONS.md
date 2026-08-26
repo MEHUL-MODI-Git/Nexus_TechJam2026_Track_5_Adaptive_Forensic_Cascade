@@ -4,6 +4,13 @@ Entry format: `## <date> — <decision>` / **Proposed by / Approved by** / **Evi
 
 ---
 
+## 2026-08-27 — Router corpus resized 30k → 15k sources on measured throughput
+**Proposed by:** Claude (measurement + recommendation). **Approved by:** Mehul ("go with 15k sources"). **Codex:** offline (limit-blocked) — reviews on return; this supersedes the corpus number in the 2026-08-26 spec freeze.
+**What:** Router corpus target becomes **15,000 sources (7,500 real / 7,500 fully-synthetic)**, down from the frozen 30,000. **Transform, class, family and severity coverage are UNCHANGED** — the frozen rule was "if the projection exceeds 12 h, shrink SOURCE COUNT, never coverage", and that is exactly what this does.
+**Evidence (measured at Phase-2 entry, as the spec required before committing):** local extraction runs at **7.83 rows/sec** on real 1024×1024 corpus images with 1 expert + 3 probes per row. 30,000 sources ⇒ **21.3 h**, exceeding the agreed 12 h cap. 15,000 ⇒ **10.6 h**, inside it with margin. 12,000 (the frozen minimum) ⇒ 8.5 h. The earlier 9.3 h projection for 30k was taken from 14 ms/img on 256px golden fixtures and was optimistic by ~2.3x; this entry corrects it with a real measurement.
+**Also recorded:** both corpus classes are drawn from SID-Set (labels 0 and 1; tampered label 2 excluded). Sourcing reals from COCO and fakes from SID-Set would let the router learn dataset artefacts — encoder, resolution, compression history — instead of AI-generation, and the quality descriptors would carry that shortcut into the model.
+**Reverses if:** batched inference or GPU escalation lifts throughput enough to afford more sources inside the cap, or a measured pilot shows 15k is insufficient for the router to separate from baseline.
+
 ## 2026-08-27 — GitHub repository created and pushed (PRIVATE until submission)
 **Proposed by:** Mehul (instruction: "push into github, create project called TechJam_2026_Track_5"; visibility chosen by Mehul when asked). **Approved by:** binding — user directive.
 **What:** `https://github.com/MEHUL-MODI-Git/TechJam_2026_Track_5` created **private** and pushed (14 commits, 114 files). Visibility decision: private now, **flip to public before the 1 Sept submission** — the brief's public-repo deliverable is judged at submission time, and public content is indexed by third parties within hours, so publishing an unfinished Results section is one-way. **ACTION REQUIRED BEFORE SUBMISSION: make the repository public.**

@@ -193,6 +193,12 @@ def run_ladder(cache_rows: list[dict], threshold: float, expert_ids: tuple[str, 
         for name, wg in (("static_average", False), ("logistic", False),
                          ("mlp", False), ("mlp", True))
     ]
+    # DEGENERACY GUARD. With one expert, softmax over a single available slot is
+    # 1.0 by construction, so every rung emits the primary score exactly and the
+    # comparison is vacuous. Reporting that as "the router did not beat the
+    # baseline" would look like a scientific finding when it is a configuration
+    # artefact — the fusion head had nothing to fuse.
+    fusion_degenerate = len(expert_ids) < 2
     baseline = next(r for r in results if r["rung"] == "static_average")
     best = max(results, key=lambda r: (r["dev_worst_family_fake_recall"]
                                        if not np.isnan(r["dev_worst_family_fake_recall"]) else -1))
@@ -213,8 +219,18 @@ def run_ladder(cache_rows: list[dict], threshold: float, expert_ids: tuple[str, 
         "best_rung": best["rung"],
         "best_worst_family_recall": best["dev_worst_family_fake_recall"],
         "improvement_over_baseline": delta,
-        "router_earns_its_complexity": bool(delta > 0.0),
+        "router_earns_its_complexity": bool(delta > 0.0) and not fusion_degenerate,
+        "fusion_comparison_degenerate": fusion_degenerate,
         "verdict_note": (
+            "FUSION COMPARISON IS VACUOUS: only one expert is available, so the fusion "
+            "head's softmax weight is 1.0 by construction and every rung necessarily "
+            "emits the primary expert's score unchanged. The identical rows below are "
+            "an artefact of expert count, NOT evidence about the router. With N=1 the "
+            "router's only possible contribution is the reliability/abstention head, "
+            "which must be judged by selective metrics (coverage vs accuracy on the "
+            "accepted set), not by fused-score recall. Add a second expert before "
+            "drawing any conclusion about fusion."
+            if fusion_degenerate else
             "If improvement_over_baseline is <= 0 the trained router did NOT beat "
             "parameter-free averaging on this data. That is a reportable negative "
             "ablation (doc 08 kill criteria), not a result to bury."

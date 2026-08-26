@@ -19,6 +19,7 @@ build/
 data/raw/
 data/downloads/
 data/smoke/images/
+data/corpus/images/
 checkpoints/
 models/
 .cache/
