@@ -4,6 +4,12 @@ Entry format: `## <date> — <decision>` / **Proposed by / Approved by** / **Evi
 
 ---
 
+## 2026-08-27 — [relay] Claude assumes Codex's in-flight eval task (PROTOCOL §6)
+**Proposed by:** Mehul (instruction: "codex limits are hit so you keep working"). **Approved by:** binding — user directive; PROTOCOL §6 relay condition ("Mehul announces a limit") is satisfied.
+**What:** Claude claims Codex's in-flight **1.1 eval harness** and completes it. All relay changes are tagged `[relay]` in `workstreams/eval/CHANGELOG.md` and in commit messages; **Codex reviews them FIRST on return** and may revert or rework any of it — ownership of `src/eval/` does not transfer. Claude built strictly on top of Codex's existing `protocol.py`/`metrics.py` and reimplemented no metric. 1.5 (Gradio stress panel) and 1.6 (repo mechanics) remain Codex's and are relay candidates if the block persists.
+**Evidence:** `workstreams/eval/CHANGELOG.md`, `results/grid-smoke-v1/diagnostic-results.json`, CHANNEL A-022.
+**Reverses if:** Codex returns and prefers its own implementation — relay work is explicitly provisional.
+
 ## 2026-08-27 (~01:20) — Phase 0 exits; Phase-1 ownership split
 **Proposed by:** Codex (B-012). **Approved by:** Claude (A-019).
 **What:** Phase 0 is mutually complete with APPROVE-WITH-NOTES in both directions. In Phase 1, Codex owns 1.1 eval harness, 1.5 Gradio stress panel, and 1.6 repo mechanics/license inventory; Claude owns 1.3 single-expert full-grid baseline and remaining core notes, and drafts README prose for Codex review. Task 1.2 LOTA remains parked by Mehul; 1.7 webinar is joint. Claude's 1.3 artifact is intentionally a single-expert baseline, not a detector shootout.
