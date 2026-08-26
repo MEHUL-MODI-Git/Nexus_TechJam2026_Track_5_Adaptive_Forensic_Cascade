@@ -120,26 +120,32 @@ def run(
                 view_decoded = replace(
                     decoded, image=view, width=view.width, height=view.height
                 )
+                # Run every expert on the view FIRST, so each emitted row can
+                # carry the failures of its siblings on the same view. With one
+                # expert this is always empty; with two, a row must say that the
+                # other expert was unavailable rather than leaving it inferable
+                # only from a missing row.
+                outputs, failures = [], []
                 for expert in experts:
-                    warnings = list(decoded.warnings)
                     try:
-                        out = expert.predict(view_decoded)
+                        outputs.append(expert.predict(view_decoded))
                     except ExpertInferenceError as exc:
-                        # No row is emitted: prediction-row.v1 requires a finite
-                        # p_fake, and inventing one would corrupt the table.
                         expert_failures += 1
+                        failures.append(exc.to_dict())
                         fh.write(json.dumps({
                             "schema_version": "prediction-failure.v1",
-                            "run_id": run_id, "method_id": expert.expert_id,
+                            "run_id": run_id, "method_id": exc.expert_id,
                             "sample_id": sample_id, "source_id": source["source_id"],
                             "condition_id": condition_id, **exc.to_dict(),
                         }) + "\n")
-                        continue
+
+                for out in outputs:
+                    warnings = list(decoded.warnings)
                     warnings.extend(f"{out.expert_id}:{w}" for w in out.warnings)
                     fh.write(json.dumps({
                         "schema_version": SCHEMA_VERSION,
                         "run_id": run_id,
-                        "method_id": expert.expert_id,
+                        "method_id": out.expert_id,
                         "sample_id": sample_id,
                         "source_id": source["source_id"],
                         "image_path": source["relative_path"],
@@ -155,6 +161,9 @@ def run(
                         "decision": None,       # harness recomputes at the frozen threshold
                         "rescue_invoked": None,
                         "inference_ms": out.inference_ms,
+                        # Present-with-null-or-list: the frozen eval spec makes this
+                        # field REQUIRED, and nullable is not the same as optional.
+                        "expert_failures": failures or None,
                         "warnings": warnings,
                         "pipeline_version": PIPELINE_VERSION,
                     }) + "\n")

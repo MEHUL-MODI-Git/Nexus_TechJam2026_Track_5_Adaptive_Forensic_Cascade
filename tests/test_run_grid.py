@@ -224,3 +224,34 @@ def test_limit_restricts_sources(mini_manifest, stub_service, tmp_path):
     manifest = run(mini_manifest, out, ["clean"], limit=1, service=stub_service)
     assert manifest["n_sources"] == 1
     assert len(_read(out)) == 1
+
+
+# --- B-014: expert_failures is REQUIRED (nullable != optional) ---
+def test_every_row_carries_expert_failures_field(mini_manifest, stub_service, tmp_path):
+    out = tmp_path / "rows.jsonl"
+    run(mini_manifest, out, ["clean", "jpeg_q30"], service=stub_service)
+    rows = _read(out)
+    assert rows, "expected rows"
+    for row in rows:
+        assert "expert_failures" in row       # present even when nothing failed
+        assert row["expert_failures"] is None or isinstance(row["expert_failures"], list)
+
+
+def test_sibling_expert_failure_is_recorded_on_the_surviving_row(mini_manifest, tmp_path):
+    """With two experts, a surviving row must say the other one was unavailable."""
+
+    class FailsOnJpeg(StubExpert):
+        expert_id = "flaky_expert"
+
+        def predict(self, img):
+            raise ExpertInferenceError(self.expert_id, "inference_failed", "scripted")
+
+    service = PredictionService([StubExpert(), FailsOnJpeg()], threshold=0.5)
+    out = tmp_path / "rows.jsonl"
+    run(mini_manifest, out, ["clean"], service=service)
+    rows = [r for r in _read(out) if r["schema_version"] == "prediction-row.v1"]
+    assert rows and all(r["method_id"] == "stub_expert" for r in rows)
+    for row in rows:
+        assert row["expert_failures"] is not None
+        assert row["expert_failures"][0]["expert_id"] == "flaky_expert"
+        assert "p_fake" not in row["expert_failures"][0]   # a failure carries no score
