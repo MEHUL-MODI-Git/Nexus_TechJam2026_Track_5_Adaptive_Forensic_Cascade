@@ -132,6 +132,32 @@ def analyze_image(image_path: str | Path | None, service: Any):
     return html, cf_text, latency_text, warning_text, technical
 
 
+def stress_test_image(image_path: str | Path | None, service: Any):
+    """[relay] Task 1.5 handler: run the official grid live and render the panel.
+
+    Mirrors `analyze_image`'s contract — returns display strings only, raises
+    nothing at the UI boundary, and never fabricates a score for a condition
+    that failed.
+    """
+    from .stress import (
+        render_stress_summary,
+        render_stress_svg,
+        render_stress_table,
+        run_stress_grid,
+    )
+
+    if image_path is None:
+        return ("<p class='afc-idle'>Upload an image, then run the stress test.</p>", "", "")
+    try:
+        result = run_stress_grid(service, image_path)
+    except Exception as exc:  # noqa: BLE001 - the UI must not crash on a bad file
+        message = _render_error(exc)
+        html_message = message[0] if isinstance(message, tuple) else str(message)
+        return (html_message, "", "")
+    return (render_stress_summary(result), render_stress_svg(result),
+            render_stress_table(result))
+
+
 def build_app(service=None):
     """Build the UI using an injected service (or the configured local service)."""
     try:
@@ -160,8 +186,28 @@ def build_app(service=None):
                 warnings = gr.Textbox(label="Decode / preprocessing warnings", value="—", interactive=False)
             with gr.Accordion("Technical details", open=False):
                 technical = gr.Textbox(label="Provenance", value="—", interactive=False, lines=5)
+
+            # [relay] Task 1.5 — the stress panel. Runs all 20 official
+            # conditions on the uploaded image (~0.7 s) and shows whether the
+            # verdict survives them. This is the demo's central claim: a clean
+            # score does not tell you whether a detector holds up.
+            gr.HTML("<h2 class='afc-heading'>Robustness stress test</h2>"
+                    "<p class='afc-intro'>Re-scores this image under all 20 official "
+                    "transformations — compression, blur, resizing, noise, colour "
+                    "shifts and cropping — and reports whether the verdict survives "
+                    "them. A detector can be confident on a clean image and still "
+                    "change its mind after a re-post.</p>")
+            stress_button = gr.Button("Stress-test this image", variant="secondary")
+            stress_summary = gr.HTML(value="<p class='afc-idle'>Not run yet.</p>")
+            stress_chart = gr.HTML(value="")
+            with gr.Accordion("Stress results table", open=False):
+                stress_table = gr.HTML(value="")
+
             def _analyze_uploaded(image_path):
                 return analyze_image(image_path, predictor)
+
+            def _stress_uploaded(image_path):
+                return stress_test_image(image_path, predictor)
 
             analyze.click(
                 _analyze_uploaded,
@@ -169,7 +215,13 @@ def build_app(service=None):
                 outputs=[result, cf, latency, warnings, technical],
                 api_name="analyze",
             )
+            stress_button.click(
+                _stress_uploaded,
+                inputs=[image],
+                outputs=[stress_summary, stress_chart, stress_table],
+                api_name="stress_test",
+            )
     return demo
 
 
-__all__ = ["build_app", "analyze_image"]
+__all__ = ["build_app", "analyze_image", "stress_test_image"]

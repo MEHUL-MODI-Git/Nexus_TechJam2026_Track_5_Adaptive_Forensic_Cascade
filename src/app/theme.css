@@ -13,3 +13,59 @@ body, .gradio-container { background: var(--ink) !important; color: var(--ivory)
 .placeholder-verdict { color: var(--ivory); font-size: .92rem; }
 .error-card { border-color: #ffb4a0; border-left-color: #ffb4a0; }
 button.primary { background: var(--signal) !important; color: var(--ink) !important; }
+
+
+/* ------------------------------------------------------------------ */
+/* [relay] Task 1.5 stress panel — added by Claude while Codex is      */
+/* limit-blocked. Appended as its own block so it is trivial to revert */
+/* or restyle; nothing above this line was modified.                   */
+/* ------------------------------------------------------------------ */
+.afc-heading { margin: 28px 0 4px; font-size: 1.05rem; letter-spacing: .01em; }
+.afc-intro { margin: 0 0 12px; opacity: .78; font-size: .9rem; max-width: 64ch; }
+.afc-idle { opacity: .6; font-size: .9rem; }
+
+.afc-chart { display: block; width: 100%; height: auto; margin: 6px 0 2px; }
+/* Roles, so light/dark swap in one place and marks are written against them. */
+.afc-chart {
+  --afc-series: #2a78d6;      /* validated: CVD ΔE 23.8 vs critical on light */
+  --afc-critical: #d03b3b;    /* reserved status colour, never a series hue */
+  --afc-grid: rgba(0,0,0,.10);
+  --afc-ink: #52514e;
+  --afc-rule: #0b0b0b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) .afc-chart {
+    --afc-series: #3987e5;    /* dark-surface step, validated as a set */
+    --afc-critical: #d03b3b;
+    --afc-grid: rgba(255,255,255,.14);
+    --afc-ink: #c3c2b7;
+    --afc-rule: #ffffff;
+  }
+}
+:root[data-theme="dark"] .afc-chart {
+  --afc-series: #3987e5;
+  --afc-critical: #d03b3b;
+  --afc-grid: rgba(255,255,255,.14);
+  --afc-ink: #c3c2b7;
+  --afc-rule: #ffffff;
+}
+
+.afc-bar { fill: var(--afc-series); }
+.afc-bar-flip { fill: var(--afc-critical); }
+.afc-bar-error { fill: var(--afc-grid); opacity: .5; }
+.afc-flip-mark { fill: var(--afc-critical); }
+.afc-grid { stroke: var(--afc-grid); stroke-width: 1; }
+.afc-axis-line { stroke: var(--afc-grid); stroke-width: 1.5; }
+.afc-axis { fill: var(--afc-ink); font-size: 10px; }
+.afc-family { fill: var(--afc-ink); font-size: 10px; letter-spacing: .04em; }
+.afc-rule-label { fill: var(--afc-ink); font-size: 10px; }
+.afc-threshold { stroke: var(--afc-rule); stroke-width: 2; opacity: .75; }
+.afc-clean { stroke: var(--afc-rule); stroke-width: 2; stroke-dasharray: 5 4; opacity: .5; }
+
+.afc-stable, .afc-unstable { margin: 8px 0 2px; font-size: .95rem; font-weight: 600; }
+.afc-unstable { color: var(--afc-critical, #d03b3b); }
+.afc-caveat { margin: 4px 0; font-size: .82rem; opacity: .75; max-width: 70ch; }
+.afc-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.afc-table th, .afc-table td { text-align: left; padding: 3px 8px;
+  border-bottom: 1px solid var(--afc-grid, rgba(0,0,0,.1)); }
+.afc-table th { font-weight: 600; opacity: .8; }

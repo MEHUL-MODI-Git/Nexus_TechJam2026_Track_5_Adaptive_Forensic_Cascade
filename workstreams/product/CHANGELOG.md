@@ -1,3 +1,22 @@
+# product — CHANGELOG (newest first)
+
+## 2026-08-27 — [relay] task 1.5 stress panel, built by Claude while Codex is limit-blocked
+**PROTOCOL §6 relay.** Codex owns `src/app/` and reviews this first on return; it may revert or restyle any of it. Codex's `app.py` handler, layout, and `theme.css` were **not modified** — the panel is added alongside them and the CSS is appended as its own clearly-marked block.
+
+- `src/app/stress.py` — runs all 20 official conditions on the uploaded image (**~0.7 s live**), detects verdict flips against the clean reference, and renders summary / chart / table.
+- `src/app/app.py` — added `stress_test_image()` handler and the "Stress-test this image" panel (button → summary, chart, collapsible table). Mirrors `analyze_image`'s contract: display strings only, never raises at the UI boundary.
+- `tests/test_stress_panel.py` — **21 tests** covering flip detection, failure handling, escaping, and chart *geometry* (marks inside the plot area, no viewBox overflow) since a rendering bug in a demo is found by the audience.
+
+**Chart decisions** (data-viz method applied; palette validated with the skill's validator, not eyeballed):
+- **Inline SVG, zero plotting dependency.** Gradio's native plots need `altair`, which is not in the lockfile — adding a dependency to a file another agent owns while it is offline is not a call to make in passing.
+- **One bar per condition, grouped by family with a gap.** Severities are NOT comparable across families, so they are deliberately not placed on a shared severity axis.
+- **One measure ⇒ one hue, no legend.** Verdict flips use the reserved `critical` status colour **plus a caret marker plus a text listing**, so a flip is never colour-alone.
+- Palette validated in both modes: CVD ΔE **23.8 light / 25.7 dark** (gate ≥8), all six checks PASS.
+- Theme-aware via CSS custom properties under both `prefers-color-scheme` and `[data-theme]` scopes; hover tooltips via native SVG `<title>` (no JS); table view always available.
+- Placeholder-threshold honesty carried through: when provenance starts with `PLACEHOLDER`, the summary states that flips reflect an unfitted operating point while the score curve does not.
+
+**Measured on real smoke images:** a correctly-detected AI image (clean p=0.528) **loses its verdict under 15 of 20 conditions**; a real photograph flips to "AI-generated" under 5, driven by heavy blur. This is the demo's central claim made visible.
+
 # CHANGELOG — product (newest first, append-only; corrections are new entries)
 
 ## 2026-08-27 — Phase 1 task 1.6 started under heavy→light→heavy routing
