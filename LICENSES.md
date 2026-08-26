@@ -58,16 +58,17 @@ they can be re-derived on any machine.
 
 | Package | Declared license |
 |---|---|
-| torch | Apache-2.0 AND Apache-2.0 WITH LLVM-exception (as declared by the 2.13 wheel) |
+| torch | Apache-2.0 AND Apache-2.0 WITH LLVM-exception AND BSD-2-Clause AND BSD-3-Clause AND BSL-1.0 AND MIT |
 | torchvision | BSD |
 | timm | Apache-2.0 |
 | Pillow | MIT-CMU |
 | NumPy | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0 |
 | huggingface_hub | Apache-2.0 |
-| safetensors | Apache-2.0 |
+| safetensors | Apache Software License |
 | Gradio | Apache-2.0 |
 | PyYAML | MIT |
-| imagehash | BSD-2-Clause |
+| imagehash | 2-clause BSD License |
+| pyarrow | Apache-2.0 |
 | pytest | MIT |
 
 Regenerate this table with:
@@ -76,7 +77,7 @@ Regenerate this table with:
 .venv/bin/python -c "from importlib.metadata import metadata; \
 [print(p, metadata(p).get('License-Expression') or metadata(p).get('License')) \
  for p in ['torch','torchvision','timm','pillow','numpy','huggingface-hub', \
-           'safetensors','gradio','pyyaml','imagehash','pytest']]"
+           'safetensors','gradio','pyyaml','imagehash','pyarrow','pytest']]"
 ```
 
 ## 4. Demo and documentation assets
@@ -91,5 +92,18 @@ Regenerate this table with:
 
 ## 5. This repository
 
-See `LICENSE`. Our own contributions are the pipeline, adapters, evaluation
-protocol, router, calibration, and application code.
+See `LICENSE` (MIT). Our own contributions are the pipeline, adapters,
+evaluation protocol, router, calibration, and application code.
+
+## 6. Redistribution audit
+
+An earlier commit accidentally tracked 1,200 raw SID-Set images (~826 MB),
+contradicting the "not redistributed" claim above. This was caught in peer
+review (Codex R5). The git history was **rewritten** with `git filter-repo` to
+remove the blobs entirely rather than deleting them in a later commit, which
+would have left them in every clone. Verify with:
+
+```bash
+git log --all --name-only --pretty=format: | grep -c 'data/corpus/images'   # expect 0
+```
+

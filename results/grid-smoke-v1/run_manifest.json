@@ -1,0 +1,42 @@
+{
+  "run_id": "grid-20260826T153520Z",
+  "created_at": "2026-08-26T15:38:22.324611+00:00",
+  "manifest_path": "data/manifests/smoke_v1.json",
+  "manifest_sha256": "f15f15e1795bc03ba28714b7ef0fbda5ce06e54a88bd34526677931e50d9491b",
+  "conditions": [
+    "clean",
+    "jpeg_q90",
+    "jpeg_q70",
+    "jpeg_q50",
+    "jpeg_q30",
+    "blur_s0.5",
+    "blur_s1.0",
+    "blur_s2.0",
+    "resize_0.5",
+    "resize_0.25",
+    "noise_s0.02",
+    "noise_s0.05",
+    "noise_s0.10",
+    "bright_-20",
+    "bright_+20",
+    "contrast_-20",
+    "contrast_+20",
+    "saturation_-20",
+    "saturation_+20",
+    "crop_0.8"
+  ],
+  "methods": [
+    {
+      "method_id": "commfor_384",
+      "model_version": "OwensLab/commfor-model-384@6076002bf0d9dd37537f965ee2f06f826c333b61",
+      "param_count": 21811969
+    }
+  ],
+  "pipeline_version": "0.1.0",
+  "n_sources": 400,
+  "rows_written": 8000,
+  "decode_failures": 0,
+  "expert_failures": 0,
+  "elapsed_seconds": 180.69,
+  "note": "single-expert baseline: LOTA is parked, so this run is NOT a multi-method shootout and no cross-method comparison may be drawn from it"
+}

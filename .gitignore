@@ -29,11 +29,15 @@ models/
 # Derived features and large run artifacts
 data/features/
 data/feature_cache/
-results/**
-!results/.gitkeep
-!results/**/*.json
-!results/**/*.csv
-!results/**/*.md
+# Results: keep the small auditable artifacts (JSON/CSV/Markdown), exclude the
+# bulky row dumps. A blanket `results/**` cannot be undone by negations further
+# down — git will not descend into an excluded directory, so `!results/**/*.json`
+# never matched and every artifact the README links to was silently untracked
+# (Codex review R6).
+results/**/*.jsonl
+results/**/*.parquet
+results/**/*.npy
+results/**/*.png
 predictions.json
 
 # Demo recordings and rendered media
