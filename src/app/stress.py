@@ -29,16 +29,17 @@ Encoding decisions:
 from __future__ import annotations
 
 import html
+import math
 from dataclasses import dataclass
 from typing import Any
 
 from ..pipeline.transforms import CONDITION_IDS, FAMILY_OF
 
-# Validated against the data-viz palette in both modes (CVD ΔE 23.8 light /
-# 25.7 dark, both well clear of the ≥8 gate).
-SERIES_LIGHT = "#2a78d6"
-SERIES_DARK = "#3987e5"
-CRITICAL = "#d03b3b"          # reserved status colour, never a series hue
+# The app surface is always dark. These colours remain distinguishable without
+# colour being the only flip encoding; the lighter red also keeps status text
+# readable against the forced #111315 background.
+SERIES_DARK = "#5aa2f2"
+CRITICAL = "#ff7b72"          # reserved status colour, never a series hue
 
 FAMILY_ORDER = ("clean", "jpeg", "blur", "resize", "noise", "color", "crop")
 
@@ -61,11 +62,17 @@ def run_stress_grid(service: Any, image_path, threshold: float | None = None) ->
     never as a score.
     """
     clean_record = service.predict_image(image_path, transform_id="clean")
-    clean_p = float(_get(clean_record, "p_fake"))
-    clean_decision = str(_get(clean_record, "decision"))
+    clean_p, clean_decision, record_threshold, provenance = _validate_record(
+        clean_record, "clean"
+    )
     if threshold is None:
-        threshold = float(_get(clean_record, "threshold_used", 0.5))
-    provenance = str(_get(clean_record, "threshold_provenance", "unspecified"))
+        threshold = record_threshold
+    else:
+        threshold = _probability(threshold, "threshold")
+        if not math.isclose(threshold, record_threshold, rel_tol=0.0, abs_tol=1e-12):
+            raise ValueError(
+                "explicit threshold does not match clean record threshold_used"
+            )
 
     points: list[StressPoint] = []
     for condition_id in CONDITION_IDS:
@@ -74,19 +81,25 @@ def run_stress_grid(service: Any, image_path, threshold: float | None = None) ->
             continue
         try:
             record = service.predict_image(image_path, transform_id=condition_id)
+            p, decision, _, _ = _validate_record(
+                record,
+                condition_id,
+                expected_threshold=threshold,
+                expected_provenance=provenance,
+            )
         except Exception as exc:                     # noqa: BLE001 - surfaced, not scored
             points.append(StressPoint(condition_id, FAMILY_OF[condition_id],
                                       float("nan"), "ERROR", False,
                                       error=f"{type(exc).__name__}: {exc}"))
             continue
-        p = float(_get(record, "p_fake"))
-        decision = str(_get(record, "decision"))
         points.append(StressPoint(condition_id, FAMILY_OF[condition_id], p, decision,
                                   flipped=decision != clean_decision))
 
     scored = [p for p in points if p.error is None]
     flips = [p.condition_id for p in scored if p.flipped]
     spread = (max(p.p_fake for p in scored) - min(p.p_fake for p in scored)) if scored else 0.0
+    complete = len(scored) == len(CONDITION_IDS)
+    status = "incomplete" if not complete else ("stable" if not flips else "unstable")
     return {
         "clean_p_fake": clean_p,
         "clean_decision": clean_decision,
@@ -97,8 +110,11 @@ def run_stress_grid(service: Any, image_path, threshold: float | None = None) ->
         "n_flips": len(flips),
         "n_scored": len(scored),
         "n_errors": len(points) - len(scored),
+        "n_expected": len(CONDITION_IDS),
         "score_spread": spread,
-        "stable": not flips,
+        "complete": complete,
+        "stable": status == "stable",
+        "status": status,
     }
 
 
@@ -106,6 +122,49 @@ def _get(record: Any, name: str, default=None):
     if isinstance(record, dict):
         return record.get(name, default)
     return getattr(record, name, default)
+
+
+def _probability(value: Any, field: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise TypeError(f"{field} must be numeric")
+    value = float(value)
+    if not math.isfinite(value) or not 0.0 <= value <= 1.0:
+        raise ValueError(f"{field} must be finite and lie in [0,1]")
+    return value
+
+
+def _validate_record(
+    record: Any,
+    condition_id: str,
+    *,
+    expected_threshold: float | None = None,
+    expected_provenance: str | None = None,
+) -> tuple[float, str, float, str]:
+    """Validate a service record before it can become a plotted score."""
+    p_fake = _probability(_get(record, "p_fake"), f"{condition_id} p_fake")
+    threshold = _probability(
+        _get(record, "threshold_used"), f"{condition_id} threshold_used"
+    )
+    decision = _get(record, "decision")
+    if decision not in {"REAL", "AI-GENERATED"}:
+        raise ValueError(
+            f"{condition_id} decision must be REAL or AI-GENERATED"
+        )
+    expected_decision = "AI-GENERATED" if p_fake >= threshold else "REAL"
+    if decision != expected_decision:
+        raise ValueError(
+            f"{condition_id} decision is inconsistent with p_fake and threshold_used"
+        )
+    provenance = _get(record, "threshold_provenance")
+    if not isinstance(provenance, str) or not provenance.strip():
+        raise ValueError(f"{condition_id} threshold_provenance must be non-empty")
+    if expected_threshold is not None and not math.isclose(
+        threshold, expected_threshold, rel_tol=0.0, abs_tol=1e-12
+    ):
+        raise ValueError(f"{condition_id} threshold_used differs from clean")
+    if expected_provenance is not None and provenance != expected_provenance:
+        raise ValueError(f"{condition_id} threshold_provenance differs from clean")
+    return p_fake, decision, threshold, provenance
 
 
 def _ordered_points(points: list[StressPoint]) -> list[StressPoint]:
@@ -206,8 +265,10 @@ def render_stress_svg(result: dict, width: int = 760, height: int = 300) -> str:
 def render_stress_table(result: dict) -> str:
     """Table view — required so the chart is never the only way to read the data."""
     rows = [
-        "<table class='afc-table'><thead><tr><th>condition</th><th>family</th>"
-        "<th>p_fake</th><th>verdict</th><th>vs clean</th></tr></thead><tbody>"
+        (
+            "<table class='afc-table'><thead><tr><th>condition</th><th>family</th>"
+            "<th>p_fake</th><th>verdict</th><th>vs clean</th></tr></thead><tbody>"
+        )
     ]
     for point in _ordered_points(result["points"]):
         if point.error is not None:
@@ -229,7 +290,19 @@ def render_stress_summary(result: dict) -> str:
     """The sentence a viewer should leave with."""
     n_flips, n_scored = result["n_flips"], result["n_scored"]
     provenance = result["threshold_provenance"]
-    if result["stable"]:
+    if not result.get("complete", result["n_errors"] == 0):
+        flips = ", ".join(html.escape(c) for c in result["flips"])
+        observation = (
+            f"{n_flips} observed verdict change{'s' if n_flips != 1 else ''}: {flips}."
+            if n_flips
+            else "no observed verdict flips among scored conditions."
+        )
+        headline = (
+            f"Robustness incomplete: {n_scored} of {result.get('n_expected', 20)} "
+            f"conditions scored; {observation}"
+        )
+        tone = "afc-incomplete"
+    elif result["stable"]:
         headline = (f"Verdict held under all {n_scored} conditions "
                     f"(score spread {result['score_spread']:.3f}).")
         tone = "afc-stable"

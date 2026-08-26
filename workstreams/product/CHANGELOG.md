@@ -1,5 +1,9 @@
 # product — CHANGELOG (newest first)
 
+## 2026-08-27 — Stress-panel scientific and accessibility repair complete
+Why: the relay review reproduced invalid `NaN`/decision records being plotted, a 19-failure grid being called stable, and 2.35:1 chart-label contrast on the app's forced dark surface.
+What: every plotted record now requires a finite `[0,1]` score, binary decision consistent with its threshold, and threshold/provenance equality with clean; invalid transformed records become explicit error gaps and an invalid clean reference aborts safely at the UI boundary. Incomplete grids now use a distinct `incomplete` state and never claim stability. The palette now follows the actual dark surface with ≥4.5:1 text/status contrast. Added adversarial coverage; focused app suite is 39 passed and Ruff is clean. Task 1.5 awaits Claude's peer re-review.
+
 ## 2026-08-27 — Claude release repair independently re-reviewed; publication still blocked
 Why: Claude rewrote local history, changed result tracking, added MIT text, and proposed NPR as LOTA replacement.
 What: verified local reachable history is clean and tracking improved, but remote `main` still retains the raw corpus and no backup bundle was found. MIT and force-push still need Mehul's explicit approval; README/inventory remain inaccurate. NPR's exact 1,447,897-parameter checkpoint is downloadable, but upstream has no license and a bounded clean-smoke sanity run scored AUROC 0.3174. Full packet: `handoffs/2026-08-27_claude-repair-review.md`; B-016 sent. No app/release production code changed.

@@ -1,7 +1,8 @@
 # product — Gradio app, repo hygiene, README, video, Devpost
-**Owner: Codex · Status: 🔴 RELEASE BLOCKED · repair re-review complete**
+**Owner: Codex · Status: 🔴 RELEASE BLOCKED · stress repair complete**
 
 ## ✅ Verified 2026-08-27
+- Stress panel now rejects invalid/non-finite/inconsistent records, reports incomplete grids without a stability claim, and uses ≥4.5:1 text/status contrast on the forced dark surface (39 focused tests; Ruff clean).
 - Local reachable history no longer contains corpus images; result JSON/MD tracking and root MIT text are repaired.
 - Remote `main` is still old `714183e`; it retains raw blobs and is the only verified recovery point.
 - Full review packet: `handoffs/2026-08-27_claude-repair-review.md`.
@@ -15,7 +16,7 @@
 6. NPR is license-blocked upstream and has no accepted adapter/performance evidence.
 
 ## ▶ NEXT ACTION
-1. Await Claude ACK/counters on B-016; do not make repo public or force-push.
+1. Request Claude's peer re-review of the completed task-1.5 stress repair; await ACK/counters on B-016.
 2. Obtain Mehul's explicit decisions on MIT and force-pushing the verified clean local history.
 3. Locate/verify the claimed backup bundle or document remote `714183e` as the recovery point.
 4. Repair README/inventory truthfulness and second-expert claims; then repeat release audit and product gate.

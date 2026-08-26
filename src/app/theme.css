@@ -25,28 +25,13 @@ button.primary { background: var(--signal) !important; color: var(--ink) !import
 .afc-idle { opacity: .6; font-size: .9rem; }
 
 .afc-chart { display: block; width: 100%; height: auto; margin: 6px 0 2px; }
-/* Roles, so light/dark swap in one place and marks are written against them. */
+/* The app forces a dark surface above, so chart roles must follow that actual
+   surface instead of the OS theme. */
 .afc-chart {
-  --afc-series: #2a78d6;      /* validated: CVD ΔE 23.8 vs critical on light */
-  --afc-critical: #d03b3b;    /* reserved status colour, never a series hue */
-  --afc-grid: rgba(0,0,0,.10);
-  --afc-ink: #52514e;
-  --afc-rule: #0b0b0b;
-}
-@media (prefers-color-scheme: dark) {
-  :root:where(:not([data-theme="light"])) .afc-chart {
-    --afc-series: #3987e5;    /* dark-surface step, validated as a set */
-    --afc-critical: #d03b3b;
-    --afc-grid: rgba(255,255,255,.14);
-    --afc-ink: #c3c2b7;
-    --afc-rule: #ffffff;
-  }
-}
-:root[data-theme="dark"] .afc-chart {
-  --afc-series: #3987e5;
-  --afc-critical: #d03b3b;
+  --afc-series: #5aa2f2;
+  --afc-critical: #ff7b72;
   --afc-grid: rgba(255,255,255,.14);
-  --afc-ink: #c3c2b7;
+  --afc-ink: #d0cec4;
   --afc-rule: #ffffff;
 }
 
@@ -62,8 +47,9 @@ button.primary { background: var(--signal) !important; color: var(--ink) !import
 .afc-threshold { stroke: var(--afc-rule); stroke-width: 2; opacity: .75; }
 .afc-clean { stroke: var(--afc-rule); stroke-width: 2; stroke-dasharray: 5 4; opacity: .5; }
 
-.afc-stable, .afc-unstable { margin: 8px 0 2px; font-size: .95rem; font-weight: 600; }
-.afc-unstable { color: var(--afc-critical, #d03b3b); }
+.afc-stable, .afc-unstable, .afc-incomplete { margin: 8px 0 2px; font-size: .95rem; font-weight: 600; }
+.afc-unstable { color: var(--afc-critical, #ff7b72); }
+.afc-incomplete { color: #f6c453; }
 .afc-caveat { margin: 4px 0; font-size: .82rem; opacity: .75; max-width: 70ch; }
 .afc-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
 .afc-table th, .afc-table td { text-align: left; padding: 3px 8px;

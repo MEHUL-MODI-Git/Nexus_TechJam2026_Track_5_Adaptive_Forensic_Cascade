@@ -10,6 +10,7 @@ discovered by the audience.
 
 import math
 import re
+from pathlib import Path
 
 import pytest
 
@@ -28,21 +29,30 @@ class FakeService:
     """Scores by condition; can be told to fail on specific ones."""
 
     def __init__(self, scores=None, default=0.9, fail_on=(), threshold=0.5,
-                 provenance="dev-fitted"):
+                 provenance="dev-fitted", decisions=None, thresholds=None,
+                 provenances=None):
         self.scores = scores or {}
         self.default = default
         self.fail_on = set(fail_on)
         self.threshold = threshold
         self.provenance = provenance
+        self.decisions = decisions or {}
+        self.thresholds = thresholds or {}
+        self.provenances = provenances or {}
 
     def predict_image(self, path, transform_id="clean"):
         if transform_id in self.fail_on:
             raise RuntimeError("scripted failure")
         p = self.scores.get(transform_id, self.default)
+        threshold = self.thresholds.get(transform_id, self.threshold)
         return {"p_fake": p,
-                "decision": "AI-GENERATED" if p >= self.threshold else "REAL",
-                "threshold_used": self.threshold,
-                "threshold_provenance": self.provenance}
+                "decision": self.decisions.get(
+                    transform_id, "AI-GENERATED" if p >= threshold else "REAL"
+                ),
+                "threshold_used": threshold,
+                "threshold_provenance": self.provenances.get(
+                    transform_id, self.provenance
+                )}
 
 
 # --- grid execution -------------------------------------------------------
@@ -83,6 +93,38 @@ def test_failed_condition_is_recorded_not_scored():
     assert bad.flipped is False
     assert result["n_errors"] == 1 and result["n_scored"] == 19
     assert "no score was substituted" in render_stress_summary(result)
+
+
+@pytest.mark.parametrize("bad_score", [float("nan"), float("inf"), -0.01, 1.01])
+def test_invalid_transformed_score_is_an_error_gap(bad_score):
+    result = run_stress_grid(
+        FakeService(scores={"jpeg_q30": bad_score}), "img.png"
+    )
+    bad = next(p for p in result["points"] if p.condition_id == "jpeg_q30")
+    assert bad.error is not None
+    assert result["n_errors"] == 1
+    assert "nan" not in render_stress_svg(result).lower()
+
+
+@pytest.mark.parametrize(
+    "service",
+    [
+        FakeService(decisions={"blur_s2.0": "MAYBE"}),
+        FakeService(scores={"blur_s2.0": 0.9}, decisions={"blur_s2.0": "REAL"}),
+        FakeService(thresholds={"blur_s2.0": 0.4}),
+        FakeService(provenances={"blur_s2.0": "different-artifact"}),
+    ],
+)
+def test_invalid_or_inconsistent_transformed_record_is_an_error(service):
+    result = run_stress_grid(service, "img.png")
+    bad = next(p for p in result["points"] if p.condition_id == "blur_s2.0")
+    assert bad.error is not None
+    assert result["n_errors"] == 1
+
+
+def test_invalid_clean_reference_aborts_the_grid():
+    with pytest.raises(ValueError, match="clean p_fake"):
+        run_stress_grid(FakeService(scores={"clean": float("nan")}), "img.png")
 
 
 def test_score_spread_reported():
@@ -171,6 +213,42 @@ def test_chart_survives_all_conditions_failing():
     svg = render_stress_svg(result)
     assert 'class="afc-bar-error"' in svg
     assert result["n_errors"] == 19
+    assert result["stable"] is False
+    summary = render_stress_summary(result)
+    assert "Robustness incomplete" in summary
+    assert "no observed verdict flips" in summary
+    assert "held under all" not in summary
+
+
+def test_incomplete_summary_names_observed_flips_without_claiming_stability():
+    service = FakeService(
+        scores={"noise_s0.10": 0.01},
+        fail_on=set(CONDITION_IDS) - {"clean", "noise_s0.10"},
+    )
+    summary = render_stress_summary(run_stress_grid(service, "img.png"))
+    assert "Robustness incomplete" in summary
+    assert "1 observed verdict change" in summary
+    assert "noise_s0.10" in summary
+
+
+def test_chart_text_palette_has_normal_text_contrast_on_forced_dark_surface():
+    css = Path("src/app/theme.css").read_text(encoding="utf-8")
+    assert f"--afc-critical: {CRITICAL}" in css
+
+    def luminance(color):
+        rgb = [int(color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+        linear = [
+            c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+            for c in rgb
+        ]
+        return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+    def contrast(foreground, background):
+        high, low = sorted((luminance(foreground), luminance(background)), reverse=True)
+        return (high + 0.05) / (low + 0.05)
+
+    for foreground in ("#d0cec4", CRITICAL, "#f6c453"):
+        assert contrast(foreground, "#111315") >= 4.5
 
 
 # --- table view -----------------------------------------------------------
