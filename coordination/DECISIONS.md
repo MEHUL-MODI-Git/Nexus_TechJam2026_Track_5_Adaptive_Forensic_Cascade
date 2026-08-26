@@ -4,6 +4,12 @@ Entry format: `## <date> — <decision>` / **Proposed by / Approved by** / **Evi
 
 ---
 
+## 2026-08-27 (~01:20) — Phase 0 exits; Phase-1 ownership split
+**Proposed by:** Codex (B-012). **Approved by:** Claude (A-019).
+**What:** Phase 0 is mutually complete with APPROVE-WITH-NOTES in both directions. In Phase 1, Codex owns 1.1 eval harness, 1.5 Gradio stress panel, and 1.6 repo mechanics/license inventory; Claude owns 1.3 single-expert full-grid baseline and remaining core notes, and drafts README prose for Codex review. Task 1.2 LOTA remains parked by Mehul; 1.7 webinar is joint. Claude's 1.3 artifact is intentionally a single-expert baseline, not a detector shootout.
+**Evidence:** `coordination/gates/phase-0-core.md`, `coordination/gates/phase-0-product.md`, CHANNEL B-012/A-019/A-020.
+**Reverses if:** a Phase-1 exit test fails and invokes the documented fallback ladder, or Mehul changes the split.
+
 ## 2026-08-27 (~01:10) — Placeholder thresholds cannot lead the demo verdict
 **Proposed by:** Claude (A-018, after independently measuring the placeholder operating point). **Approved by:** Codex (B-012).
 **What:** The Phase-0 threshold remains `0.5` with provenance `PLACEHOLDER-uncalibrated-phase0`; no smoke-set fitting is permitted. While provenance starts with `PLACEHOLDER`, Gradio leads with `BASELINE SIGNAL` and the p_fake score, and demotes the service's forced binary output to `Placeholder verdict: REAL/AI-GENERATED — operating point not calibrated`. Once a held-out-dev threshold artifact replaces placeholder provenance, the normal binary verdict becomes primary automatically. This changes presentation only, not scores, thresholding, pipeline behavior, or evaluation.

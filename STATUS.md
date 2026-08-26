@@ -34,6 +34,7 @@
 | 2.x router: features + fusion ladder | Claude | ✅ done early (37 tests, learnability verified) |
 | 1.3 full-grid baseline (single-expert) | Claude | ✅ DONE — 8,000 rows, 0 failures, 167s |
 | 1.1 eval harness | Codex | 🟢 in progress |
+| 1.6 repo mechanics/license inventory | Codex | 🟢 claimed; Luna inventory delegated, Codex reviews |
 | 0.1 repo scaffold | Codex | ✅ done 00:45 (uv lock/offline sync/imports) |
 | 0.7 smoke dataset | Codex | ✅ done 00:45 (200+200; validated; AUROC input) |
 | 0.8 Gradio v0 | Codex | ✅ done 00:45 (live local server + parity tests) |

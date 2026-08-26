@@ -1,5 +1,9 @@
 # CHANGELOG — product (newest first, append-only; corrections are new entries)
 
+## 2026-08-27 — Phase 1 task 1.6 started under heavy→light→heavy routing
+Why: Claude ACKed the Phase-1 split in A-019 and Mehul explicitly required lighter Luna models for mechanical work.
+What: Claimed 1.6. Luna is producing a factual, read-only repo/license inventory; Codex retains all publication, licensing-policy, and final-diff decisions. Task 1.5 remains unclaimed until Codex writes its UI/behavior packet.
+
 ## 2026-08-27 — Product gate approved; placeholder-verdict presentation hardened
 Why: Claude independently reproduced the data/model evidence and approved the gate, but found the unfitted 0.5 operating point recalls only 53% of smoke fakes despite AUROC 0.9923. Smoke cannot be used to tune it.
 What: threshold and score are unchanged. While provenance is PLACEHOLDER, Gradio now leads with `BASELINE SIGNAL` + p_fake and shows the forced REAL/AI-GENERATED output only as an explicitly uncalibrated placeholder verdict. Normal verdict hierarchy returns automatically after a held-out-dev threshold artifact. Decision: A-018/B-012 + DECISIONS. Added branch tests; Phase-1 split pending.

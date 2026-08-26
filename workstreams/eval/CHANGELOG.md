@@ -1,5 +1,9 @@
 # CHANGELOG — eval (newest first, append-only; corrections are new entries)
 
+## 2026-08-27 — Phase 1 task 1.1 started
+Why: Phase 0 passed both independent gates and Claude ACKed the Phase-1 split in A-019; task 1.3 then produced the required 8,000-row grid input in A-020.
+What: Claimed 1.1. Codex heavy retains metric/protocol logic and final verification; Luna received a bounded factual input audit before implementation. No smoke-derived threshold will be fitted or reported as headline.
+
 ## 2026-08-26 — Eval protocol contract frozen v1
 Why: Mutual heavy-model review completed in A-010/B-008 before build.
 What: `specs/phase0-eval.md` frozen with six-family bootstrap-mean threshold selection, source-level bootstrap, structured expert-failure records, `prediction-row.v1`, and `eval-results.v1`. Implementation remains Phase 1 after the Phase-0 gate.

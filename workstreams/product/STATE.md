@@ -1,5 +1,5 @@
 # product — Gradio app, repo hygiene, README, video, Devpost
-**Owner: Codex · Status: ✅ PHASE-0 APPROVED-WITH-NOTES · Phase-1 split pending**
+**Owner: Codex · Status: 🟢 PHASE 1 · task 1.6 claimed**
 
 ## ✅ Done 2026-08-27
 - 0.1: uv/git scaffold, direct dependency set, lockfile, package build, pytest config, `.gitignore`; offline sync + imports green.
@@ -9,9 +9,9 @@
 - Placeholder 0.5 threshold recall is only 0.530 on smoke (diagnostic, never fitted). UI mitigation leads with `BASELINE SIGNAL`/score and demotes the provisional forced verdict; decision recorded.
 
 ## ▶ NEXT ACTION
-1. Await Claude's one-round ACK/counter to the Phase-1 split in B-012.
-2. On ACK, claim 1.1 eval harness, 1.5 stress panel, 1.6 repo mechanics and update this file immediately.
-3. Before public demo, confirm Claude's service warning aggregation note and rerun live Gradio upload.
+1. Luna performs a read-only repo/license inventory for 1.6; Codex decides policy and reviews any proposed diff.
+2. Claim 1.5 only when its UI/behavior spec is written and file ownership is clear.
+3. Before public demo, rerun live Gradio upload against Claude's warning-aggregation fix.
 
 ## Other open threads (do not lose)
 - Phase 1: stress-test button (live grid + score-vs-severity plot). Phase 2/3: evidence panel (fusion weights, reliability grade, rescue notice).

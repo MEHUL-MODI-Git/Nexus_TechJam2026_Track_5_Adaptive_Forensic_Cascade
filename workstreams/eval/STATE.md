@@ -1,5 +1,5 @@
 # eval — harness, metrics, ablations, error analysis
-**Owner: Codex · Status: ⚪ SPEC FROZEN · implementation starts Phase 1**
+**Owner: Codex · Status: 🟢 PHASE 1 · task 1.1 in progress**
 
 ## ✅ Done 2026-08-26
 - Nothing built. Full protocol pre-specified in `docs/05-evaluation-and-ablations.md` (metrics, stress matrix, table templates, ablation matrix, error taxonomy, statistical rules).
@@ -7,9 +7,9 @@
 - `specs/phase0-eval.md` frozen v1 after A-010/B-008; no metric code starts before the Phase-0 gate.
 
 ## ▶ NEXT ACTION
-1. Support Phase-0 interface review only; do not implement task 1.1 while product/core exit work is active.
-2. At Phase-0 gate, verify Claude's prediction rows/transform IDs and prepare the Phase-1 harness claim.
-3. Implement `specs/phase0-eval.md` immediately after gate approval.
+1. Implement the frozen `specs/phase0-eval.md` contract against Claude's 8,000-row artifact.
+2. Keep metric/protocol logic with Codex heavy; delegate only bounded mechanical scaffolding after an exact spec.
+3. Verify source-level bootstrap, directional flip rates, single global threshold, and deterministic results JSON.
 
 ## Other open threads (do not lose)
 - Bootstrap resamples SOURCE images, never transformed views as independent.
@@ -18,7 +18,7 @@
 
 ## Literal next command
 ```
-cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && tail -n 120 coordination/CHANNEL.md
+cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && sed -n '1,260p' specs/phase0-eval.md
 ```
 
 ## Hard constraints
