@@ -65,7 +65,18 @@ def binary_entropy(p: float) -> float:
 
 
 def sigmoid(x: float | np.ndarray):
-    return 1.0 / (1.0 + np.exp(-np.asarray(x, dtype=np.float64)))
+    """Numerically stable logistic.
+
+    The naive form overflows `exp(-x)` for large negative x and returns nan
+    where the true answer is ~0. Splitting by sign keeps every branch bounded.
+    """
+    x = np.asarray(x, dtype=np.float64)
+    out = np.empty_like(x)
+    pos = x >= 0
+    out[pos] = 1.0 / (1.0 + np.exp(-x[pos]))
+    e = np.exp(x[~pos])
+    out[~pos] = e / (1.0 + e)
+    return out if out.ndim else float(out)
 
 
 def logit(p: float | np.ndarray, eps: float = 1e-12):
@@ -134,6 +145,67 @@ class DevSet:
     def transform_families(self) -> list[str]:
         """The six transform families present, EXCLUDING clean, sorted."""
         return sorted(set(self.families.tolist()) - {"clean"})
+
+
+# The frozen objective is defined over exactly these six families. If dev is
+# missing one, the objective would silently become a five-family minimum -- a
+# different (easier) objective wearing the same name.
+REQUIRED_FAMILIES = frozenset({"jpeg", "blur", "resize", "noise", "color", "crop"})
+
+
+def validate_dev_for_selection(dev: "DevSet") -> None:
+    """Strict protocol validation. Required before ANY artifact is produced.
+
+    Exploratory helpers may tolerate absent groups; artifact-producing
+    selection may not (Codex B-013).
+    """
+    from ..pipeline.transforms import CONDITION_IDS, FAMILY_OF
+
+    if not np.isfinite(dev.scores).all():
+        raise ValueError("dev contains non-finite p_fake values")
+    if dev.scores.min() < 0.0 or dev.scores.max() > 1.0:
+        raise ValueError("dev contains p_fake outside [0,1]")
+
+    unknown = set(dev.condition_ids.tolist()) - set(CONDITION_IDS)
+    if unknown:
+        raise ValueError(f"unknown condition ids for the official grid: {sorted(unknown)}")
+    for condition, family in zip(dev.condition_ids.tolist(), dev.families.tolist()):
+        if FAMILY_OF[condition] != family:
+            raise ValueError(
+                f"condition {condition!r} is labelled family {family!r} but belongs "
+                f"to {FAMILY_OF[condition]!r}"
+            )
+
+    _source_labels(dev)  # raises on a source whose views disagree about its label
+
+    if not dev.clean_mask.any():
+        raise ValueError("dev has no clean rows; the constraints are undefined")
+    clean_labels = set(dev.labels[dev.clean_mask].tolist())
+    if clean_labels != {0, 1}:
+        raise ValueError(f"clean rows must contain both classes, found {sorted(clean_labels)}")
+
+    present = set(dev.families.tolist()) - {"clean"}
+    missing = REQUIRED_FAMILIES - present
+    if missing:
+        raise ValueError(
+            f"the frozen objective requires all six transform families; missing {sorted(missing)}. "
+            "Selecting on a subset would silently redefine the objective."
+        )
+    for family in sorted(REQUIRED_FAMILIES):
+        if not ((dev.families == family) & (dev.labels == 1)).any():
+            raise ValueError(f"family {family!r} has no fake rows; worst-family recall is undefined")
+
+
+def validate_candidates(candidates: np.ndarray) -> np.ndarray:
+    """Candidate thresholds must be finite and inside [0,1]."""
+    candidates = np.asarray(candidates, dtype=np.float64)
+    if candidates.size == 0:
+        raise ValueError("no candidate thresholds supplied")
+    if not np.isfinite(candidates).all():
+        raise ValueError("candidate thresholds contain non-finite values")
+    if candidates.min() < 0.0 or candidates.max() > 1.0:
+        raise ValueError("candidate thresholds must lie in [0,1]")
+    return np.unique(candidates)
 
 
 def worst_family_fake_recall(dev: DevSet, threshold: float) -> tuple[float, str]:
@@ -260,15 +332,65 @@ class ThresholdArtifact:
     pipeline_version: str
     fitting_code_version: str
     created_at: str
+    tie_break: str = "objective > clean_bacc > -clean_fpr > threshold"
     warnings: list[str] = field(default_factory=list)
 
     def to_json_dict(self) -> dict:
         return asdict(self)
 
+    def validate(self) -> None:
+        """A threshold artifact is consumed by test/sealed runners; it must be
+        self-checking, because a corrupt one silently invalidates every number
+        computed from it."""
+        if self.schema_version != SCHEMA_VERSION:
+            raise ValueError(f"unexpected schema_version {self.schema_version!r}")
+        if not math.isfinite(self.threshold) or not (0.0 <= self.threshold <= 1.0):
+            raise ValueError(f"threshold must be finite in [0,1], got {self.threshold}")
+        for name in ("objective_value", "clean_fpr", "clean_bacc"):
+            v = getattr(self, name)
+            if not math.isfinite(v):
+                raise ValueError(f"{name} must be finite, got {v}")
+        lo, hi = self.objective_ci95
+        if not (math.isfinite(lo) and math.isfinite(hi)) or lo > hi:
+            raise ValueError(f"invalid objective_ci95 {self.objective_ci95}")
+        if self.selection_granularity not in ("family", "exact_condition"):
+            raise ValueError(f"bad selection_granularity {self.selection_granularity!r}")
+
     def save(self, path) -> None:
+        """Validate, then write atomically (temp + rename).
+
+        A half-written artifact that still parses would be the worst possible
+        failure here: it looks usable and freezes the wrong operating point.
+        """
+        import os
+        import tempfile
         from pathlib import Path
 
-        Path(path).write_text(json.dumps(self.to_json_dict(), indent=2) + "\n")
+        self.validate()
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp = tempfile.mkstemp(dir=str(path.parent), suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w") as fh:
+                json.dump(self.to_json_dict(), fh, indent=2)
+                fh.write("\n")
+                fh.flush()
+                os.fsync(fh.fileno())
+            os.replace(tmp, path)
+        except BaseException:
+            Path(tmp).unlink(missing_ok=True)
+            raise
+
+    @classmethod
+    def load(cls, path) -> "ThresholdArtifact":
+        """Load and VALIDATE. Never trust an artifact just because it parses."""
+        from pathlib import Path
+
+        payload = json.loads(Path(path).read_text())
+        payload["objective_ci95"] = tuple(payload["objective_ci95"])
+        artifact = cls(**payload)
+        artifact.validate()
+        return artifact
 
 
 def select_threshold(
@@ -290,9 +412,10 @@ def select_threshold(
     `feasible=False` and falls back to the baseline threshold with a warning,
     rather than silently relaxing a constraint we agreed to.
     """
+    # Artifact-producing selection validates the protocol strictly, BEFORE any
+    # fitting happens (Codex B-013).
+    validate_dev_for_selection(dev)
     clean = dev.clean_mask
-    if not clean.any():
-        raise ValueError("threshold selection requires clean rows for the constraints")
 
     baseline_fpr = _rates(dev.scores[clean], dev.labels[clean], baseline_threshold)[1]
     baseline_bacc = balanced_accuracy(dev.scores[clean], dev.labels[clean], baseline_threshold)
@@ -303,10 +426,11 @@ def select_threshold(
         # Candidate grid over observed scores: only values that actually change
         # a decision can change the objective.
         candidates = np.unique(np.clip(dev.scores, 0.0, 1.0))
-    candidates = np.unique(np.asarray(candidates, dtype=np.float64))
+    candidates = validate_candidates(candidates)
 
     warnings: list[str] = []
     best: tuple[float, float, tuple[float, float]] | None = None
+    best_key: tuple[float, float, float, float] | None = None
     for threshold in candidates:
         fpr = _rates(dev.scores[clean], dev.labels[clean], threshold)[1]
         bacc = balanced_accuracy(dev.scores[clean], dev.labels[clean], threshold)
@@ -316,7 +440,13 @@ def select_threshold(
             value, ci = bootstrap_worst_family_recall(dev, threshold, n_replicates, seed)
         except ValueError:
             continue
-        if best is None or value > best[1]:
+        # Deterministic tie-break, recorded in the artifact (Codex B-013):
+        # objective -> higher clean BAcc -> lower clean FPR -> higher threshold.
+        # Without it, ties resolve by candidate iteration order, so an unrelated
+        # change to the grid could move the frozen threshold.
+        key = (value, bacc, -fpr, float(threshold))
+        if best_key is None or key > best_key:
+            best_key = key
             best = (float(threshold), value, ci)
 
     feasible = best is not None
@@ -401,8 +531,14 @@ def fit_temperature_bias(
     labels = np.asarray(labels, dtype=np.float64)
     if logits.shape != labels.shape:
         raise ValueError("logits and labels must have the same shape")
+    if logits.size == 0:
+        raise ValueError("cannot fit calibration on an empty set")
     if not np.isfinite(logits).all():
         raise ValueError("non-finite logits")
+    if not np.isin(labels, (0.0, 1.0)).all():
+        raise ValueError("labels must be 0/1")
+    if len(np.unique(labels)) < 2:
+        raise ValueError("calibration needs both classes present")
 
     log_t, bias = 0.0, 0.0  # optimize log T to keep T > 0
     for _ in range(max_iter):
@@ -432,6 +568,18 @@ def expected_calibration_error(
     """ECE with fixed equal-width bins (eval contract default: 15)."""
     probs = np.asarray(probs, dtype=np.float64)
     labels = np.asarray(labels, dtype=np.float64)
+    if probs.shape != labels.shape:
+        raise ValueError("probs and labels must have the same shape")
+    if probs.size == 0:
+        raise ValueError("cannot compute ECE on an empty set")
+    if not np.isfinite(probs).all():
+        raise ValueError("non-finite probabilities")
+    if probs.min() < 0.0 or probs.max() > 1.0:
+        raise ValueError("probabilities must lie in [0,1]")
+    if not np.isin(labels, (0.0, 1.0)).all():
+        raise ValueError("labels must be 0/1")
+    if n_bins < 1:
+        raise ValueError("n_bins must be >= 1")
     edges = np.linspace(0.0, 1.0, n_bins + 1)
     # Include the left edge in the first bin so p == 0.0 is not dropped.
     idx = np.clip(np.digitize(probs, edges[1:-1], right=False), 0, n_bins - 1)

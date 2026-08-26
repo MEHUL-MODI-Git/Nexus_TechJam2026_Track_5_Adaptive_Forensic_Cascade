@@ -163,9 +163,7 @@ def _noise(img: PIL.Image.Image, sha256: str, spec: dict) -> PIL.Image.Image:
     arr = np.array(img, dtype=np.float32) / 255.0
     arr = arr + rng.normal(0.0, sigma, arr.shape)  # independent per channel
     arr = np.clip(arr, 0.0, 1.0)
-    return PIL.Image.fromarray(
-        np.round(arr * 255.0).clip(0, 255).astype(np.uint8), mode="RGB"
-    )
+    return PIL.Image.fromarray(np.round(arr * 255.0).clip(0, 255).astype(np.uint8))
 
 
 _ADJUST = {

@@ -303,3 +303,151 @@ def test_ece_includes_edge_bins():
 def test_fit_rejects_shape_mismatch():
     with pytest.raises(ValueError):
         fit_temperature_bias(np.zeros(5), np.zeros(4))
+
+
+# --- B-013: strict protocol validation before any artifact is produced ---
+def test_selection_rejects_p_fake_out_of_range():
+    dev = make_dev()
+    scores = dev.scores.copy()
+    scores[5] = 1.7
+    d = DevSet(dev.source_ids, dev.condition_ids, dev.families, dev.labels, scores)
+    with pytest.raises(ValueError, match=r"outside \[0,1\]"):
+        select_threshold(d, n_replicates=5)
+
+
+def test_selection_rejects_unknown_condition_id():
+    dev = make_dev()
+    conds = dev.condition_ids.copy()
+    conds[0] = "jpeg_q42"
+    d = DevSet(dev.source_ids, conds, dev.families, dev.labels, dev.scores)
+    with pytest.raises(ValueError, match="unknown condition ids"):
+        select_threshold(d, n_replicates=5)
+
+
+def test_selection_rejects_family_condition_mismatch():
+    dev = make_dev()
+    fams = dev.families.copy()
+    fams[dev.condition_ids == "jpeg_q90"] = "blur"     # mislabelled family
+    d = DevSet(dev.source_ids, dev.condition_ids, fams, dev.labels, dev.scores)
+    with pytest.raises(ValueError, match="belongs to"):
+        select_threshold(d, n_replicates=5)
+
+
+def test_selection_rejects_inconsistent_source_labels():
+    dev = make_dev()
+    labels = dev.labels.copy()
+    labels[0] = 1 - labels[0]
+    d = DevSet(dev.source_ids, dev.condition_ids, dev.families, labels, dev.scores)
+    with pytest.raises(ValueError, match="inconsistent labels"):
+        select_threshold(d, n_replicates=5)
+
+
+def test_selection_refuses_a_five_family_objective():
+    """The frozen objective must not silently become an easier five-family one."""
+    dev = make_dev()
+    keep = dev.families != "crop"
+    d = DevSet(dev.source_ids[keep], dev.condition_ids[keep], dev.families[keep],
+               dev.labels[keep], dev.scores[keep])
+    with pytest.raises(ValueError, match="all six transform families"):
+        select_threshold(d, n_replicates=5)
+
+
+def test_selection_refuses_family_without_fake_rows():
+    dev = make_dev()
+    keep = ~((dev.families == "crop") & (dev.labels == 1))
+    d = DevSet(dev.source_ids[keep], dev.condition_ids[keep], dev.families[keep],
+               dev.labels[keep], dev.scores[keep])
+    with pytest.raises(ValueError, match="no fake rows"):
+        select_threshold(d, n_replicates=5)
+
+
+def test_selection_requires_both_classes_in_clean():
+    dev = make_dev()
+    drop = (dev.families == "clean") & (dev.labels == 0)
+    keep = ~drop
+    d = DevSet(dev.source_ids[keep], dev.condition_ids[keep], dev.families[keep],
+               dev.labels[keep], dev.scores[keep])
+    with pytest.raises(ValueError, match="both classes"):
+        select_threshold(d, n_replicates=5)
+
+
+@pytest.mark.parametrize("bad", [np.array([]), np.array([0.5, np.nan]), np.array([1.5])])
+def test_invalid_candidates_rejected(bad):
+    dev = make_dev()
+    with pytest.raises(ValueError):
+        select_threshold(dev, n_replicates=5, candidates=bad)
+
+
+def test_tie_break_is_deterministic_and_recorded():
+    """Equal objective values must resolve by a recorded rule, not by grid order."""
+    dev = make_dev(family_fake_score={f: 0.9 for f in
+                                      ("jpeg", "blur", "resize", "noise", "color", "crop")})
+    cands = np.array([0.1, 0.2, 0.3])   # all detect everything -> objective ties
+    a = select_threshold(dev, n_replicates=10, candidates=cands)
+    b = select_threshold(dev, n_replicates=10, candidates=cands[::-1])
+    assert a.threshold == b.threshold           # order-independent
+    assert a.tie_break.startswith("objective")
+
+
+# --- artifact save/load ---------------------------------------------------
+def test_artifact_roundtrip_validates(tmp_path):
+    art = select_threshold(make_dev(), n_replicates=10)
+    path = tmp_path / "t.json"
+    art.save(path)
+    loaded = ThresholdArtifact.load(path)
+    assert loaded.threshold == art.threshold
+    assert loaded.tie_break == art.tie_break
+
+
+def test_artifact_save_is_atomic(tmp_path):
+    art = select_threshold(make_dev(), n_replicates=10)
+    out = tmp_path / "nested" / "t.json"
+    art.save(out)
+    assert out.exists()
+    assert not list(out.parent.glob("*.tmp"))
+
+
+def test_corrupt_artifact_is_rejected_on_load(tmp_path):
+    art = select_threshold(make_dev(), n_replicates=10)
+    path = tmp_path / "t.json"
+    art.save(path)
+    payload = json.loads(path.read_text())
+    payload["threshold"] = 42.0
+    path.write_text(json.dumps(payload))
+    with pytest.raises(ValueError, match="threshold"):
+        ThresholdArtifact.load(path)
+
+
+def test_saving_an_invalid_artifact_raises(tmp_path):
+    art = select_threshold(make_dev(), n_replicates=10)
+    art.threshold = float("nan")
+    with pytest.raises(ValueError):
+        art.save(tmp_path / "bad.json")
+
+
+# --- helper guards --------------------------------------------------------
+def test_sigmoid_is_stable_at_extremes():
+    out = sigmoid(np.array([-800.0, 0.0, 800.0]))
+    assert np.isfinite(out).all()
+    assert out[0] == pytest.approx(0.0) and out[2] == pytest.approx(1.0)
+
+
+@pytest.mark.parametrize("kwargs", [
+    dict(logits=np.array([]), labels=np.array([])),
+    dict(logits=np.array([0.1, 0.2]), labels=np.array([0.0, 0.0])),   # one class
+    dict(logits=np.array([0.1, 0.2]), labels=np.array([0.0, 2.0])),   # bad label
+])
+def test_fit_temperature_bias_guards(kwargs):
+    with pytest.raises(ValueError):
+        fit_temperature_bias(**kwargs)
+
+
+@pytest.mark.parametrize("probs,labels", [
+    (np.array([]), np.array([])),
+    (np.array([0.5, 1.5]), np.array([0.0, 1.0])),
+    (np.array([0.5, np.nan]), np.array([0.0, 1.0])),
+    (np.array([0.5, 0.5]), np.array([0.0, 3.0])),
+])
+def test_ece_guards(probs, labels):
+    with pytest.raises(ValueError):
+        expected_calibration_error(probs, labels)
