@@ -82,10 +82,26 @@ def analyze_image(image_path: str | Path | None, service: Any):
     if not math.isfinite(numeric_score) or not 0.0 <= numeric_score <= 1.0:
         return _render_error(PredictionError("Service returned an out-of-range score."))
     score = f"{numeric_score:.4f}"
-    html = ("<section class='result-card' role='status'>"
+    threshold_provenance = str(_field(record, "threshold_provenance", ""))
+    placeholder_threshold = threshold_provenance.upper().startswith("PLACEHOLDER")
+    if placeholder_threshold:
+        html = (
+            "<section class='result-card placeholder-card' role='status'>"
+            "<div class='verdict'>⌁ BASELINE SIGNAL</div>"
+            f"<p class='score-label'>Model score · p_fake <span class='score'>{score}</span></p>"
+            f"<p class='placeholder-verdict'>Placeholder verdict: <strong>{icon} {_escape(decision)}</strong>"
+            " — operating point not calibrated.</p>"
+            "<p class='disclaimer'>Provisional research result — p_fake is not a real-world probability. "
+            "A held-out development set will set the operating point.</p></section>"
+        )
+    else:
+        html = (
+            "<section class='result-card' role='status'>"
             f"<div class='verdict'>{icon} {_escape(decision)}</div>"
-            f"<p class='score-label'>Baseline model score · p_fake <span class='score'>{score}</span></p>"
-            "<p class='disclaimer'>Provisional research result — p_fake is not a real-world probability.</p></section>")
+            f"<p class='score-label'>Model score · p_fake <span class='score'>{score}</span></p>"
+            "<p class='disclaimer'>Research prototype output; do not treat one score as forensic proof.</p>"
+            "</section>"
+        )
 
     experts = _field(record, "experts", []) or []
     cf_score = None
@@ -112,7 +128,7 @@ def analyze_image(image_path: str | Path | None, service: Any):
                  f"Format: {_field(image, 'format', '—') or 'unknown'}\n"
                  f"Content hash: {str(_field(image, 'sha256', '—'))[:12]}…\n"
                  f"Pipeline version: {_field(record, 'pipeline_version', '—')}\n"
-                 f"Config/threshold provenance: {_field(record, 'threshold_provenance', '—')}")
+                 f"Config/threshold provenance: {threshold_provenance or '—'}")
     return html, cf_text, latency_text, warning_text, technical
 
 

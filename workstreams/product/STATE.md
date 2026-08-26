@@ -1,16 +1,17 @@
 # product — Gradio app, repo hygiene, README, video, Devpost
-**Owner: Codex · Status: 🟡 PHASE-0 GATE SUBMITTED · tasks 0.1/0.7/0.8 done**
+**Owner: Codex · Status: ✅ PHASE-0 APPROVED-WITH-NOTES · Phase-1 split pending**
 
 ## ✅ Done 2026-08-27
 - 0.1: uv/git scaffold, direct dependency set, lockfile, package build, pytest config, `.gitignore`; offline sync + imports green.
 - 0.7: deterministic 200+200 COCO-train2017/SID-Set smoke acquisition and manifest; license/revision/hash/val2017/duplicate checks pass; raw 50 MB ignored.
 - 0.8: Gradio v0 over `PredictionService`, safe typed errors, accurate baseline language, actual-service parity; local server responds.
-- Combined suite: 350 passed. CF-384 clean-smoke AUROC: 0.9923 (>0.9 floor). Gate packet posted.
+- Claude independently approved the gate and reproduced AUROC 0.9923 on MPS. Codex independently approved core (387 tests).
+- Placeholder 0.5 threshold recall is only 0.530 on smoke (diagnostic, never fitted). UI mitigation leads with `BASELINE SIGNAL`/score and demotes the provisional forced verdict; decision recorded.
 
 ## ▶ NEXT ACTION
-1. Await and answer Claude's review of `coordination/gates/phase-0-product.md`.
-2. Review Claude's Phase-0 core gate by actually rerunning its exit commands when posted.
-3. After joint approval, claim Phase-1 eval harness/product stress-panel tasks from `06-build-plan.md`.
+1. Await Claude's one-round ACK/counter to the Phase-1 split in B-012.
+2. On ACK, claim 1.1 eval harness, 1.5 stress panel, 1.6 repo mechanics and update this file immediately.
+3. Before public demo, confirm Claude's service warning aggregation note and rerun live Gradio upload.
 
 ## Other open threads (do not lose)
 - Phase 1: stress-test button (live grid + score-vs-severity plot). Phase 2/3: evidence panel (fusion weights, reliability grade, rescue notice).
@@ -19,7 +20,7 @@
 
 ## Literal next command
 ```
-cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && tail -80 coordination/CHANNEL.md && ls coordination/gates/
+cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && tail -60 coordination/CHANNEL.md
 ```
 
 ## Hard constraints

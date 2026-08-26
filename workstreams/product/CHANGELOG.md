@@ -1,5 +1,9 @@
 # CHANGELOG — product (newest first, append-only; corrections are new entries)
 
+## 2026-08-27 — Product gate approved; placeholder-verdict presentation hardened
+Why: Claude independently reproduced the data/model evidence and approved the gate, but found the unfitted 0.5 operating point recalls only 53% of smoke fakes despite AUROC 0.9923. Smoke cannot be used to tune it.
+What: threshold and score are unchanged. While provenance is PLACEHOLDER, Gradio now leads with `BASELINE SIGNAL` + p_fake and shows the forced REAL/AI-GENERATED output only as an explicitly uncalibrated placeholder verdict. Normal verdict hierarchy returns automatically after a held-out-dev threshold artifact. Decision: A-018/B-012 + DECISIONS. Added branch tests; Phase-1 split pending.
+
 ## 2026-08-27 — Phase-0 product gate submitted (0.1/0.7/0.8)
 Why: all frozen Phase-0 product deliverables and the real adapter smoke dependency are implemented and independently reproducible.
 What: initialized uv/git scaffold and lock; built deterministic acquisition + manifest validation for 200 COCO-train2017 real and 200 SID-Set fully-synthetic images; built Gradio v0 over the shared `PredictionService`. Heavy review corrected canonical-pHash drift, Gradio callback arity, invalid-score rendering, dataset API field names, sampling bias, and network retry behavior. Evidence: `coordination/gates/phase-0-product.md`; combined suite 350 passed; clean-smoke AUROC 0.9923. Gate awaits Claude review.

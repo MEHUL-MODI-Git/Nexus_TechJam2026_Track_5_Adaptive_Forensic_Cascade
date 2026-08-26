@@ -9,5 +9,7 @@ body, .gradio-container { background: var(--ink) !important; color: var(--ivory)
 .verdict { font: 800 2rem/1.1 ui-monospace, SFMono-Regular, monospace; letter-spacing: .04em; }
 .score-label, .disclaimer, .evidence { color: #d0cec4; }
 .score { color: var(--signal); font: 700 1.5rem ui-monospace, SFMono-Regular, monospace; }
+.placeholder-card { border-left-color: #f6c453; }
+.placeholder-verdict { color: var(--ivory); font-size: .92rem; }
 .error-card { border-color: #ffb4a0; border-left-color: #ffb4a0; }
 button.primary { background: var(--signal) !important; color: var(--ink) !important; }

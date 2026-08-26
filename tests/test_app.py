@@ -18,7 +18,7 @@ class FakeService:
 
 def test_handler_uses_injected_service(tmp_path):
     html, cf, latency, warnings, technical = analyze_image(tmp_path / "image.png", FakeService())
-    assert "AI-GENERATED" in html and "not a real-world probability" in html
+    assert "AI-GENERATED" in html and "Research prototype output" in html
     assert cf == "CF-384 p_fake 0.8100"
     assert latency == "12.3 ms"
     assert warnings == "none"
@@ -67,3 +67,27 @@ def test_handler_matches_real_prediction_service_when_checkpoint_is_available():
     direct = service.predict_image(image)
     html, *_ = analyze_image(image, service)
     assert f"{direct.p_fake:.4f}" in html
+    assert "BASELINE SIGNAL" in html
+    assert f"Placeholder verdict: <strong>" in html
+
+
+def test_placeholder_threshold_demotes_binary_verdict():
+    class Placeholder(FakeService):
+        def predict_image(self, path, transform_id="clean"):
+            record = super().predict_image(path, transform_id)
+            record["decision"] = "REAL"
+            record["p_fake"] = 0.07
+            record["threshold_provenance"] = "PLACEHOLDER-uncalibrated-phase0"
+            return record
+
+    html, *_ = analyze_image("image.png", Placeholder())
+    assert "BASELINE SIGNAL" in html
+    assert "Placeholder verdict:" in html and "REAL" in html
+    assert "operating point not calibrated" in html
+
+
+def test_frozen_threshold_keeps_binary_verdict_primary():
+    html, *_ = analyze_image("image.png", FakeService())
+    assert "AI-GENERATED" in html
+    assert "BASELINE SIGNAL" not in html
+    assert "Placeholder verdict" not in html
