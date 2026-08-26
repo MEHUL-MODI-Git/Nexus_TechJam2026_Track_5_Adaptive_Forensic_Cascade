@@ -1,0 +1,13 @@
+:root { --ink: #111315; --ivory: #f3efe5; --signal: #ff6b35; --muted: #a9aaa2; }
+body, .gradio-container { background: var(--ink) !important; color: var(--ivory) !important; }
+.lab-shell { max-width: 980px; margin: 0 auto; }
+.lab-header { border-bottom: 1px solid #4a4b46; padding: 1.5rem 0 1rem; }
+.lab-kicker { color: var(--signal); font: 700 .72rem/1.2 ui-monospace, SFMono-Regular, monospace; letter-spacing: .14em; text-transform: uppercase; }
+.lab-title { color: var(--ivory); font: 800 clamp(2rem, 6vw, 4.3rem)/.95 Georgia, serif; margin: .45rem 0; }
+.lab-scope { color: #d0cec4; font-size: 1.05rem; }
+.result-card { border: 1px solid #66675f; border-left: 6px solid var(--signal); background: #1b1d1d; padding: 1.15rem; min-height: 120px; }
+.verdict { font: 800 2rem/1.1 ui-monospace, SFMono-Regular, monospace; letter-spacing: .04em; }
+.score-label, .disclaimer, .evidence { color: #d0cec4; }
+.score { color: var(--signal); font: 700 1.5rem ui-monospace, SFMono-Regular, monospace; }
+.error-card { border-color: #ffb4a0; border-left-color: #ffb4a0; }
+button.primary { background: var(--signal) !important; color: var(--ink) !important; }
