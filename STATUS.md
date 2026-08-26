@@ -3,7 +3,7 @@
 > 30-second orientation only. Detail lives in `workstreams/<ws>/STATE.md`. Messages in `coordination/CHANNEL.md`. Rules in `CLAUDE.md` / `AGENTS.md`.
 
 ## Snapshot
-- **Phase:** Phase 1 relay repair re-reviewed; Phase-2 pilot artifacts exist. **Eval/product acceptance and public release remain BLOCKED by B-016 pending fixes + peer re-review.**
+- **Phase:** Phase 1 relay repair re-reviewed; Phase-2 pilot artifacts exist. **Eval, training, product acceptance, and public release remain BLOCKED pending fixes + peer re-review (B-016–B-018).**
 - **Deadline:** Mon 1 Sept 12:00pm — submit ~9am · **Webinar: dropped by Mehul (27 Aug)**
 - **Repo:** https://github.com/MEHUL-MODI-Git/TechJam_2026_Track_5 — **PRIVATE. ⚠️ MUST BE MADE PUBLIC BEFORE SUBMISSION** (brief deliverable).
 - **Session note:** Mehul moved from the API session to the Claude Code session (~21:00). AGENT-A continuity = these files; the new session resumes via RESUME PROTOCOL.
@@ -15,7 +15,7 @@
 | Workstream | Owner | Status | Next (see its STATE.md) |
 |---|---|---|---|
 | core | Claude | ✅ PHASE-0 GATE APPROVED-WITH-NOTES | service notes in B-012 before named consumers |
-| training | Claude | 🟢 cache + router + calibration ALL built | needs a real corpus to run against |
+| training | Claude | 🔴 router repair re-review blocked | consumed-field validation, one-expert semantics, checkpoint parity, reliability ordering |
 | eval | Codex | 🔴 repair re-review blocked | E1–E5 scientific-boundary corrections + new gate |
 | product | Codex | 🔴 public release blocked | owner approvals, remote clean-history push, README/license truthfulness |
 
@@ -32,7 +32,7 @@
 | 2.x self-probes (doc 03 step 4) | Claude | ✅ done early (17 tests) |
 | 2.x feature-cache row v1 spec | Claude | ✅ FROZEN (Codex B-009 fixes applied) |
 | 3.x calibration + threshold selection | Claude | ✅ done early (30 tests) |
-| 2.x router: features + fusion ladder | Claude | ✅ done early (37 tests, learnability verified) |
+| 2.x router: features + fusion ladder | Claude | 🔴 repair `d64f0b6` blocked by B-018; 601-suite green but adversarial failures remain |
 | 1.3 full-grid baseline (single-expert) | Claude | ✅ DONE — 8,000 rows, 0 failures, 167s |
 | 1.1 eval harness | Codex (Claude relay re-reviewed) | 🔴 BLOCKED — E1–E5 coverage/grid/artifact/diagnostic/pairing fixes required |
 | 1.5 Gradio stress panel | Codex (Claude relay reviewed) | 🟢 REPAIRED — 39 focused tests + lint; peer re-review pending |
@@ -43,6 +43,7 @@
 | 0.8 Gradio v0 | Codex | ✅ done 00:45 (live local server + parity tests) |
 
 ## Log (newest first)
+- **2026-08-27 — ROUTER REPAIR REVIEW: BLOCK.** Full suite **601 passed**, but direct tests show unchecked `raw_logit=NaN` crashes training, unknown splits/inconsistent source labels pass validation, and the new bias head changes one-expert scores by up to **0.2747413** while the artifact still calls every rung necessarily unchanged. No checkpoint loader/parity exists, and placeholder-threshold reliability fitting remains unresolved. Packet: `handoffs/2026-08-27_router-repair-review.md`; B-018 sent.
 - **2026-08-27 — STRESS PANEL REPAIRED.** Invalid/non-finite/inconsistent service records now become explicit error gaps; incomplete grids cannot claim stability; chart/status text meets ≥4.5:1 contrast on the forced dark UI surface. Focused app suite **39 passed**, Ruff clean. Peer re-review pending.
 - **2026-08-27 — CODEX REPAIR REVIEW: BLOCK REMAINS.** Independently reran **567 tests** and verified local history cleanup, result tracking, root MIT text, and NPR's exact 1,447,897-parameter checkpoint. Adversarial tests still mint headlines from sparse method×source×condition coverage, a caller-shrunk seven-condition grid, and a fabricated `FrozenThreshold`; diagnostic method records contain `headline`; paired deltas change when method-B rows are shuffled. Remote still retains raw data, with no verified backup bundle. NPR has no upstream license and scored AUROC 0.3174 in a bounded clean-smoke sanity run; it is not an accepted second expert. Full packet: `handoffs/2026-08-27_claude-repair-review.md`; B-016 sent. **KEEP REPO PRIVATE.**
 - **2026-08-27 — CODEX RELAY REVIEW: BLOCK.** Full suite **558 passed**, live stress E2E passed, and single-method diagnostic math is correct. However, direct reproductions found multi-method pooling, arbitrary-string/partial-grid headline output, incomplete frozen result provenance, malformed/trusted-hash denylist bypass, unsafe cache resume, non-frozen router selection/loss, and invalid stress stability. Release audit found **1,200 raw SID-Set images / ~829 MB already tracked and pushed**, broken result tracking, no root license, incomplete inventory, and README overclaims. Full packet: `handoffs/2026-08-27_claude-relay-critical-review.md`; B-015 sent to Claude. **KEEP REPO PRIVATE.**
