@@ -22,6 +22,7 @@ from src.router.model import (
     LogisticRouter,
     MLPRouter,
     StaticAverageFusion,
+    group_index,
     reliability_targets,
     worst_group_loss,
 )
@@ -207,26 +208,37 @@ def test_no_available_expert_yields_zero_weights(cls):
     assert out.weights.sum().item() == 0.0     # no verdict, not a uniform guess
 
 
-def test_static_average_is_the_plain_mean():
-    p = torch.tensor([[0.2, 0.8]])
-    out = StaticAverageFusion(2)(torch.randn(1, SPEC2.dim), p, torch.ones(1, 2, dtype=torch.bool))
+def test_static_average_is_the_plain_mean_of_logits():
+    """Fusion happens in LOGIT space (doc 03 step 6, Codex R23)."""
+    logits = torch.tensor([[-2.0, 2.0]])
+    out = StaticAverageFusion(2)(torch.randn(1, SPEC2.dim), logits,
+                                 torch.ones(1, 2, dtype=torch.bool))
+    assert out.fused_logit.item() == pytest.approx(0.0)
     assert out.p_fake.item() == pytest.approx(0.5)
 
 
 def test_static_average_ignores_unavailable_expert():
-    p = torch.tensor([[0.2, 0.8]])
-    available = torch.tensor([[True, False]])
-    out = StaticAverageFusion(2)(torch.randn(1, SPEC2.dim), p, available)
-    assert out.p_fake.item() == pytest.approx(0.2)
+    logits = torch.tensor([[-2.0, 2.0]])
+    out = StaticAverageFusion(2)(torch.randn(1, SPEC2.dim), logits,
+                                 torch.tensor([[True, False]]))
+    assert out.fused_logit.item() == pytest.approx(-2.0)
+
+
+def test_static_average_fused_logit_is_a_convex_combination():
+    logits = torch.randn(16, 2)
+    out = StaticAverageFusion(2)(torch.randn(16, SPEC2.dim), logits,
+                                 torch.ones(16, 2, dtype=torch.bool))
+    assert (out.fused_logit >= logits.min(dim=1).values - 1e-5).all()
+    assert (out.fused_logit <= logits.max(dim=1).values + 1e-5).all()
 
 
 @pytest.mark.parametrize("cls", [LogisticRouter, MLPRouter])
-def test_fused_score_is_a_convex_combination(cls):
+def test_trained_rungs_emit_a_probability_and_its_logit(cls):
     model = cls(SPEC2.dim, 2)
-    p = torch.rand(16, 2)
-    out = model(torch.randn(16, SPEC2.dim), p, torch.ones(16, 2, dtype=torch.bool))
-    assert (out.p_fake >= p.min(dim=1).values - 1e-6).all()
-    assert (out.p_fake <= p.max(dim=1).values + 1e-6).all()
+    out = model(torch.randn(16, SPEC2.dim), torch.randn(16, 2),
+                torch.ones(16, 2, dtype=torch.bool))
+    assert ((out.p_fake >= 0) & (out.p_fake <= 1)).all()
+    assert torch.allclose(out.p_fake, torch.sigmoid(out.fused_logit), atol=1e-6)
 
 
 @pytest.mark.parametrize("cls", [LogisticRouter, MLPRouter])
@@ -246,16 +258,40 @@ def test_router_is_tiny():
 
 
 # --- worst-group loss + reliability targets -------------------------------
-def test_worst_group_loss_selects_the_worst_group():
+def test_worst_group_loss_is_bce_plus_smooth_upper_bound():
+    """R11: the planned form is BCE + lambda * smooth_logsumexp(group means),
+    not a hard max that REPLACES the BCE (a hard max has zero gradient for every
+    group but the current worst)."""
     losses = torch.tensor([0.1, 0.1, 5.0, 5.0])
     groups = torch.tensor([0, 0, 1, 1])
-    assert worst_group_loss(losses, groups, 2).item() == pytest.approx(5.0)
+    value = worst_group_loss(losses, groups, 2).item()
+    assert value > losses.mean().item()        # the BCE term is still present
+    assert value == pytest.approx(losses.mean().item() + 5.0, abs=0.05)
+
+
+def test_worst_group_loss_dominated_by_the_worst_group():
+    balanced = worst_group_loss(torch.tensor([1.0, 1.0]), torch.tensor([0, 1]), 2)
+    skewed = worst_group_loss(torch.tensor([0.0, 2.0]), torch.tensor([0, 1]), 2)
+    assert skewed.item() > balanced.item()     # same mean, worse worst group
 
 
 def test_worst_group_loss_skips_empty_groups():
     losses = torch.tensor([1.0, 3.0])
-    groups = torch.tensor([0, 2])          # group 1 absent from this batch
-    assert worst_group_loss(losses, groups, 3).item() == pytest.approx(3.0)
+    groups = torch.tensor([0, 2])              # group 1 absent from this batch
+    assert torch.isfinite(worst_group_loss(losses, groups, 3))
+
+
+def test_groups_are_class_by_family():
+    """R11: family-only grouping averages opposite directional failures together."""
+    import numpy as np
+
+    families = np.array(["blur", "blur", "noise", "noise"])
+    labels = torch.tensor([0.0, 1.0, 0.0, 1.0])
+    groups, n_groups = group_index(families, labels)
+    assert n_groups == 4                       # 2 families x 2 classes
+    assert len(set(groups.tolist())) == 4       # every (class, family) is distinct
+    # the same family with different labels must NOT share a group
+    assert groups[0].item() != groups[1].item()
 
 
 def test_worst_group_loss_raises_when_no_groups_present():

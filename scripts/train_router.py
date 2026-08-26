@@ -20,7 +20,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.pipeline.service import load_predict_config
-from src.router.train import load_cache_rows, run_ladder
+from src.router.train import load_cache_rows, run_ladder, save_checkpoint
 
 
 def main() -> int:
@@ -57,22 +57,30 @@ def main() -> int:
         return 2
 
     print(f"rows={len(rows)} experts={expert_ids} threshold={threshold}", file=sys.stderr)
-    result = run_ladder(rows, threshold=threshold, expert_ids=expert_ids, seed=args.seed)
-    result["cache_key"] = cache_manifest.get("cache_key")
+    provenance = load_predict_config().get("threshold_provenance", "unspecified")
+    result = run_ladder(rows, threshold=threshold, expert_ids=expert_ids, seed=args.seed,
+                        threshold_provenance=provenance)
     result["cache_unprotected"] = cache_manifest.get("UNPROTECTED_SMOKE_ONLY", False)
 
     out = args.out or (args.cache / "router_training.json")
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(result, indent=2) + "\n")
+    checkpoint = save_checkpoint(result, out.with_suffix(".pt"), threshold)
+    serialisable = {k: v for k, v in result.items() if not k.startswith("_")}
+    serialisable["checkpoint"] = str(checkpoint)
+    out.write_text(json.dumps(serialisable, indent=2) + "\n")
+    if result.get("rows_dropped_all_experts_unavailable"):
+        print(f"excluded {result['rows_dropped_all_experts_unavailable']} row(s) where every "
+              "expert failed: they would train as fabricated REAL scores", file=sys.stderr)
 
     print(f"\n{'rung':<18}{'params':>8}{'worst-family':>14}{'clean recall':>14}"
           f"{'clean FPR':>11}{'accuracy':>10}")
     for entry in result["results"]:
         name = entry["rung"] + ("+wg" if entry["use_worst_group_loss"] else "")
+        flag = "" if entry.get("satisfies_clean_constraints", True) else "  (violates clean constraints)"
         print(f"{name:<18}{entry['n_parameters']:>8}"
-              f"{entry['dev_worst_family_fake_recall']:>14.4f}"
+              f"{entry['dev_worst_family_bootstrap_mean']:>14.4f}"
               f"{entry['dev_clean_fake_recall']:>14.4f}"
-              f"{entry['dev_clean_fpr']:>11.4f}{entry['dev_overall_accuracy']:>10.4f}")
+              f"{entry['dev_clean_fpr']:>11.4f}{entry['dev_overall_accuracy']:>10.4f}{flag}")
     delta = result["improvement_over_baseline"]
     if result.get("fusion_comparison_degenerate"):
         print("\n*** FUSION COMPARISON IS VACUOUS ***")

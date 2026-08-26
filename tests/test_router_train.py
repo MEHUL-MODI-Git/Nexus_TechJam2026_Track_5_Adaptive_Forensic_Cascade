@@ -14,7 +14,9 @@ from src.router.train import (
     TRANSFORM_FAMILIES,
     build_batch,
     run_ladder,
+    save_checkpoint,
     train_rung,
+    validate_cache_rows,
     worst_family_recall,
 )
 
@@ -43,10 +45,14 @@ def make_rows(n_sources=40, split_at=30, hard_family=None, seed=0):
                 rows.append({
                     "source_id": f"s{i}", "label": label, "dataset_split": split,
                     "condition_id": condition, "family": family,
-                    "experts": {"e1": {"ok": True, "raw_logit": 0.1, "p_fake": p}},
+                    "cache_key": "K",
+                    "experts": {"e1": {"ok": True,
+                                       "raw_logit": float(np.log(p / (1 - p))),
+                                       "p_fake": p}},
                     "probes": {"e1": {"probe_mean": p, "probe_std": 0.01,
                                       "probe_range": 0.02, "probe_max_delta": 0.01,
-                                      "probe_flip": False, "n_probes_ok": 3}},
+                                      "probe_scores": {"probe_jpeg_q92": p},
+                                      "n_probes_ok": 3}},
                     "quality": {"width": 512, "height": 512, "aspect_ratio": 1.0,
                                 "megapixels": 0.26, "is_portrait": False,
                                 "blur_varlap": 0.01, "blockiness": 1.0,
@@ -62,15 +68,22 @@ def make_rows(n_sources=40, split_at=30, hard_family=None, seed=0):
 def test_worst_family_recall_excludes_clean():
     p = np.array([0.0, 0.9]); labels = np.array([1, 1])
     families = np.array(["clean", "jpeg"])
-    recall, family = worst_family_recall(p, labels, families, 0.5)
+    recall, family = worst_family_recall(p, labels, families, 0.5, require_all=False)
     assert family == "jpeg" and recall == 1.0     # clean's 0.0 is not selected
 
 
 def test_worst_family_recall_picks_the_minimum():
     p = np.array([0.9, 0.9, 0.1]); labels = np.array([1, 1, 1])
     families = np.array(["jpeg", "blur", "noise"])
-    recall, family = worst_family_recall(p, labels, families, 0.5)
+    recall, family = worst_family_recall(p, labels, families, 0.5, require_all=False)
     assert family == "noise" and recall == 0.0
+
+
+def test_objective_refuses_a_reduced_family_set():
+    """R10: silently skipping a family turns six into fewer while keeping the name."""
+    p = np.array([0.9]); labels = np.array([1]); families = np.array(["jpeg"])
+    with pytest.raises(ValueError, match="all six transform families"):
+        worst_family_recall(p, labels, families, 0.5)
 
 
 def test_transform_families_are_the_six():
@@ -161,7 +174,7 @@ def test_batch_alignment():
     batch = build_batch(rows, spec, std)
     n = len(rows)
     assert batch.features.shape == (n, spec.dim)
-    assert batch.expert_p.shape == (n, 1) and batch.available.shape == (n, 1)
+    assert batch.expert_logits.shape == (n, 1) and batch.available.shape == (n, 1)
     assert batch.labels.shape == (n,) and len(batch.families) == n
 
 
@@ -172,7 +185,7 @@ def test_failed_expert_is_marked_unavailable_in_the_batch():
     std = Standardizer.fit(rows_to_matrix(rows, spec), spec)
     batch = build_batch(rows, spec, std)
     assert batch.available[0, 0].item() is False
-    assert batch.expert_p[0, 0].item() == 0.0     # zero WITH an unavailable flag
+    assert batch.expert_logits[0, 0].item() == 0.0   # zero WITH an unavailable flag
 
 
 # --- degeneracy guard -----------------------------------------------------
@@ -204,3 +217,97 @@ def test_degenerate_flag_overrides_a_spurious_improvement():
     result = run_ladder(make_rows(), threshold=0.5, expert_ids=("e1",))
     # even if delta were positive, N=1 must never claim the router earned its keep
     assert result["router_earns_its_complexity"] is False
+
+
+# --- R12 / R20 / R21: checkpointing, exclusions, validation ---------------
+def test_checkpoint_is_deployable(tmp_path):
+    """R12: the trainer previously returned metrics only, so no rung could be
+    loaded into the prediction service or reproduced."""
+    import torch
+
+    result = run_ladder(make_rows(), threshold=0.5, expert_ids=EXPERTS)
+    path = save_checkpoint(result, tmp_path / "router.pt", threshold=0.5)
+    payload = torch.load(path, weights_only=False)
+    assert payload["schema_version"] == "router-checkpoint.v1"
+    assert payload["rung"] == result["best_rung"]
+    assert payload["expert_order"] == list(EXPERTS)
+    assert payload["standardizer"]["mean"] and payload["feature_spec"]["dim"] > 0
+    assert payload["fusion_space"] == "logit"
+    assert payload["cache_key"] == "K"
+
+
+def test_rows_with_every_expert_failed_are_excluded_not_trained():
+    """R20: they fuse to p_fake=0, a confident REAL score no model produced."""
+    rows = make_rows()
+    for row in rows[:7]:
+        row["experts"]["e1"] = {"ok": False, "reason_code": "x", "message": "y"}
+    report = validate_cache_rows(rows, EXPERTS)
+    assert report["dropped_all_experts_unavailable"] == 7
+    assert all(r["experts"]["e1"]["ok"] for r in report["usable_rows"])
+
+
+def test_dropped_rows_are_reported_in_the_artifact():
+    rows = make_rows()
+    for row in rows[:5]:
+        row["experts"]["e1"] = {"ok": False, "reason_code": "x", "message": "y"}
+    result = run_ladder(rows, threshold=0.5, expert_ids=EXPERTS)
+    assert result["rows_dropped_all_experts_unavailable"] == 5
+
+
+def test_non_finite_score_is_dropped():
+    rows = make_rows()
+    rows[0]["experts"]["e1"]["p_fake"] = float("nan")
+    report = validate_cache_rows(rows, EXPERTS)
+    assert report["dropped_invalid_scores"] == 1
+
+
+def test_mixed_cache_keys_are_refused():
+    rows = make_rows()
+    rows[0]["cache_key"] = "OTHER"
+    with pytest.raises(ValueError, match="never mix generations"):
+        validate_cache_rows(rows, EXPERTS)
+
+
+def test_source_in_both_splits_is_refused():
+    """A leaked source makes dev measure memorisation."""
+    rows = make_rows()
+    for row in rows:
+        if row["source_id"] == "s0":
+            row["dataset_split"] = "dev"
+    rows.append(dict(rows[0], dataset_split="train"))
+    with pytest.raises(ValueError, match="BOTH train and dev"):
+        validate_cache_rows(rows, EXPERTS)
+
+
+def test_unknown_condition_is_refused():
+    rows = make_rows()
+    rows[0]["condition_id"] = "not_a_condition"
+    with pytest.raises(ValueError, match="unknown condition_id"):
+        validate_cache_rows(rows, EXPERTS)
+
+
+def test_selection_uses_bootstrap_mean_and_clean_constraints():
+    """R10: selection must be the frozen objective it claims to be."""
+    result = run_ladder(make_rows(), threshold=0.5, expert_ids=EXPERTS,
+                        bootstrap_replicates=25)
+    assert "bootstrap-mean" in result["selection_metric"]
+    assert "clean FPR" in result["selection_metric"]
+    assert result["clean_constraints"]["max_clean_fpr"] >= 0
+    for entry in result["results"]:
+        assert "dev_worst_family_bootstrap_mean" in entry
+        assert "satisfies_clean_constraints" in entry
+        lo, hi = entry["dev_worst_family_ci95"]
+        assert lo <= entry["dev_worst_family_bootstrap_mean"] <= hi
+
+
+def test_placeholder_threshold_provenance_is_warned_about():
+    """R22: reliability targets mean something different under a real threshold."""
+    result = run_ladder(make_rows(), threshold=0.5, expert_ids=EXPERTS,
+                        threshold_provenance="PLACEHOLDER-uncalibrated-phase0")
+    assert result["threshold_provenance_warning"]
+    assert "changes meaning" in result["threshold_provenance_warning"]
+
+
+def test_fusion_happens_in_logit_space():
+    result = run_ladder(make_rows(), threshold=0.5, expert_ids=EXPERTS)
+    assert result["fusion_space"] == "logit"
