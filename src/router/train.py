@@ -4,6 +4,9 @@ The ladder from doc 04 is trained rung by rung and compared on the SAME dev
 split, because the question is not "does the router work" but "does the router
 earn its complexity over a baseline that has none":
 
+    quality_only      one linear layer over FEATURES ONLY, no expert score —
+                      the shortcut floor (real=JPEG, fake=PNG) every other
+                      rung must beat before any detection claim is credible
     static_average    0 parameters — logit-space mean, the honest baseline
     probability_mean  0 parameters — probability-space mean
     fixed_weights     0 trainable parameters — grid-searched on TRAIN only
@@ -45,6 +48,7 @@ from .model import (
     LogisticRouter,
     MLPRouter,
     ProbabilityMeanFusion,
+    QualityOnlyRouter,
     StaticAverageFusion,
     group_index,
     reliability_targets,
@@ -204,6 +208,8 @@ def _construct_router(rung: str, n_features: int, n_experts: int, *,
     reasonable placeholder for `load_checkpoint`, which immediately overwrites
     the buffer via `load_state_dict`.
     """
+    if rung == "quality_only":
+        return QualityOnlyRouter(n_features)
     if rung == "static_average":
         return StaticAverageFusion(n_experts)
     if rung == "probability_mean":
@@ -605,12 +611,13 @@ def run_ladder(cache_rows: list[dict], threshold: float, expert_ids: tuple[str, 
                    use_worst_group=wg, seed=seed, bootstrap_replicates=bootstrap_replicates,
                    fit_reliability=fit_reliability)
         for name, wg in (
-            ("static_average", False), ("probability_mean", False),
+            ("quality_only", False), ("static_average", False), ("probability_mean", False),
             ("fixed_weights", False), ("logistic", False),
             ("mlp", False), ("mlp", True),
         )
     ]
     baseline = next(r for r in results if r["rung"] == "static_average")
+    quality_only_result = next(r for r in results if r["rung"] == "quality_only")
 
     # T3: the fusion WEIGHTS are degenerate with one expert (softmax over a
     # single available slot is 1.0 by construction) -- that says nothing about
@@ -644,6 +651,21 @@ def run_ladder(cache_rows: list[dict], threshold: float, expert_ids: tuple[str, 
     # CI95 sits entirely above the baseline's -- otherwise it is noise.
     meaningful = bool(delta >= MIN_MEANINGFUL_DELTA)
     separated = bool(best["dev_worst_family_ci95"][0] > baseline["dev_worst_family_ci95"][1])
+
+    # The quality-only floor (see model.QualityOnlyRouter docstring): a
+    # cascade that cannot clear this by the SAME meaningful-delta bar used
+    # against static_average has not demonstrated detection, only image
+    # statistics that happen to correlate with the corpus's JPEG/PNG shortcut.
+    beats_quality_only = bool(
+        best["dev_worst_family_bootstrap_mean"]
+        - quality_only_result["dev_worst_family_bootstrap_mean"] >= MIN_MEANINGFUL_DELTA
+    )
+
+    # quality_only competes for selection like any other rung, which means it can
+    # WIN. If it does, the winning model never looked at an expert, and reporting
+    # "the router earns its complexity" would be false in the most flattering
+    # possible direction. The flag must not be able to say that.
+    best_uses_expert_scores = bool(best["rung"] != "quality_only")
 
     document = {
         "schema_version": SCHEMA_VERSION,
@@ -684,12 +706,31 @@ def run_ladder(cache_rows: list[dict], threshold: float, expert_ids: tuple[str, 
         "results": [{k: v for k, v in r.items() if k not in ("_model", "_dev_p_fake")}
                     for r in results],
         "baseline_worst_family_recall": baseline["dev_worst_family_bootstrap_mean"],
+        "quality_only_worst_family_recall": quality_only_result["dev_worst_family_bootstrap_mean"],
+        "beats_quality_only": beats_quality_only,
+        "quality_only_note": (
+            "quality_only uses no expert score at all -- a linear model over the router "
+            "feature vector (image-statistics descriptors) alone. This corpus's real=JPEG, "
+            "fake=PNG shortcut lets those descriptors separate the classes with no idea "
+            "what AI generation is; a cascade that fails to beat this rung has not "
+            "demonstrated a detection result."
+        ),
         "best_rung": best["rung"],
         "best_worst_family_recall": best["dev_worst_family_bootstrap_mean"],
         "improvement_over_baseline": delta,
         "improvement_is_meaningful": meaningful,
         "improvement_is_outside_uncertainty": separated,
-        "router_earns_its_complexity": bool(meaningful or separated),
+        "best_rung_uses_expert_scores": best_uses_expert_scores,
+        # Narrow claim: the learned machinery beat parameter-free fusion AND the
+        # winner actually consults an expert. Deliberately NOT folded together
+        # with beats_quality_only -- "the fusion machinery is justified" and
+        # "the cascade beats plain image statistics" are different questions and
+        # collapsing them would hide which one failed.
+        "router_earns_its_complexity": bool((meaningful or separated)
+                                            and best_uses_expert_scores),
+        # The composite headline: both bars cleared.
+        "cascade_is_justified": bool((meaningful or separated)
+                                     and best_uses_expert_scores and beats_quality_only),
         "kill_gate": {
             "min_meaningful_delta": MIN_MEANINGFUL_DELTA,
             "rule": "delta >= 2 points OR best CI95 low above baseline CI95 high, subject "

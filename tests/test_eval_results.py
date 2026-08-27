@@ -379,6 +379,31 @@ def test_loaded_fixture_still_produces_reportable_output():
     assert document["protocol"]["threshold_provenance"] == "unspecified"
 
 
+def test_from_loader_cannot_mint_a_headline():
+    """Reproduces the reported exploit verbatim: mint a capability from a bare
+    two-key blob via the private classmethod, bypassing load_frozen_threshold
+    entirely, and confirm it can never reach a headline document."""
+    fb = json.dumps({"threshold": 0.5}).encode()
+    with pytest.raises((ValueError, TypeError)):
+        forged = FrozenThreshold._from_loader(
+            0.5, hashlib.sha256(fb).hexdigest(), json.loads(fb), fb,
+        )
+        build(make_rows(), threshold=forged)
+
+
+def test_genuine_loaded_threshold_still_works():
+    """Guards against fixing the hole by breaking the feature: a threshold
+    artifact loaded the legitimate way must still produce a headline."""
+    document = build(make_rows(), threshold=FROZEN)
+    assert document["schema_version"] == EVAL_SCHEMA
+    assert document["methods"][0]["headline"] is not None
+
+
+def test_provenance_never_defaults_to_a_fitted_sounding_string():
+    document = build(make_rows(), threshold=FROZEN)
+    assert document["protocol"]["threshold_provenance"] != "held-out-dev"
+
+
 @pytest.mark.parametrize("replicates", [0, -1, True, 1.5])
 def test_invalid_bootstrap_replicates_refuse_before_metric_work(replicates):
     with pytest.raises(ValueError, match="replicate"):

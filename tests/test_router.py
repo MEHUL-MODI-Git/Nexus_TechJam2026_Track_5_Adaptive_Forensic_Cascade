@@ -23,6 +23,7 @@ from src.router.model import (
     LogisticRouter,
     MLPRouter,
     ProbabilityMeanFusion,
+    QualityOnlyRouter,
     StaticAverageFusion,
     group_index,
     reliability_targets,
@@ -284,6 +285,32 @@ def test_reliability_is_a_probability(cls):
 
 def test_static_average_has_no_parameters():
     assert sum(p.numel() for p in StaticAverageFusion(2).parameters()) == 0
+
+
+# --- quality_only: the shortcut floor (router-repair-b018) -----------------
+def test_quality_only_ignores_expert_scores():
+    """The important one: QualityOnlyRouter must not read `expert_logits` at
+    all, so wildly different expert scores on the same features must not
+    change `p_fake` by even a bit."""
+    torch.manual_seed(0)
+    model = QualityOnlyRouter(SPEC2.dim)
+    model.eval()
+    features = torch.randn(8, SPEC2.dim)
+    available = torch.ones(8, 2, dtype=torch.bool)
+    with torch.no_grad():
+        out_a = model(features, torch.full((8, 2), -50.0), available)
+        out_b = model(features, torch.full((8, 2), 50.0), available)
+    assert torch.equal(out_a.p_fake, out_b.p_fake)
+    assert torch.equal(out_a.fused_logit, out_b.fused_logit)
+
+
+def test_quality_only_weights_are_zero():
+    model = QualityOnlyRouter(SPEC2.dim)
+    out = model(torch.randn(4, SPEC2.dim), torch.randn(4, 2),
+                torch.ones(4, 2, dtype=torch.bool))
+    assert out.weights.shape == (4, 2)
+    assert torch.equal(out.weights, torch.zeros(4, 2))
+    assert out.reliability is None and out.reliability_logit is None
 
 
 def test_router_is_tiny():

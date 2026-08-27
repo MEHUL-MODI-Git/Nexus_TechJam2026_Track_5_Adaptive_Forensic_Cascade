@@ -1,9 +1,14 @@
 """The reliability/fusion router (doc 03 step 6) — our original contribution.
 
-The fusion ladder from doc 04 is implemented as six rungs that share one
+The fusion ladder from doc 04 is implemented as seven rungs that share one
 interface, so an ablation compares like with like and a negative result is
 reportable rather than embarrassing:
 
+    0. QualityOnlyRouter     — no expert score, ever. A linear layer over the
+       router feature vector alone (image-statistics descriptors). The
+       corpus has a shortcut (real=JPEG, fake=PNG) that these descriptors can
+       exploit with no idea what AI generation is; this rung makes that
+       shortcut an explicit floor the rest of the ladder must clear.
     1. StaticAverageFusion   — no learned parameters, fuses in LOGIT space.
        The honest baseline the router must beat to justify its existence.
     2. ProbabilityMeanFusion — no learned parameters, fuses in PROBABILITY
@@ -15,7 +20,7 @@ reportable rather than embarrassing:
     4. LogisticRouter        — a single linear layer. If this matches the MLP,
        the MLP is unjustified complexity and we say so.
     5. MLPRouter             — doc 03's two-head architecture (also run with
-       the worst-group loss, so the ladder has six entries in total).
+       the worst-group loss, so the ladder has seven entries in total).
 
 Two heads, because they answer different questions:
   - **fusion**: how much to trust each expert ON THIS IMAGE (weights over the
@@ -82,6 +87,33 @@ def _masked_weights(logits: torch.Tensor, available: torch.Tensor) -> torch.Tens
     weights = weights * available.to(weights.dtype)
     total = weights.sum(dim=-1, keepdim=True)
     return torch.where(total > 0, weights / total.clamp(min=1e-12), torch.zeros_like(weights))
+
+
+class QualityOnlyRouter(nn.Module):
+    """Rung 0: predicts from the ROUTER FEATURE VECTOR ONLY. No expert score,
+    ever -- `expert_logits` is never read in `forward`.
+
+    This rung exists so that any claim about the cascade is measured against a
+    model that has only ever seen image statistics; if the cascade cannot beat
+    it, we do not have a detection result. Our training corpus has a shortcut
+    (real images are JPEG, fake images are PNG) that quality descriptors --
+    blockiness, noise_sigma, blur_varlap, luminance/saturation stats -- can
+    exploit at dev AUROC ~0.95-0.99 while knowing nothing about AI generation.
+    Making that shortcut an explicit baseline turns a hidden advantage into a
+    number every other rung must clear.
+    """
+
+    def __init__(self, n_features: int) -> None:
+        super().__init__()
+        self.linear = nn.Linear(n_features, 1)
+
+    def forward(self, features, expert_logits, available) -> FusionOutput:
+        fused = self.linear(features).squeeze(-1)
+        # No expert is used: weights are all zero, not a uniform/degenerate
+        # vector that would suggest some expert contributed.
+        weights = torch.zeros_like(expert_logits)
+        return FusionOutput(p_fake=torch.sigmoid(fused), fused_logit=fused,
+                            weights=weights, reliability=None, reliability_logit=None)
 
 
 class StaticAverageFusion(nn.Module):

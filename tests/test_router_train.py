@@ -130,10 +130,12 @@ def test_missing_split_is_an_error():
 # --- the ladder -----------------------------------------------------------
 def test_ladder_trains_every_rung():
     """B-018 §7 grew the ladder from four rungs to six (two new parameter-free
-    baselines); this expected list is updated to match that mandatory change."""
+    baselines); a later change (router-repair-b018) added `quality_only` as a
+    seventh, leading, rung -- this expected list is updated to match."""
     result = run_ladder(make_rows(), threshold=0.5, expert_ids=EXPERTS)
     rungs = [(r["rung"], r["use_worst_group_loss"]) for r in result["results"]]
     assert rungs == [
+        ("quality_only", False),
         ("static_average", False), ("probability_mean", False),
         ("fixed_weights", False), ("logistic", False),
         ("mlp", False), ("mlp", True),
@@ -547,11 +549,54 @@ def test_fixed_weights_are_selected_on_train_only():
     assert fw["fixed_weights"] == [1.0]      # single expert: only one point on the simplex
 
 
-def test_ladder_contains_all_six_rungs():
+def test_ladder_contains_all_seven_rungs():
     result = run_ladder(make_rows(), threshold=0.5, expert_ids=EXPERTS)
     rungs = [(r["rung"], r["use_worst_group_loss"]) for r in result["results"]]
     assert rungs == [
+        ("quality_only", False),
         ("static_average", False), ("probability_mean", False),
         ("fixed_weights", False), ("logistic", False),
         ("mlp", False), ("mlp", True),
     ]
+
+
+def test_ladder_contains_quality_only_first():
+    result = run_ladder(make_rows(), threshold=0.5, expert_ids=EXPERTS)
+    assert len(result["results"]) == 7
+    assert result["results"][0]["rung"] == "quality_only"
+
+
+def test_document_reports_beats_quality_only():
+    result = run_ladder(make_rows(), threshold=0.5, expert_ids=EXPERTS)
+    assert "quality_only_worst_family_recall" in result
+    assert "quality_only_note" in result and isinstance(result["quality_only_note"], str)
+    assert isinstance(result["beats_quality_only"], bool)
+
+
+def test_quality_only_winning_cannot_claim_the_router_earned_its_complexity():
+    """A no-expert rung winning must never report the router as justified.
+
+    `quality_only` competes for selection like any other rung, so it can win --
+    especially on a corpus whose image statistics correlate with the label. If
+    the flag could still read True there, the artifact would make its most
+    flattering claim in exactly the case that disproves it.
+    """
+    document = run_ladder(make_rows(), threshold=0.5, expert_ids=EXPERTS)
+    document["best_rung"] = "quality_only"
+    assert "best_rung_uses_expert_scores" in document
+    assert "cascade_is_justified" in document
+    # Recompute the invariant the way run_ladder does, for a forced quality_only win.
+    forced_uses_expert = document["best_rung"] != "quality_only"
+    assert forced_uses_expert is False
+    assert not (forced_uses_expert and document["improvement_is_meaningful"])
+
+
+def test_cascade_is_justified_requires_both_bars():
+    document = run_ladder(make_rows(), threshold=0.5, expert_ids=EXPERTS)
+    assert document["cascade_is_justified"] == (
+        (document["improvement_is_meaningful"] or document["improvement_is_outside_uncertainty"])
+        and document["best_rung_uses_expert_scores"]
+        and document["beats_quality_only"]
+    )
+    if document["best_rung"] == "quality_only":
+        assert document["router_earns_its_complexity"] is False

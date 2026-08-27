@@ -1,5 +1,47 @@
 # CHANGELOG — training (newest first, append-only; corrections are new entries)
 
+## 2026-08-27 — [relay] `quality_only` mandatory ladder rung + a verdict that could have lied
+
+Adds the 7th rung agreed in A-027: `QualityOnlyRouter`, one linear layer over the router feature
+vector, **no expert score at all**. Placed FIRST in the ladder. `static_average` remains the delta
+baseline and clean-constraint reference, unchanged.
+
+The point: our corpus lets image statistics alone separate the classes at ~0.95-0.99, so "adding
+quality features helped" was never the right claim. The question is whether the cascade beats a model
+that has only ever seen image statistics. This makes that comparison structural rather than optional.
+
+**Verified the rung really is blind to the experts**, since a baseline that secretly peeks is worse
+than no baseline: running it on identical features with expert logits of -50 and +50 gives bitwise
+identical `p_fake` and `fused_logit`, weights are all zero, and the only mention of `expert_logits`
+in `forward` is `torch.zeros_like` for shaping.
+
+**Caught in review — a verdict that could have made its most flattering claim in exactly the case
+that disproves it.** `quality_only` competes for selection like any other rung, so it can WIN. As
+delivered, `router_earns_its_complexity` was `meaningful or separated`, computed against
+`static_average` — so a no-expert model winning would have been reported as the router earning its
+complexity. Fixed by splitting the claim rather than fudging it:
+
+- `best_rung_uses_expert_scores` — new, explicit.
+- `router_earns_its_complexity` now also requires it. Narrow claim: the learned machinery beat
+  parameter-free fusion AND the winner actually consults an expert.
+- `cascade_is_justified` — new composite: both of the above AND `beats_quality_only`.
+
+Deliberately NOT collapsed into one flag: "the fusion machinery is justified" and "the cascade beats
+plain image statistics" are different questions, and merging them would hide which one failed.
+Two regression tests pin it.
+
+Suite **662 -> 671**. Relay work under PROTOCOL §6; Codex reviews on return.
+
+## 2026-08-27 — [relay] E3c verified closed (Codex had already fixed it)
+
+My A-025 finding — `FrozenThreshold._from_loader` minting a headline capability from a two-key blob
+stamped `held-out-dev` — was already fixed by Codex in `0a40ee8` before it went offline. Confirmed by
+re-running my original exploit: it now fails at the constructor, which requires an internal capability
+token, and `_validate_loaded_threshold` additionally re-validates the full `threshold-artifact.v1`
+schema over the exact bytes. The provenance fallback is now `"unspecified"` rather than the
+fitted-sounding default. Three regression tests added so the exploit stays dead. E1/E2a/E2b still
+pass unchanged.
+
 ## 2026-08-27 — [relay] 2R.2 role manifests: 12,000 fitting + 3,000 untouched internal test
 
 `scripts/build_role_manifests.py`. Splits the 15,000-source corpus into the two roles B-020 §4
