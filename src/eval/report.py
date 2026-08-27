@@ -8,8 +8,14 @@ report ends up disagreeing with the artifact it claims to summarize, and the
 disagreement is always discovered by a reader, not by us.
 """
 
+# Adjacent strings inside report rows intentionally form one readable cell.
+# ruff: noqa: ISC004
+
 from __future__ import annotations
 
+import os
+import tempfile
+from pathlib import Path
 from typing import Any
 
 from .results import DIAGNOSTIC_SCHEMA
@@ -75,10 +81,27 @@ def render_markdown(document: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def write_markdown(document: dict[str, Any], path: str | Path) -> Path:
+    """Atomically write the markdown sibling of an eval JSON artifact."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=str(path.parent), suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w") as handle:
+            handle.write(render_markdown(document))
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+    return path
+
+
 def _render_method(method: dict[str, Any], multi: bool) -> list[str]:
     """One method's tables. Methods are NEVER pooled (Codex R1)."""
     lines: list[str] = []
-    summary = method["headline"]
+    summary = method.get("headline", method.get("diagnostic_summary"))
     if multi:
         lines += [f"## Method: `{method['method_id']}`", ""]
     if summary:

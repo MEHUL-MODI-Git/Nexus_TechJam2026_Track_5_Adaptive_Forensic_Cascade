@@ -4,18 +4,23 @@ This module contains no fitting path.  Evaluation reads a pre-existing
 threshold artifact and fails closed on provenance or row-schema drift.
 """
 
+# ValueError is intentional here: malformed JSON payloads are all protocol
+# validation failures, regardless of whether the bad value has the wrong type.
+# ruff: noqa: TRY004
+
 from __future__ import annotations
 
-from dataclasses import dataclass
 import hashlib
 import json
 import math
-from pathlib import Path
 import re
-from typing import Any, Iterable, Mapping
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 from src.pipeline.transforms import CONDITION_IDS, FAMILY_OF
-
+from src.pipeline.version import PIPELINE_VERSION
 
 PREDICTION_ROW_SCHEMA = "prediction-row.v1"
 THRESHOLD_ARTIFACT_SCHEMA = "threshold-artifact.v1"
@@ -82,11 +87,41 @@ class ValidatedPredictionRows:
     condition_ids: tuple[str, ...]
 
 
-@dataclass(frozen=True)
+_THRESHOLD_CAPABILITY = object()
+
+
+@dataclass(frozen=True, init=False)
 class FrozenThreshold:
+    """Opaque capability issued only by :func:`load_frozen_threshold`.
+
+    A threshold value and provenance string are not sufficient authority to
+    produce reportable output.  Keeping construction private makes that
+    boundary enforceable even for callers importing this module directly.
+    """
+
     value: float
     artifact_sha256: str
     payload: dict[str, Any]
+    raw_bytes: bytes
+    _marker: object
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        raise TypeError("FrozenThreshold is loader-only; use load_frozen_threshold(path)")
+
+    @classmethod
+    def _from_loader(
+        cls, value: float, digest: str, payload: dict[str, Any], raw_bytes: bytes
+    ) -> FrozenThreshold:
+        instance = object.__new__(cls)
+        object.__setattr__(instance, "value", value)
+        object.__setattr__(instance, "artifact_sha256", digest)
+        object.__setattr__(instance, "payload", payload)
+        object.__setattr__(instance, "raw_bytes", raw_bytes)
+        object.__setattr__(instance, "_marker", _THRESHOLD_CAPABILITY)
+        return instance
+
+    def _is_loader_capability(self) -> bool:
+        return self._marker is _THRESHOLD_CAPABILITY
 
 
 def _finite_probability(value: Any, field: str) -> float:
@@ -255,9 +290,17 @@ def load_frozen_threshold(path: str | Path) -> FrozenThreshold:
     missing = _THRESHOLD_FIELDS - set(payload)
     if missing:
         raise ValueError(f"threshold artifact missing required fields {sorted(missing)}")
+    extra = set(payload) - _THRESHOLD_FIELDS
+    if extra:
+        raise ValueError(f"threshold artifact has unexpected fields {sorted(extra)}")
     if payload["schema_version"] != THRESHOLD_ARTIFACT_SCHEMA:
         raise ValueError(f"unexpected threshold schema {payload['schema_version']!r}")
     threshold = _finite_probability(payload["threshold"], "threshold")
+    if payload["pipeline_version"] != PIPELINE_VERSION:
+        raise ValueError(
+            f"threshold pipeline_version {payload['pipeline_version']!r} != live "
+            f"PIPELINE_VERSION {PIPELINE_VERSION!r}"
+        )
     for field in ("objective", "pipeline_version", "fitting_code_version", "created_at", "tie_break"):
         _nonempty_string(payload[field], field)
     for field in ("dev_manifest_sha256", "config_sha256"):
@@ -267,14 +310,57 @@ def load_frozen_threshold(path: str | Path) -> FrozenThreshold:
         raise ValueError("selection_granularity must be family or exact_condition")
     if not isinstance(payload["feasible"], bool):
         raise ValueError("feasible must be boolean")
+    for field in (
+        "objective_value", "worst_exact_condition_recall", "clean_fpr", "clean_bacc",
+        "baseline_clean_fpr", "baseline_clean_bacc", "constraint_max_clean_fpr",
+        "constraint_min_clean_bacc",
+    ):
+        _finite_probability(payload[field], field)
+    ci = payload["objective_ci95"]
+    if (not isinstance(ci, (list, tuple)) or len(ci) != 2 or
+            any(isinstance(v, bool) for v in ci)):
+        raise ValueError("objective_ci95 must be an ordered two-value interval")
+    ci_values = [_finite_probability(v, f"objective_ci95[{i}]") for i, v in enumerate(ci)]
+    if ci_values[0] > ci_values[1]:
+        raise ValueError("objective_ci95 must be ordered")
+    if payload["worst_family"] not in set(FAMILY_OF.values()) - {"clean"}:
+        raise ValueError(f"worst_family {payload['worst_family']!r} is not an official family")
+    if (payload["worst_exact_condition"] not in CONDITION_IDS or
+            payload["worst_exact_condition"] == "clean"):
+        raise ValueError("worst_exact_condition must be a transformed official condition")
+    for field, positive in (("n_dev_sources", True), ("n_dev_rows", True),
+                            ("n_fake_sources_per_exact_condition_min", False)):
+        value = payload[field]
+        if isinstance(value, bool) or not isinstance(value, int) or (value <= 0 if positive else value < 0):
+            qualifier = "positive" if positive else "non-negative"
+            raise ValueError(f"{field} must be a {qualifier} integer")
     if not isinstance(payload["bootstrap"], dict):
         raise ValueError("bootstrap must be an object")
+    bootstrap = payload["bootstrap"]
+    expected_bootstrap = {"n_replicates", "seed", "unit", "stratified_by", "interval"}
+    if set(bootstrap) != expected_bootstrap:
+        raise ValueError("bootstrap must use producer keys n_replicates, seed, unit, stratified_by, interval")
+    for field in expected_bootstrap:
+        if field not in bootstrap:
+            raise ValueError(f"bootstrap missing required field {field!r}")
+    replicates = bootstrap["n_replicates"]
+    if isinstance(replicates, bool) or not isinstance(replicates, int) or replicates <= 0:
+        raise ValueError("bootstrap replicates must be a positive integer")
+    if isinstance(bootstrap["seed"], bool) or not isinstance(bootstrap["seed"], int):
+        raise ValueError("bootstrap seed must be an integer")
+    if bootstrap["unit"] != "source_id":
+        raise ValueError("bootstrap.unit must be source_id")
+    if bootstrap["stratified_by"] != "label":
+        raise ValueError("bootstrap.stratified_by must be label")
+    if bootstrap["interval"] != "percentile_95":
+        raise ValueError("bootstrap.interval must be percentile_95")
     if not isinstance(payload["warnings"], list) or not all(
         isinstance(item, str) for item in payload["warnings"]
     ):
         raise ValueError("threshold warnings must be a list of strings")
-    return FrozenThreshold(
+    return FrozenThreshold._from_loader(
         value=threshold,
-        artifact_sha256=hashlib.sha256(raw).hexdigest(),
+        digest=hashlib.sha256(raw).hexdigest(),
         payload=payload,
+        raw_bytes=raw,
     )

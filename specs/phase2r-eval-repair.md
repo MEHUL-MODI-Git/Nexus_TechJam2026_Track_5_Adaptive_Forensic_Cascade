@@ -48,13 +48,15 @@ shape, and rejects fabricated objects. Validate:
 - ordered two-value CI in `[0,1]`;
 - positive integer dev source/row counts, non-negative fake-per-condition count;
 - known worst family and transformed condition;
-- bootstrap object with positive integer replicates, integer seed, `source_id`, `label`, and
-  `percentile_95` semantics;
+- bootstrap object using the producer's frozen keys: positive integer `n_replicates`, integer
+  `seed`, `unit="source_id"`, `stratified_by="label"`, and `interval="percentile_95"`;
 - lowercase SHA-256 dev/config hashes, non-empty objective/version/time/tie-break fields;
 - artifact pipeline version equals the live `PIPELINE_VERSION`.
 
-Tests must construct real temporary artifacts and call the loader; a hand-built `FrozenThreshold`
-must fail before results assembly.
+The loaded capability retains the exact loaded bytes; results assembly re-hashes them and confirms
+they still decode to the validated payload. Tests must load a real artifact file; neither tests nor
+production callers may use a private constructor shortcut. A hand-built `FrozenThreshold` must
+fail before results assembly.
 
 ### E4 — diagnostics contain no headline field
 
@@ -109,14 +111,22 @@ Validation rules:
 
 - transform and golden hashes must equal the bytes of the canonical repository files; their
   versions must equal live `PIPELINE_VERSION`/`GOLDEN_VERSION`;
+- the referenced dataset manifest must be JSON with an `images` list; its exact source IDs and
+  each source's label/dataset/source-group/path identity must equal the prediction rows. Merely
+  matching a caller-supplied count is not evidence of an intact denominator;
 - method IDs equal the prediction rows exactly; every method has complete checkpoint,
   preprocessing, parameter and config provenance;
 - `coverage.expected_source_count` equals observed sources;
   `expected_view_count == sources * methods * 20`; successful views equal observed rows;
+- failure-ledger bytes must decode as `eval-failure-ledger.v1` with a `failures` list whose length
+  equals its declared count and coverage failure count; an arbitrary hashed file is not a ledger;
 - failure ledger count equals coverage failure count and
   `successful_view_count + failure_count == expected_view_count`;
 - reportable output requires zero failures. A warning is not sufficient for a shrunken denominator;
+- run ID equals the prediction rows' sole run ID, and manifest/eval bootstrap seeds agree;
 - run/freeze code, pipeline, golden, transform, threshold and method identities match exactly;
+- the freeze `manifest_sha256` equals SHA-256 of canonical compact/sorted JSON for the freeze
+  payload with `manifest_sha256` omitted, so it binds rather than merely resembles a digest;
 - `architecture_frozen` is true;
 - sealed-reference output additionally requires `sealed_evaluation_authorized=true`; non-sealed
   output records the flag but does not require it;
@@ -152,7 +162,8 @@ counts from rows, and never hardcode `sealed_reference=false`.
 7. Missing/legacy run manifest refuses reportable output; diagnostics still render with a warning.
 8. Wrong transform hash, wrong golden hash/version, missing method provenance, inconsistent counts,
    non-zero failure denominator, missing/mismatched freeze, and unauthorized sealed run each refuse.
-9. Valid non-sealed manifest and valid sealed-authorized manifest produce provenance-complete
+9. A manifest citing a larger or identity-mismatched dataset source list refuses. Valid non-sealed
+   and valid sealed-authorized manifests produce provenance-complete
    `eval-results.v1`.
 10. Placeholder NaN/out-of-range, zero/boolean replicates, invalid seed/ECE bins refuse.
 11. All-zero flips name the first canonical transformed condition.

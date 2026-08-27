@@ -1,0 +1,8 @@
+{
+  "images": [
+    {"source_id": "src0", "label": 0, "dataset": "TEST", "source_group": "g", "relative_path": "img0.png"},
+    {"source_id": "src1", "label": 1, "dataset": "TEST", "source_group": "g", "relative_path": "img1.png"},
+    {"source_id": "src2", "label": 0, "dataset": "TEST", "source_group": "g", "relative_path": "img2.png"},
+    {"source_id": "src3", "label": 1, "dataset": "TEST", "source_group": "g", "relative_path": "img3.png"}
+  ]
+}

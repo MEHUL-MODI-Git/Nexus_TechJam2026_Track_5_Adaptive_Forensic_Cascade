@@ -5,13 +5,19 @@ would have caught the original method-pooling bug: a perfect method and an
 inverted method must never average into one fictitious method.
 """
 
+import hashlib
 import json
+from pathlib import Path
 
 import numpy as np
 import pytest
 
-from src.eval.protocol import FrozenThreshold, validate_prediction_rows
-from src.eval.report import render_markdown
+from src.eval.protocol import (
+    FrozenThreshold,
+    load_frozen_threshold,
+    validate_prediction_rows,
+)
+from src.eval.report import render_markdown, write_markdown
 from src.eval.results import (
     DIAGNOSTIC_SCHEMA,
     EVAL_SCHEMA,
@@ -24,8 +30,8 @@ from src.eval.results import (
 from src.pipeline.transforms import CONDITION_IDS, FAMILY_OF
 
 OFFICIAL = tuple(CONDITION_IDS)
-FROZEN = FrozenThreshold(value=0.5, artifact_sha256="a" * 64,
-                         payload={"threshold_provenance": "dev-fitted-2026-08-27"})
+ROOT = Path(__file__).resolve().parents[1]
+FROZEN = load_frozen_threshold(ROOT / "tests/fixtures/threshold_artifact.v1.json")
 PLACEHOLDER = PlaceholderThreshold(value=0.5, provenance="PLACEHOLDER-uncalibrated-phase0")
 
 
@@ -51,8 +57,55 @@ def make_rows(methods=("m1",), n_sources=4, conditions=OFFICIAL, invert=(), seed
     return validate_prediction_rows(rows, require_full_grid=False)
 
 
+def _bind_freeze(freeze):
+    freeze["manifest_sha256"] = hashlib.sha256(json.dumps(
+        {k: v for k, v in freeze.items() if k != "manifest_sha256"},
+        sort_keys=True, separators=(",", ":")
+    ).encode()).hexdigest()
+    return freeze
+
+
+def _run_manifest(validated, threshold=FROZEN):
+    root = Path(__file__).resolve().parents[1]
+    threshold_digest = (
+        threshold.artifact_sha256 if isinstance(threshold, FrozenThreshold)
+        else FROZEN.artifact_sha256
+    )
+
+    def digest(path):
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    freeze = _bind_freeze({"schema_version": "production-freeze.v1", "manifest_sha256": "",
+              "code_revision": "a" * 40, "pipeline_version": "0.1.0", "golden_version": "0.1.0",
+              "transform_manifest_sha256": digest(root / "configs/transforms.yaml"),
+              "threshold_artifact_sha256": threshold_digest,
+              "method_ids": sorted(validated.method_ids),
+              "architecture_frozen": True, "sealed_evaluation_authorized": False})
+    return {
+        "schema_version": "eval-run-manifest.v1", "run_id": "run-1",
+        "created_at": "2026-08-27T00:00:00Z", "command": "pytest",
+        "code_revision": "a" * 40, "seed": 20260826,
+        "dataset": {"name": "fixture", "split": "test", "manifest_path": "tests/fixtures/eval_small_dataset.json",
+                    "manifest_sha256": digest(root / "tests/fixtures/eval_small_dataset.json"), "sealed_reference": False},
+        "protocol": {"pipeline_version": "0.1.0", "golden_version": "0.1.0",
+                     "transform_manifest_path": "configs/transforms.yaml",
+                     "transform_manifest_sha256": digest(root / "configs/transforms.yaml"),
+                     "golden_manifest_path": "tests/golden/expected.json",
+                     "golden_manifest_sha256": digest(root / "tests/golden/expected.json")},
+        "methods": [{"method_id": m, "checkpoint_versions": ["fixture"],
+                     "preprocessing_versions": ["fixture"], "parameter_count": 0,
+                     "config_sha256": "c" * 64} for m in validated.method_ids],
+        "coverage": {"expected_source_count": len(validated.source_ids),
+                     "expected_view_count": len(set(validated.source_ids)) * len(validated.method_ids) * 20,
+                     "successful_view_count": len(validated.rows), "failure_count": 0},
+        "failure_ledger": {"path": "tests/fixtures/eval_empty_failure_ledger.json", "sha256": digest(root / "tests/fixtures/eval_empty_failure_ledger.json"), "count": 0},
+        "production_freeze": freeze,
+    }
+
+
 def build(validated, threshold=FROZEN, **kw):
     kw.setdefault("bootstrap_replicates", 8)
+    manifest = _run_manifest(validated, threshold)
+    kw.setdefault("run_manifest", manifest)
     return build_results(validated, threshold, family_of=FAMILY_OF,
                          official_conditions=OFFICIAL, **kw)
 
@@ -96,12 +149,14 @@ def test_placeholder_threshold_yields_a_diagnostic_document():
     assert doc["schema_version"] == DIAGNOSTIC_SCHEMA
     assert "NOT_A_HEADLINE_RESULT" in doc
     assert doc["protocol"]["threshold_fitted_on_held_out_dev"] is False
+    assert "headline" not in doc["methods"][0]
+    assert "diagnostic_summary" in doc["methods"][0]
 
 
 def test_frozen_threshold_yields_a_headline_document():
     doc = build(make_rows())
     assert doc["schema_version"] == EVAL_SCHEMA
-    assert doc["protocol"]["threshold_artifact_sha256"] == "a" * 64
+    assert doc["protocol"]["threshold_artifact_sha256"] == FROZEN.artifact_sha256
     assert doc["protocol"]["threshold_fitted_on_held_out_dev"] is True
 
 
@@ -145,18 +200,19 @@ def test_diagnostic_path_tolerates_a_partial_grid():
 
 # --- R4: provenance -------------------------------------------------------
 def test_document_carries_run_provenance():
-    manifest = {"run_id": "grid-x", "pipeline_version": "0.1.0",
-                "manifest_sha256": "b" * 64, "decode_failures": 0}
-    doc = build(make_rows(), run_manifest=manifest)
-    assert doc["run"]["run_id"] == "grid-x"
+    doc = build(make_rows())
+    assert doc["run"]["run_id"] == "run-1"
     assert doc["protocol"]["pipeline_version"] == "0.1.0"
-    assert doc["protocol"]["transform_manifest_sha256"] == "b" * 64
+    assert len(doc["protocol"]["transform_manifest_sha256"]) == 64
+    assert doc["dataset"]["class_counts"] == {"0": 2, "1": 2}
+    assert doc["dataset"]["group_counts"] == {"g": 4}
+    assert doc["methods"][0]["provenance"]["checkpoint_versions"] == ["fixture"]
 
 
 def test_decode_failures_raise_a_denominator_warning():
-    doc = build(make_rows(), run_manifest={"decode_failures": 7})
-    assert any("decode failure" in w for w in doc["warnings"])
-    assert doc["dataset"]["decode_failures_reported_by_run"] == 7
+    manifest = {"decode_failures": 7}
+    with pytest.raises(ValueError, match="eval-run-manifest"):
+        build(make_rows(), run_manifest=manifest)
 
 
 def test_input_artifact_is_hashed(tmp_path):
@@ -228,7 +284,184 @@ def test_write_is_atomic(tmp_path):
     assert not list(path.parent.glob("*.tmp"))
 
 
+def test_markdown_write_is_atomic(tmp_path):
+    path = write_markdown(build(make_rows()), tmp_path / "nested" / "eval-results.md")
+    assert "Evaluation results" in path.read_text()
+    assert not list(path.parent.glob("*.tmp"))
+
+
 def test_markdown_surfaces_warnings():
     """A denominator-shrinking decode failure must be visible in the report."""
-    md = render_markdown(build(make_rows(), run_manifest={"decode_failures": 3}))
-    assert "## Warnings" in md and "decode failure" in md
+    md = render_markdown(build(make_rows(), threshold=PLACEHOLDER, run_manifest=None))
+    assert "## Warnings" in md and "manifest" in md
+
+
+# --- Phase 2R adversarial boundaries --------------------------------------
+def test_sparse_method_source_condition_refuses_reportable_build():
+    rows = make_rows(methods=("m1", "m2"), n_sources=4).rows
+    rows = [r for r in rows if not (
+        r["method_id"] == "m2" and r["source_id"] == "src2" and
+        r["condition_id"] == "noise_s0.10"
+    )]
+    validated = validate_prediction_rows(rows, require_full_grid=False)
+    with pytest.raises(CoverageError, match="m2.*src2.*noise_s0.10"):
+        build(validated)
+
+
+def test_caller_cannot_shrink_official_grid():
+    with pytest.raises((CoverageError, ValueError, TypeError), match="official|canonical|grid"):
+        build(make_rows(), official_conditions=OFFICIAL[:7])
+
+
+def test_diagnostic_document_has_no_headline_key_recursively():
+    doc = build(make_rows(), threshold=PLACEHOLDER)
+
+    def keys(value):
+        if isinstance(value, dict):
+            yield from value
+            for child in value.values():
+                yield from keys(child)
+        elif isinstance(value, list):
+            for child in value:
+                yield from keys(child)
+
+    assert "headline" not in set(keys(doc))
+
+
+def test_pairing_is_invariant_to_method_b_row_order():
+    rows = make_rows(methods=("a", "b")).rows
+    first = build(validate_prediction_rows(rows, require_full_grid=False))
+    a_rows = [r for r in rows if r["method_id"] == "a"]
+    b_rows = [r for r in rows if r["method_id"] == "b"]
+    shuffled = validate_prediction_rows(a_rows + list(reversed(b_rows)), require_full_grid=False)
+    second = build(shuffled)
+    assert first["paired_deltas"] == second["paired_deltas"]
+
+
+def test_diagnostic_pairing_never_uses_positional_rows_for_unequal_keys():
+    rows = make_rows(methods=("a", "b")).rows
+    rows = [r for r in rows if not (
+        r["method_id"] == "b" and r["source_id"] == "src3" and
+        r["condition_id"] == "jpeg_q90"
+    )]
+    validated = validate_prediction_rows(rows, require_full_grid=False)
+    doc = build(validated, threshold=PLACEHOLDER, require_full_grid=False)
+    assert doc["paired_deltas"] == []
+    assert any("canonical key sets differ" in warning for warning in doc["warnings"])
+
+
+def test_frozen_threshold_cannot_be_fabricated_by_direct_constructor():
+    with pytest.raises(TypeError):
+        FrozenThreshold(value=0.5, artifact_sha256="a" * 64, payload={})
+
+
+def test_loaded_threshold_bytes_are_rehashed_during_assembly():
+    loaded = load_frozen_threshold(ROOT / "tests/fixtures/threshold_artifact.v1.json")
+    object.__setattr__(loaded, "raw_bytes", b"{}")
+    with pytest.raises(ValueError, match="digest"):
+        build(make_rows(), threshold=loaded)
+
+
+@pytest.mark.parametrize("replicates", [0, -1, True, 1.5])
+def test_invalid_bootstrap_replicates_refuse_before_metric_work(replicates):
+    with pytest.raises(ValueError, match="replicate"):
+        build(make_rows(), threshold=PLACEHOLDER, bootstrap_replicates=replicates)
+
+
+def test_all_zero_directional_flips_name_first_canonical_condition():
+    doc = build(make_rows(), threshold=PLACEHOLDER)
+    summary = doc["methods"][0]["diagnostic_summary"]
+    assert summary["max_directional_flip"]["real_to_fake_condition"] == "jpeg_q90"
+    assert summary["max_directional_flip"]["fake_to_real_condition"] == "jpeg_q90"
+
+
+def test_reportable_build_requires_current_run_manifest():
+    with pytest.raises(ValueError, match="eval-run-manifest"):
+        build_results(make_rows(), FROZEN, run_manifest=None, bootstrap_replicates=8)
+
+
+def test_dataset_manifest_must_equal_prediction_source_denominator():
+    validated = make_rows()
+    manifest = _run_manifest(validated)
+    path = ROOT / "data/manifests/smoke_v1.json"
+    manifest["dataset"]["manifest_path"] = "data/manifests/smoke_v1.json"
+    manifest["dataset"]["manifest_sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+    with pytest.raises(ValueError, match="source IDs"):
+        build(validated, run_manifest=manifest)
+
+
+@pytest.mark.parametrize(
+    ("mutate", "message"),
+    [
+        (lambda m: m["protocol"].__setitem__("transform_manifest_sha256", "0" * 64),
+         "transform_manifest.*digest"),
+        (lambda m: m["protocol"].__setitem__("golden_version", "stale"),
+         "golden_version"),
+        (lambda m: m["methods"][0].__setitem__("checkpoint_versions", []),
+         "checkpoint_versions"),
+        (lambda m: m["coverage"].__setitem__("successful_view_count", 79),
+         "successful_view_count"),
+        (lambda m: m.__setitem__("run_id", "another-run"), "run_id"),
+        (lambda m: m.__setitem__("seed", 7), "seed"),
+    ],
+)
+def test_provenance_mismatch_refuses_reportable_output(mutate, message):
+    validated = make_rows()
+    manifest = _run_manifest(validated)
+    mutate(manifest)
+    with pytest.raises(ValueError, match=message):
+        build(validated, run_manifest=manifest)
+
+
+def test_nonzero_failure_denominator_refuses_reportable_output():
+    validated = make_rows()
+    manifest = _run_manifest(validated)
+    ledger = ROOT / "tests/fixtures/eval_one_failure_ledger.json"
+    manifest["failure_ledger"] = {
+        "path": "tests/fixtures/eval_one_failure_ledger.json",
+        "sha256": hashlib.sha256(ledger.read_bytes()).hexdigest(),
+        "count": 1,
+    }
+    manifest["coverage"]["failure_count"] = 1
+    with pytest.raises(ValueError, match="denominator"):
+        build(validated, run_manifest=manifest)
+
+
+def test_unbound_freeze_digest_refuses_reportable_output():
+    validated = make_rows()
+    manifest = _run_manifest(validated)
+    manifest["production_freeze"]["manifest_sha256"] = "d" * 64
+    with pytest.raises(ValueError, match="does not bind"):
+        build(validated, run_manifest=manifest)
+
+
+def test_sealed_reference_requires_freeze_authorization():
+    validated = make_rows()
+    manifest = _run_manifest(validated)
+    manifest["dataset"]["sealed_reference"] = True
+    with pytest.raises(ValueError, match="sealed evaluation"):
+        build(validated, run_manifest=manifest)
+
+
+def test_sealed_reference_succeeds_only_when_freeze_authorizes_it():
+    validated = make_rows()
+    manifest = _run_manifest(validated)
+    manifest["dataset"]["sealed_reference"] = True
+    manifest["production_freeze"]["sealed_evaluation_authorized"] = True
+    _bind_freeze(manifest["production_freeze"])
+    doc = build(validated, run_manifest=manifest)
+    assert doc["dataset"]["sealed_reference"] is True
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    [
+        ({"threshold": PlaceholderThreshold(float("nan"), "PLACEHOLDER-bad")}, "finite"),
+        ({"threshold": PlaceholderThreshold(1.1, "PLACEHOLDER-bad")}, "finite"),
+        ({"threshold": PLACEHOLDER, "seed": True}, "seed"),
+        ({"threshold": PLACEHOLDER, "ece_bins": 0}, "ece_bins"),
+    ],
+)
+def test_invalid_eval_controls_refuse(kwargs, message):
+    with pytest.raises(ValueError, match=message):
+        build(make_rows(), **kwargs)

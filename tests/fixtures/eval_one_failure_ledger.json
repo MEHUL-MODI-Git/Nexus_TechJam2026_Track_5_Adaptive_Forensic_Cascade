@@ -1,0 +1,12 @@
+{
+  "schema_version": "eval-failure-ledger.v1",
+  "failures": [
+    {
+      "method_id": "m1",
+      "source_id": "src3",
+      "condition_id": "noise_s0.10",
+      "reason_code": "fixture_failure"
+    }
+  ],
+  "count": 1
+}

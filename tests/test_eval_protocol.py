@@ -3,7 +3,11 @@ import json
 
 import pytest
 
-from src.eval.protocol import load_frozen_threshold, load_prediction_rows, validate_prediction_rows
+from src.eval.protocol import (
+    load_frozen_threshold,
+    load_prediction_rows,
+    validate_prediction_rows,
+)
 from src.pipeline.transforms import CONDITION_IDS, FAMILY_OF
 
 
@@ -56,7 +60,8 @@ def _threshold_artifact():
         "n_dev_sources": 100,
         "n_dev_rows": 2000,
         "n_fake_sources_per_exact_condition_min": 50,
-        "bootstrap": {"replicates": 1000, "seed": 7},
+        "bootstrap": {"n_replicates": 1000, "seed": 7, "unit": "source_id",
+                       "stratified_by": "label", "interval": "percentile_95"},
         "dev_manifest_sha256": "b" * 64,
         "config_sha256": "c" * 64,
         "pipeline_version": "0.1.0",
@@ -131,6 +136,10 @@ def test_frozen_threshold_loader_validates_provenance_and_hashes(tmp_path):
     artifact = load_frozen_threshold(path)
     assert artifact.value == 0.5
     assert len(artifact.artifact_sha256) == 64
+    assert artifact.payload["bootstrap"] == {
+        "n_replicates": 1000, "seed": 7, "unit": "source_id",
+        "stratified_by": "label", "interval": "percentile_95",
+    }
 
 
 @pytest.mark.parametrize("field", ["dev_manifest_sha256", "config_sha256"])
