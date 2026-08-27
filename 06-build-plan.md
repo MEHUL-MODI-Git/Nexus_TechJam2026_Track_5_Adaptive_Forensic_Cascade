@@ -72,6 +72,106 @@ The **trained router + reliability/abstention layer is our original contribution
 
 **Exit test:** full-grid baseline table for the chosen primary on the smoke set; Gradio stress panel works; repo is public.
 
+## ⚠️ POST-LOTA REVISION — Phases 2R–5R supersede Phases 2–5 (PROPOSED 2026-08-27)
+
+**Proposed by Claude in `A-023`; NOT ADOPTED until Codex ACKs and `coordination/DECISIONS.md`
+carries both names.** Phases 2–5 below are preserved unedited as the record of what was
+planned; where 2R–5R disagree, 2R–5R win once ACKed.
+
+Trigger: Mehul's update pack `docs/techjam_track5_update/` (docs 09–12) after the LOTA
+checkpoint proved Baidu-gated. Evidence packet: `handoffs/2026-08-27_post-lota-replan.md`.
+
+### The three measurements this revision rests on
+
+1. **DegradePrint's response signature fails its own kill criterion.** The pack's cheap test
+   (doc 10 §11, bar ~+2 pt) was runnable at zero compute on the existing pilot cache.
+   Dev worst-family fake recall over 3 seeds at a fixed 5% clean FPR:
+   primary alone **0.211** → +quality **0.604** → +quality+response **0.612** → response-without-quality **0.254**.
+   Response-over-quality is **+0.8 pt with unstable sign**. Reproduce:
+   `.venv/bin/python scripts/diagnostics/degradeprint_probe.py [seed]`.
+   Measures the logit-space half only; embedding drift is untested and costs a cache rebuild.
+2. **Quality descriptors (task 1.4, already shipped) are the largest measured gain in the
+   project** — +39.3 pt on the worst family, at a *lower* clean FPR, for zero new compute.
+3. **No heavy expert fits the training cache.** 15k sources × 20 conditions = 300,000 rows at a
+   measured 7.83 rows/s = 10.6 h against the 12 h cap. PGC ≈ 311M and GAPL ≈ 305M params
+   (~1.2 GB each) are ~14× CF-384; base-view-only pushes the run over cap, base+probes far past it.
+
+### The architecture change
+
+> **The router head becomes a CORRECTION head over the primary logit conditioned on quality +
+> reliability features — not a convex FUSION head over experts.**
+
+`results/router-pilot/training.json` shows all four rungs identical and
+`router_earns_its_complexity: false`. The recorded reason (one expert ⇒ softmax weight 1.0) is
+true but incomplete: the router was degenerate **because fusion was its only lever**, not because
+its features are weak. Its 43 features already carry the 39-point signal in (2) with no way to
+apply it. Fusion re-enters only if a second always-on expert ever earns its slot.
+Consequence: `fusion_comparison_degenerate` becomes obsolete rather than merely inaccurate
+(resolves B-018 item 3 by deleting the claim, not the bias head).
+
+### Model slots after verification
+
+| slot | occupant | evidence |
+|---|---|---|
+| primary | **CF-384** (challengers measured, not assumed) | 21.8M, MIT, pinned-able |
+| complementary evidence | **quality descriptors + self-probes** (no second checkpoint) | +39.3 pt measured |
+| primary challenger | **PGC** (Apache-2.0, HF, 311M) · **GAPL** (MIT *on the model card only*, HF, 305M) | shootout on the existing 8,000-row grid, ~20–40 min each |
+| selective rescue | shootout winner, 6 h hard cap | scored by P(rescue correct \| primary wrong) |
+| killed | LOTA reproduction · DegradePrint response branch · PGC-as-always-on-expert | see packet §4 |
+
+### Phase 2R — Unblock, freeze, cache (Thu 27 Aug)
+
+| # | Task | Owner | Notes |
+|---|---|---|---|
+| 2R.1 | **Clear B-016 (E1–E5) and B-018; review B-017/B-019** | both | **No 2R work starts while blocks are open.** The cache run must not launch on blocked code. |
+| 2R.2 | Freeze feature + probe set; router head fusion → correction; embeddings **out** | Claude | The 10.6 h run is affordable once. Codex's cache requests due **~17:00 today**. |
+| 2R.3 | Cache-key bump **once**, golden + denylist re-verified fail-closed | Claude | Two bumps = two 10.6 h runs = no submission. |
+| 2R.4 | **Full 15k feature-cache run, ~18:00 Thu → ~05:00 Fri** | Claude | **Hard critical path.** Not started Thursday evening ⇒ no trained router. |
+
+**Exit test:** manifest completes with `denylist_protected: true`, cache key matches the frozen
+key object, zero sealed-reference hits, row count = sources × 20.
+
+### Phase 3R — Correction head + shootout (Fri 28 Aug, parallel)
+
+| # | Task | Owner | Notes |
+|---|---|---|---|
+| 3R.1 | Train correction-head ladder (static → logistic → MLP → +worst-group) on the frozen objective | Claude | Every rung an ablation row; negative results reported, not buried. |
+| 3R.2 | Calibration + threshold on held-out dev; one threshold across all conditions | Claude | Existing `calibration.py`; no per-condition tuning. |
+| 3R.3 | Ablation arms A/B/C/D from the diagnostic promoted to first-class rows | Claude | The DegradePrint negative result ships as a finding. |
+| 3R.4 | **Primary shootout: CF-384 vs PGC vs GAPL** on the existing 8,000-row grid | **Codex** | **Licence gate first** — GAPL's card-only MIT needs a decision. 3 h cap each. |
+
+**Exit test:** correction head beats static baseline on worst-family fake recall with clean BAcc
+regression ≤1 pt and FPR increase ≤1 pt — or the strongest simpler variant ships, stated honestly.
+
+### Phase 4R — Selective rescue, freeze, evaluation (Sat 29 – Sun 30 Aug)
+
+| # | Task | Owner | Notes |
+|---|---|---|---|
+| 4R.1 | Selective rescue with the shootout winner | Codex | **6 h hard cap**, then cut and report the negative ablation (doc 11 §13). |
+| 4R.2 | Rescue metrics: invocation / correction / harm rate, p50-p95 latency | Codex | Most inputs invoking rescue ⇒ the adaptive-compute story failed; say so. |
+| 4R.3 | **Freeze.** Architecture, threshold, calibration. No further tuning. | both | Joint gate. |
+| 4R.4 | Full ablation matrix + **one** sealed WildFake run | Claude | Phase-4 only; denylist evidence attached. |
+| 4R.5 | Robustness Evaluation Summary + Error Analysis Note (**required deliverables**) | Claude drafts, Codex reviews | Include the JPEG-30 limitation and the DegradePrint negative. |
+
+### Phase 5R — Ship (Sun 30 evening → Tue 1 Sept 09:00)
+
+Unchanged from Phase 5 below, plus two items that are now blocking:
+**repo must go public** (needs Mehul's explicit MIT approval *and* force-push approval — remote
+`main` still carries ~829 MB of raw SID-Set blobs), and the README must carry the
+reproducibility-as-a-design-constraint argument: three unobtainable artifacts (LOTA Baidu-gated,
+NPR unlicensed, GAPL licence card-only) against one clean counter-example (PGC).
+
+### Fallback ladder (revised)
+
+| time dies during… | what gets submitted |
+|---|---|
+| 2R (cache run fails) | CF-384 + correction head trained on the **24,000-row pilot** — already +39 pt on the worst family |
+| 3R | Correction head + calibration + full robustness table + stress demo |
+| 4R | Everything minus rescue, rescue reported as a negative ablation |
+| 5R | Everything; polish level varies |
+
+---
+
 ## Phase 2 — Router Corpus + Trained Fusion (Days 2–3, Thu 28 – Fri 29 Aug)
 
 **Goal: our trained layer beats the best single detector on robustness.**

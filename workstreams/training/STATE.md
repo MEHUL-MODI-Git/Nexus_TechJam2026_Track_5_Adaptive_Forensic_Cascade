@@ -1,54 +1,58 @@
 # training — router corpus, feature cache, router/fusion, calibration
-**Owner: Claude · Status: 🟢 FEATURE CACHE + ROUTER + CALIBRATION ALL BUILT & TESTED (awaiting a real corpus)**
+**Owner: Claude · Status: 🔴 router repair BLOCKED (B-018) · 🟡 POST-LOTA REPLAN PROPOSED (A-023), awaiting Codex ACK · corpus acquired (14,999), full cache NOT yet run**
 
-## ✅ Done 2026-08-26 / 27
-- **CORPUS ACQUISITION BUILT + PILOT ACQUIRED.** `scripts/build_router_corpus.py`: 1,200 sources (600 real / 600 fake) in **27 s** via HF parquet shards. The datasets-server `/rows` endpoint the smoke set used is anonymously rate-limited (hit HTTP 429) and cannot carry corpus scale.
-- **Methodological choice — BOTH CLASSES FROM SID-SET.** SID-Set publishes label 0 (real), 1 (fully synthetic), 2 (tampered); we take 0 and 1. Sourcing reals from COCO and fakes from SID-Set would let the router learn dataset artefacts (encoder, resolution, compression history) rather than AI-generation — and our quality descriptors would carry that shortcut straight into the model. One curation pipeline removes the confound.
-- **`src/router/train.py` + 14 tests** — trains the full ladder (static → logistic → MLP → MLP+worst-group) on the SAME dev split, standardizer fitted on **train rows only**, selection on the frozen objective's own quantity (worst-family fake recall), and an explicit `router_earns_its_complexity` verdict so a negative ablation is reported rather than buried.
-- Added **pyarrow** (needed to read corpus parquet AND to make cache storage spec-compliant) — recorded for Codex's ACK as lockfile owner.
+## ✅ Built (detail in `workstreams/training/CHANGELOG.md` — do not re-derive here)
+- **Corpus acquisition** `scripts/build_router_corpus.py` — 14,999 sources acquired (silent-underfill
+  defect R19 still open). **Both classes from SID-Set deliberately**: COCO-reals + SID-fakes would let
+  the router learn dataset artefacts, and our quality descriptors would carry that shortcut in.
+- **`src/router/feature_cache.py`** (30 tests) — spec v2: canonical cache key with refuse-to-append,
+  **fail-closed denylist** (no denylist ⇒ refuses to build), sealed hit **aborts** the job, never skips.
+- **`src/router/features.py` + `model.py`** (37 tests) — 43 features, every optional one a
+  `(value, is_present)` pair so *missing* never reads as *measured*; standardizer fits on train rows only.
+- **`src/router/calibration.py`** (30 tests) — frozen threshold objective: bootstrap worst-FAMILY fake
+  recall, clean excluded from the minimum, severities pooled, `source_id` as the resampling unit.
+- **`src/router/train.py`** (14 tests) — full ladder + explicit `router_earns_its_complexity` verdict.
+  **Currently BLOCKED by B-018.**
+- **`scripts/diagnostics/degradeprint_probe.py`** — the DegradePrint kill test; see CHANGELOG for the
+  arm table. **Response branch failed; quality descriptors won by +39.3 pt.**
 
-## ⚠️ MEASURED AT PHASE-2 ENTRY — THE 30k CORPUS TARGET DOES NOT FIT THE 12h CAP
-Real corpus images are 1024×1024; my earlier 9.3h projection came from 14 ms/img on 256px golden fixtures and was **optimistic by ~2.3x**.
-Measured: **7.83 rows/sec** (1 expert + 3 probes per row).
-| sources | projected cache time | vs 12h cap |
-|---|---|---|
-| 30,000 (frozen target) | **21.3 h** | **EXCEEDS** |
-| 16,900 | 12.0 h | at the cap |
-| **15,000 (recommended)** | **10.6 h** | within, with margin |
-| 12,000 (frozen minimum) | 8.5 h | within |
-Per the frozen decision, the response is to **shrink SOURCE COUNT, never transform/class/family coverage**. Recommend **15k sources (7.5k/class)**. Batched inference is the obvious speed-up (4 forwards/row are currently issued singly) but it changes a reviewed adapter, so it is proposed rather than done.
-- **`src/router/feature_cache.py` BUILT + 30 tests** — the Phase-2 backbone, implementing frozen spec v2. Canonical-JSON `cache_key` with **refuse-to-append on mismatch**; `feature-cache-row.v1` rows (per-expert blocks, probe blocks, quality block, pairwise disagreement or null); resumable by `view_id`; atomic manifest storing the key object so the key is re-derivable.
-- **Contamination protection fails CLOSED:** with no denylist supplied the builder **refuses to run at all** rather than quietly building an unprotected fitting cache; an unprotected build must be explicitly acknowledged and is stamped `UNPROTECTED_SMOKE_ONLY` in the manifest. A sealed-reference hit **aborts the whole job** — never a skip, because a skip hides a contaminated manifest. `dataset_split` is restricted to train/dev and `val2017` is rejected outright.
-- **Recorded spec deviation:** the spec names Parquet; `pyarrow` is not in the lockfile and adding a dependency to Codex's locked `pyproject.toml` while it is offline is not a call to make in passing. Storage is pluggable and the manifest records `storage_format: jsonl` plus the reason. Rows are schema-identical either way. Flagged to Codex for ACK.
-- **`src/router/features.py` + `src/router/model.py` BUILT + 37 tests.** The whole fusion ladder from doc 04 behind one interface so ablations compare like with like: `StaticAverageFusion` (rung 1, zero parameters — the baseline the router must beat), `LogisticRouter` (rung 2, the complexity control), `MLPRouter` (rung 3, doc 03 step 6: Linear32→GELU→Dropout→Linear16→GELU→two heads, **1,987 params**), plus `worst_group_loss` (rung 4 — aligns training with our headline worst-family metric instead of the overall mean we never report).
-- **Missing-value discipline is now arithmetic, not a promise:** every optional feature is a `(value, is_present)` pair. Critically, with LOTA parked EVERY row lacks disagreement features — imputing zeros would tell the router "the experts agreed perfectly" on every image. Tested. `probe_flip` is encoded tri-state so *unknown* stays distinct from *measured-and-stable*.
-- **Entropy is computed from `p_fake` at assembly, never read from the cache** — tested with a poisoned cache value that must be ignored (Codex B-009's canonical-helper requirement).
-- **Availability masking:** an unavailable expert receives EXACTLY zero weight; a row with no available expert gets all-zero weights (no verdict) rather than a uniform guess over nothing.
-- **Standardizer fits on TRAIN ROWS ONLY** and leaves indicator columns untouched (rescaling a presence flag by its train frequency would make "missing" mean different things per block).
-- **LEARNABILITY VERIFIED (synthetic):** in a world where each expert is reliable in a different context, static averaging sits at <0.65 accuracy while the trained router reaches >0.90. The architecture's central premise is implementable — this test fails loudly if that ever stops being true.
-- **`src/router/calibration.py` BUILT + 30 tests** — the frozen threshold objective implemented exactly: bootstrap-mean worst-FAMILY fake recall over the 6 transform families, **clean excluded from the minimum** (enters only via constraints), **severities pooled within family**, **label-stratified bootstrap with `source_id` as the resampling unit** (views travel together). Plus `threshold-artifact.v1`, temperature+bias calibration fitted by NLL on dev, ECE with 15 fixed bins, and canonical `binary_entropy` (the helper Codex asked for so entropy is computed at consumption, never stored).
-  - Infeasible runs record `feasible=False` and fall back to baseline **rather than silently relaxing a constraint we agreed to**.
-  - Families with no fake rows are SKIPPED, not counted as zero — an absent measurement is not a failure to detect.
-  - Exact-condition upgrade (≥500 fake sources/condition) is DETECTED and flagged in the artifact, but not taken automatically.
-- **`specs/phase2-feature-cache.md` v2 FROZEN** — Codex returned APPROVE-WITH-FIXES (B-009); all 6 required fixes applied `[F1]`–`[F6]` + both preference calls. Fixes worth remembering: the duplicate-SHA rule was WRONG (all 20 views of a source share `original_sha256`, so it would have rejected the whole cache — corrected to one-SHA→one-`source_id`); added `view_rgb_sha256` because `original_sha256` cannot identify transformed content; removed `threshold_agreement` from the raw cache (threshold-dependent value must not be baked into a threshold-free artifact); cache key now hashes canonical JSON, not pipe-concatenation. Replay mapping to `prediction-row.v1` agreed in §8. Originally — closes a real gap: the spec-freeze entry had listed "feature-cache row v1" as frozen when it had never been written. Covers `feature-cache-row.v1` schema (per-expert blocks, probe block, quality block, disagreement-or-null), `cache_key` = hash of PIPELINE+PROBE versions + configs + expert fingerprints with refuse-to-append on mismatch, Parquet layout + resumability, the 4 in-code hard constraints (sealed-subset denylist ABORTS not skips), throughput budget, and a 7-item DoD.
-- **Throughput budget computed from the real Phase-0 measurement:** 14 ms/img on MPS ⇒ ~1.1 s/source at 20 conditions × (1 expert + 3 probes) ⇒ **30k sources ≈ 9.3h, 12k ≈ 3.7h — both inside the agreed ≤12h cap** before batching gains. Re-measure on ≥200 sources at Phase-2 entry before committing.
-- Nothing built (code). Strategy fixed in `docs/04-training-and-data.md`: 20–40k corpus (GenImage + filtered SID-Set), grouped splits, WildFake hash denylist, fusion ladder (static avg → logistic → MLP router → +worst-group loss).
+## ⚠️ FROZEN COMPUTE FACT — the 30k target does not fit the 12 h cap
+Measured **7.83 rows/sec** on real 1024×1024 corpus images (pilot re-derives 7.55: 24,000 rows in
+53 min). 30k sources ⇒ 21.3 h (**over cap**); **15k ⇒ 10.6 h (adopted)**; 12k ⇒ 8.5 h. The earlier
+9.3 h figure came from 256px fixtures and was optimistic by ~2.3×. Per the frozen rule the response
+is to shrink **source count, never coverage**. Same arithmetic kills a heavy second expert in the
+cache: PGC ≈311M / GAPL ≈305M are ~14× CF-384, and 300,000 rows cannot absorb that (A-023 §3).
+Batched inference is the obvious speed-up but it changes a reviewed adapter — proposed, not done.
 
-## ▶ NEXT ACTION (when unblocked at Phase 2 entry)
-1. Measure Phase-1 caching throughput on MPS → post compute decision (local vs Colab) as GATE-adjacent CHANNEL message; joint decision with Codex + Mehul.
-2. Build WildFake-subset hash denylist FIRST (`scripts/build_denylist.py`) — it gates every later job.
-3. Corpus download + manifest (delegate downloads to Sonnet subagent; verify counts/licenses heavy-side).
-4. Feature cache job (`scripts/cache_features.py`) per doc 04 schema; 20% clean / 80% single-transform sampling.
-5. Fusion ladder training + calibration; every rung logged as an ablation row for eval workstream.
+## ▶ NEXT ACTION — strictly in this order (119 h to submit; the cache run is the critical path)
+1. **Reply to B-018 itemised** (router repair BLOCK): consumed-field validation (`raw_logit=NaN`
+   must fail, missing raw logits must not become 0.0), unknown-split/inconsistent-label rejection,
+   checkpoint loader + save→load prediction-parity test, BCEWithLogits, the ≥2 pt kill gate, and the
+   learnability test still passing probabilities into a logit API. **Counter item 3 with A-023's
+   correction-head argument, not by removing the bias head.**
+2. **Reply to B-016 E1–E5** (eval boundary) — Codex owns `src/eval/`; agree acceptance cases first.
+3. **On Codex's A-023 ACK:** write the DECISIONS entry (both names), then implement the correction
+   head and freeze the feature/probe set. **Embeddings stay OUT** unless Codex counters with evidence.
+4. **Collect Codex's cache requests by ~17:00 today, bump the cache key ONCE**, re-verify goldens +
+   fail-closed denylist, then **launch the 15k full cache run ~18:00 Thu → ~05:00 Fri (10.6 h)**.
+   A second bump costs another 10.6 h and there is no room for one.
+5. Fri: correction-head ladder + calibration + threshold on dev; promote diagnostic arms A/B/C/D to
+   first-class ablation rows so the DegradePrint negative ships as a finding.
+
+**Fallback if the cache run fails:** train on the existing 24,000-row pilot — already +39 pt on the
+worst family. Say so honestly; it is a real result.
 
 ## Other open threads (do not lose)
-- Self-probe set (JPEG 92 / crop 97% / resize 0.90) is provisional — ablate one probe at a time (doc 08).
-- Worst-group loss has kill criteria: drop if clean BAcc −1pt without +2pt worst-group gain.
+- Probe set (JPEG 92 / crop 97 / resize 0.90) is provisional — but A-023 measured the probes' response
+  features as near-worthless on top of quality, so **adding a 4th probe is NOT worth a cache-key bump**.
+- Worst-group loss kill criteria: drop if clean BAcc −1 pt without +2 pt worst-group gain.
+- R19 silent corpus underfill (14,999 vs 15,000 requested) still unfixed.
 
 ## Literal next command
 ```
-# blocked — first command when unblocked:
-cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && python scripts/bench_throughput.py --n 500
+cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && \
+  .venv/bin/python scripts/diagnostics/degradeprint_probe.py 0 && \
+  tail -60 coordination/CHANNEL.md
 ```
 
 ## Hard constraints
@@ -59,6 +63,6 @@ cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && python scripts/bench_
 ## Read next
 | Task | Read |
 |---|---|
+| **The current plan** | `06-build-plan.md` **Phases 2R–5R** + `handoffs/2026-08-27_post-lota-replan.md` |
 | Corpus/splits/denylist | `docs/04-training-and-data.md` |
-| Router architecture + features | `docs/03-recommended-architecture.md` steps 4–8 |
 | Kill criteria | `docs/08-risks-kill-criteria-open-questions.md` |
