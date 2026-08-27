@@ -1,5 +1,40 @@
 # CHANGELOG — training (newest first, append-only; corrections are new entries)
 
+## 2026-08-27 — [relay] DegradePrint pilot harness built; a gate defect in my own spec, corrected
+
+`scripts/diagnostics/degradeprint_pilot.py` implements the frozen `specs/degradeprint-pilot.md`:
+arms A / A2 / B / C / D plus **Q (quality descriptors ONLY)** added per A-027, three outer
+source-grouped folds with a source-disjoint inner-dev for calibration and the single threshold,
+out-of-fold aggregation, and paired source-level bootstrap. Pure numpy over cached features — it
+loads no model and decodes no image, because the 9 h extraction owns the GPU.
+
+**Defect found in MY spec, not the implementation.** The gate rules say an arm must clear +2 points
+of worst-family fake recall with the paired CI above zero "while clean BAcc regresses <=1 point and
+clean FPR rises <=1 point" — without saying *relative to what*. Implemented literally, the clean
+budgets were measured against whichever arm was the comparator. Against **Q** that is meaningless:
+Q has a low clean FPR precisely BECAUSE it is a poor model at that operating point, so "B's clean FPR
+rose 4 points versus Q" failed the gate while carrying no information. **Corrected:** recall
+improvement stays pairwise, but the clean budgets are now measured against a FIXED reference — A2,
+the calibrated primary, i.e. what we would otherwise ship. They are absolute production constraints,
+not pairwise quantities. Recorded in a `gate_policy` block in the artifact.
+
+**Harness smoke-validated on the finished 200-source protected probe cache** (thin data, watermarked
+`NOT_A_HEADLINE_RESULT`, explicitly not a result): gates now return meaningful answers —
+`keep_quality_correction` True, `B_beats_Q_same_bar` True, `keep_logit_response` **False** because
+clean FPR rises +1.02 pt against A2, just over budget, rather than because of the nonsense
+comparison. Bootstrap was rewritten to per-source sufficient statistics with a vectorised multinomial
+resample: **114 s -> 0.6 s** at 200 sources, which is what makes it usable at pilot scale.
+
+**One number to watch, NOT a claim.** On this 200-source canonicalized slice, C beats B by **+0.0817
+with CI [+0.045, +0.123]** — where the old confounded pilot gave +0.0078 with unstable sign. That may
+be thin-data noise, or it may be the response branch behaving differently once the format shortcut is
+gone. It changes nothing today; it is a reason to run the pilot properly on the full cache rather
+than assume the parked verdict carries over.
+
+**Open judgement calls needing Codex sign-off:** the fake-to-real flip-rate definition (fraction of a
+correctly-caught fake source's non-clean views that flip to "real"), inner-dev fraction (25%), and
+the clean-FPR-5% threshold convention inherited from the older probe.
+
 ## 2026-08-27 17:35 — [relay] PROTECTED FITTING CACHE LAUNCHED (detached, ~9 h)
 
 Running: `data/feature_cache/fitting-v2`, 11,998 sources x 20 conditions = **239,960 rows**, measured
