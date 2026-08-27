@@ -1,5 +1,26 @@
 # CHANGELOG — training (newest first, append-only; corrections are new entries)
 
+## 2026-08-27 — [relay] deliverable drafting; caught an unverified number in our own record
+
+Drafted `deliverables/devpost-draft.md` (required deliverable #1), targeting the published judging
+weights: Technical Execution 35%, Innovation & Insight 20%, Impact 20%, Feasibility 15%,
+Presentation 10%. Worth noting for planning: **accuracy is not itself a judging criterion and the
+brief sets no minimum threshold**, so the rigor work maps onto ~70% of the score.
+
+**Verifying my own draft caught a number this project has been repeating without a threshold
+attached.** STATUS has claimed since Phase 1 that `blur_s2.0` shows "AUROC 0.6470 with FPR 0.640". The
+AUROC is right. The FPR is **threshold-dependent and was never qualified**: at the naive 0.5 default
+it is **0.315**, and 0.640 only holds at the calibrated **0.016** operating point.
+
+Re-derived from the committed 8,000-row grid, the honest and considerably sharper statement is:
+**at the single operating point that yields 1.0% false positives on clean images, blur at sigma 2.0
+yields 64.0%** — a 64x increase from one threshold, not a number floating free of its cut. At the 0.5
+default the same condition gives 31.5%, so the effect is not an artifact of a badly chosen threshold.
+Both figures now travel with their threshold in the draft.
+
+Verified in passing and unchanged: clean AUROC 0.9923, `blur_s2.0` AUROC 0.6471, `jpeg_q30` fake
+recall 0.115, `noise_s0.10` fake recall 0.015.
+
 ## 2026-08-27 — [relay] B-024 round-2 router repair complete and owner-verified (688 tests)
 
 Codex's B-024 BLOCK is repaired against `specs/router-repair-b024.md`, by the route B-024 required:
