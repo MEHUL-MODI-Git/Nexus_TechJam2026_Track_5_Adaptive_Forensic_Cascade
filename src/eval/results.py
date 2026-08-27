@@ -48,7 +48,11 @@ from .metrics import (
     signed_drop,
     worst_condition,
 )
-from .protocol import FrozenThreshold, ValidatedPredictionRows
+from .protocol import (
+    FrozenThreshold,
+    ValidatedPredictionRows,
+    _validate_threshold_payload,
+)
 
 EVAL_SCHEMA = "eval-results.v1"
 DIAGNOSTIC_SCHEMA = "diagnostic-results.v1"
@@ -366,9 +370,10 @@ def _validate_loaded_threshold(source: FrozenThreshold) -> None:
         reparsed = json.loads(source.raw_bytes)
     except json.JSONDecodeError as exc:
         raise ValueError("FrozenThreshold loaded bytes are not valid JSON") from exc
+    validated_value = _validate_threshold_payload(reparsed)
     if reparsed != source.payload:
         raise ValueError("FrozenThreshold payload differs from its exact loaded bytes")
-    if source.payload.get("threshold") != source.value:
+    if validated_value != source.value:
         raise ValueError("FrozenThreshold value differs from its validated payload")
 
 
@@ -733,7 +738,7 @@ def build_results(
     _validate_metric_controls(bootstrap_replicates, seed, ece_bins)
     threshold = float(threshold_source.value)
     provenance = (threshold_source.provenance if diagnostic
-                  else threshold_source.payload.get("threshold_provenance", "held-out-dev"))
+                  else threshold_source.payload.get("threshold_provenance", "unspecified"))
 
     grouped = _key_rows(validated.rows)
     method_ids = sorted({m for m, _ in grouped})

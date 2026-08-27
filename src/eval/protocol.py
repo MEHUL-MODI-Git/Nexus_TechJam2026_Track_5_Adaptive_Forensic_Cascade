@@ -110,8 +110,11 @@ class FrozenThreshold:
 
     @classmethod
     def _from_loader(
-        cls, value: float, digest: str, payload: dict[str, Any], raw_bytes: bytes
+        cls, value: float, digest: str, payload: dict[str, Any], raw_bytes: bytes,
+        capability: object,
     ) -> FrozenThreshold:
+        if capability is not _THRESHOLD_CAPABILITY:
+            raise TypeError("FrozenThreshold capabilities are loader-only")
         instance = object.__new__(cls)
         object.__setattr__(instance, "value", value)
         object.__setattr__(instance, "artifact_sha256", digest)
@@ -281,10 +284,19 @@ def load_frozen_threshold(path: str | Path) -> FrozenThreshold:
     """Read a fully-provenanced threshold artifact without importing fit code."""
     path = Path(path)
     raw = path.read_bytes()
-    try:
-        payload = json.loads(raw)
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"invalid threshold artifact JSON: {exc.msg}") from exc
+    payload, threshold = _validate_threshold_bytes(raw)
+    digest = hashlib.sha256(raw).hexdigest()
+    return FrozenThreshold._from_loader(
+        value=threshold,
+        digest=digest,
+        payload=payload,
+        raw_bytes=raw,
+        capability=_THRESHOLD_CAPABILITY,
+    )
+
+
+def _validate_threshold_payload(payload: Any) -> float:
+    """Validate the complete threshold-artifact.v1 schema and return its value."""
     if not isinstance(payload, dict):
         raise ValueError("threshold artifact must be a JSON object")
     missing = _THRESHOLD_FIELDS - set(payload)
@@ -358,9 +370,13 @@ def load_frozen_threshold(path: str | Path) -> FrozenThreshold:
         isinstance(item, str) for item in payload["warnings"]
     ):
         raise ValueError("threshold warnings must be a list of strings")
-    return FrozenThreshold._from_loader(
-        value=threshold,
-        digest=hashlib.sha256(raw).hexdigest(),
-        payload=payload,
-        raw_bytes=raw,
-    )
+    return threshold
+
+
+def _validate_threshold_bytes(raw: bytes) -> tuple[dict[str, Any], float]:
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"invalid threshold artifact JSON: {exc.msg}") from exc
+    threshold = _validate_threshold_payload(payload)
+    return payload, threshold

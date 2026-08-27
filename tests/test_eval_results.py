@@ -13,6 +13,7 @@ import numpy as np
 import pytest
 
 from src.eval.protocol import (
+    _THRESHOLD_CAPABILITY,
     FrozenThreshold,
     load_frozen_threshold,
     validate_prediction_rows,
@@ -360,6 +361,22 @@ def test_loaded_threshold_bytes_are_rehashed_during_assembly():
     object.__setattr__(loaded, "raw_bytes", b"{}")
     with pytest.raises(ValueError, match="digest"):
         build(make_rows(), threshold=loaded)
+
+
+def test_internally_consistent_forged_threshold_bytes_still_fail_schema_validation():
+    raw = json.dumps({"threshold": 0.5}).encode()
+    forged = FrozenThreshold._from_loader(
+        0.5, hashlib.sha256(raw).hexdigest(), {"threshold": 0.5}, raw,
+        _THRESHOLD_CAPABILITY,
+    )
+    with pytest.raises(ValueError, match="missing required fields"):
+        build(make_rows(), threshold=forged)
+
+
+def test_loaded_fixture_still_produces_reportable_output():
+    document = build(make_rows(), threshold=FROZEN)
+    assert document["schema_version"] == EVAL_SCHEMA
+    assert document["protocol"]["threshold_provenance"] == "unspecified"
 
 
 @pytest.mark.parametrize("replicates", [0, -1, True, 1.5])
