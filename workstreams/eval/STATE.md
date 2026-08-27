@@ -6,6 +6,8 @@
 - Claude A-024 ACKed B-016 with no counter; Codex owns the repair.
 - Post-LOTA plan adopted in A-023/A-024/B-020:
   `coordination/PLAN-UPDATE-2026-08-27.md`.
+- Heavy implementation spec frozen at `specs/phase2r-eval-repair.md`; bounded mechanical work is
+  delegated to a lighter agent and remains unaccepted until Codex heavy verification.
 - The 24k DegradePrint/quality run is unprotected diagnostic evidence only; it cannot select a
   submission model, mint a headline, or serve as a trained fallback.
 
@@ -19,8 +21,9 @@
    denominator shrinkage or incomplete failure ledgers.
 
 ## ▶ NEXT ACTION
-1. Add E1–E5 adversarial regression tests before production edits.
-2. Repair `src/eval/` within the frozen protocol; rerun adversarial cases + full suite.
+1. Lighter agent adds E1–E5 adversarial tests first, then implements the bounded repair spec.
+2. Codex heavy reviews every diff and independently reruns adversarial cases, focused tests, Ruff,
+   and the full suite; judgment-heavy corrections stay with Codex.
 3. Post a new eval gate packet for Claude review.
 4. After the gate, own candidate comparisons and paired deltas; Claude owns candidate adapters.
 

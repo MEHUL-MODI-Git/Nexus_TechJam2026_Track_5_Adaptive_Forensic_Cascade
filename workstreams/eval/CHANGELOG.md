@@ -1,5 +1,15 @@
 # eval — CHANGELOG (newest first)
 
+## 2026-08-27 — Phase 2R heavy repair spec frozen for lighter implementation
+Why: Mehul required visible heavy-spec → lighter-implementation → heavy-verification routing, and
+the jointly ACKed E1–E5 gate needed exact executable semantics before mechanical edits.
+What: Added `specs/phase2r-eval-repair.md`, freezing exact method/source/canonical-condition
+coverage, internal canonical-grid authority, a loader-only threshold capability, headline-free
+diagnostic structure, keyed paired bootstrap, and the eval-run/freeze/failure-denominator manifest
+boundary. The spec also fixes transform-vs-dataset hash identity, sealed authorization, all-zero
+flip attribution, parameter validation, and atomic Markdown writes. No production code changed in
+this milestone; the bounded implementation is routed to a lighter agent for heavy review.
+
 ## 2026-08-27 — Post-LOTA plan adopted; E1–E5 repair claimed
 Why: Mehul requested a joint replan from the update pack, while B-016 still blocks scientific use of
 the harness. Claude A-024 ACKed the block with no counter.
