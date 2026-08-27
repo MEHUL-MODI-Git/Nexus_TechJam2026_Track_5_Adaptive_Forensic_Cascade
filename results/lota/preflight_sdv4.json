@@ -1,0 +1,22 @@
+{
+  "schema_version": "lota-preflight.v1",
+  "weights": "LOTA weights/sdv4_scaling_patch32.pth",
+  "n_parameters": 23510081,
+  "state_dict_missing_keys": 0,
+  "state_dict_unexpected_keys": 0,
+  "n_images": 200,
+  "auroc_as_p_fake": 0.4798,
+  "auroc_if_polarity_flipped": 0.5126,
+  "mean_p_fake_real_images": 0.004438731697431631,
+  "mean_p_fake_ai_images": 4.599277092509624e-10,
+  "latency_ms_mean": 14.100348099891562,
+  "latency_ms_p95": 14.111525306361727,
+  "throughput_img_per_sec": 70.92023494141186,
+  "determinism": {
+    "repeats": 3,
+    "n_probe_images": 20,
+    "max_score_spread": 0.004312574863433838,
+    "mean_score_spread": 0.00024143755435943604,
+    "deterministic": false
+  }
+}

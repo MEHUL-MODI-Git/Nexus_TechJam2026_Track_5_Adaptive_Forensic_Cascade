@@ -17,6 +17,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 HF_CACHE_DIR = REPO_ROOT / "data" / "hf_cache"
+TORCH_CACHE_DIR = REPO_ROOT / "data" / "torch_cache"
 
 
 def use_repo_local_cache() -> Path:
@@ -24,3 +25,15 @@ def use_repo_local_cache() -> Path:
     HF_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     os.environ.setdefault("HF_HOME", str(HF_CACHE_DIR))
     return Path(os.environ["HF_HOME"])
+
+
+def use_repo_local_torch_cache() -> Path:
+    """Same for `torch.hub` / `model_zoo`, which default to `~/.cache/torch`.
+
+    Third-party model code (LOTA's `resnet50(pretrained=True)`, for one) pulls
+    ImageNet weights through `torch.utils.model_zoo` as a side effect of being
+    constructed, so this must be set before such a module is imported or built.
+    """
+    TORCH_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    os.environ.setdefault("TORCH_HOME", str(TORCH_CACHE_DIR))
+    return Path(os.environ["TORCH_HOME"])

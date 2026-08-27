@@ -22,6 +22,9 @@ data/smoke/images/
 data/corpus/images/
 checkpoints/
 models/
+*.pth
+*.pt
+*.ckpt
 .cache/
 **/huggingface/
 **/hub/
@@ -71,3 +74,5 @@ data/sealed/
 # Hugging Face cache, kept inside the repo rather than ~/.cache (Mehul, 27 Aug).
 # Re-downloadable; never committed.
 data/hf_cache/
+data/torch_cache/
+third_party/
