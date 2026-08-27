@@ -1,9 +1,9 @@
 {
   "manifest": "data/manifests/router_corpus_v2.json",
   "seed": 0,
-  "n_per_class_requested": 12,
-  "n_real_sampled": 12,
-  "n_fake_sampled": 12,
+  "n_per_class_requested": 400,
+  "n_real_sampled": 400,
+  "n_fake_sampled": 400,
   "quality_keys": [
     "blur_varlap",
     "blockiness",
@@ -17,218 +17,218 @@
   "blockiness_threshold": 1.05,
   "variants": {
     "native": {
-      "n_rows": 24,
-      "blockiness_auroc": 0.8611111111111112,
+      "n_rows": 800,
+      "blockiness_auroc": 0.90486875,
       "blockiness_auroc_direction": "higher=real",
       "per_descriptor_auroc": {
         "blur_varlap": {
-          "auroc": 0.7152777777777778,
+          "auroc": 0.5029874999999999,
           "direction": "higher=real"
         },
         "blockiness": {
-          "auroc": 0.8611111111111112,
+          "auroc": 0.90486875,
           "direction": "higher=real"
         },
         "noise_sigma": {
-          "auroc": 0.9166666666666666,
+          "auroc": 0.822065625,
           "direction": "higher=real"
         },
         "luminance_mean": {
-          "auroc": 0.6180555555555556,
+          "auroc": 0.62415625,
           "direction": "higher=real"
         },
         "luminance_std": {
-          "auroc": 0.7847222222222222,
+          "auroc": 0.559975,
           "direction": "higher=real"
         },
         "saturation_mean": {
-          "auroc": 0.6388888888888888,
+          "auroc": 0.64150625,
           "direction": "higher=fake"
         },
         "clipped_low_frac": {
-          "auroc": 0.6319444444444444,
-          "direction": "higher=real"
+          "auroc": 0.538665625,
+          "direction": "higher=fake"
         },
         "clipped_high_frac": {
-          "auroc": 0.6006944444444444,
+          "auroc": 0.722503125,
           "direction": "higher=real"
         }
       },
       "logistic_all_descriptors": {
-        "n_train": 18,
-        "n_dev": 6,
+        "n_train": 600,
+        "n_dev": 200,
         "n_features": 8,
-        "dev_auroc": 0.875
+        "dev_auroc": 0.9872796474358975
       },
       "blockiness_class_stats": {
-        "real_mean": 1.0236113825042195,
-        "real_std": 0.03854017830617097,
-        "fake_mean": 0.9905358237974299,
-        "fake_std": 0.011341172397836918,
-        "real_frac_above_1.05": 0.25,
-        "fake_frac_above_1.05": 0.0
+        "real_mean": 1.1018867339504348,
+        "real_std": 0.12659336461633638,
+        "fake_mean": 0.9954258134414462,
+        "fake_std": 0.04095191197103302,
+        "real_frac_above_1.05": 0.5425,
+        "fake_frac_above_1.05": 0.0225
       }
     },
     "jpeg_q95": {
-      "n_rows": 24,
-      "blockiness_auroc": 0.5277777777777778,
-      "blockiness_auroc_direction": "higher=fake",
+      "n_rows": 800,
+      "blockiness_auroc": 0.63584375,
+      "blockiness_auroc_direction": "higher=real",
       "per_descriptor_auroc": {
         "blur_varlap": {
-          "auroc": 0.7222222222222222,
+          "auroc": 0.5009812499999999,
           "direction": "higher=real"
         },
         "blockiness": {
-          "auroc": 0.5277777777777778,
-          "direction": "higher=fake"
+          "auroc": 0.63584375,
+          "direction": "higher=real"
         },
         "noise_sigma": {
-          "auroc": 0.9166666666666666,
+          "auroc": 0.8272625,
           "direction": "higher=real"
         },
         "luminance_mean": {
-          "auroc": 0.6180555555555556,
+          "auroc": 0.6241375,
           "direction": "higher=real"
         },
         "luminance_std": {
-          "auroc": 0.7847222222222222,
+          "auroc": 0.5598562499999999,
           "direction": "higher=real"
         },
         "saturation_mean": {
-          "auroc": 0.6458333333333334,
+          "auroc": 0.64075,
           "direction": "higher=fake"
         },
         "clipped_low_frac": {
-          "auroc": 0.6423611111111112,
-          "direction": "higher=real"
+          "auroc": 0.54666875,
+          "direction": "higher=fake"
         },
         "clipped_high_frac": {
-          "auroc": 0.5486111111111112,
+          "auroc": 0.674740625,
           "direction": "higher=real"
         }
       },
       "logistic_all_descriptors": {
-        "n_train": 18,
-        "n_dev": 6,
+        "n_train": 600,
+        "n_dev": 200,
         "n_features": 8,
-        "dev_auroc": 0.75
+        "dev_auroc": 0.9741586538461539
       },
       "blockiness_class_stats": {
-        "real_mean": 1.043909687873061,
-        "real_std": 0.05163093978640393,
-        "fake_mean": 1.0600930012837722,
-        "fake_std": 0.039730463551882936,
-        "real_frac_above_1.05": 0.4166666666666667,
-        "fake_frac_above_1.05": 0.4166666666666667
+        "real_mean": 1.1187382859401487,
+        "real_std": 0.12263509326439992,
+        "fake_mean": 1.0667340627924333,
+        "fake_std": 0.05875217768474267,
+        "real_frac_above_1.05": 0.675,
+        "fake_frac_above_1.05": 0.53
       }
     },
     "jpeg_q75": {
-      "n_rows": 24,
-      "blockiness_auroc": 0.6041666666666666,
+      "n_rows": 800,
+      "blockiness_auroc": 0.52558125,
       "blockiness_auroc_direction": "higher=fake",
       "per_descriptor_auroc": {
         "blur_varlap": {
-          "auroc": 0.6736111111111112,
-          "direction": "higher=real"
+          "auroc": 0.5077625,
+          "direction": "higher=fake"
         },
         "blockiness": {
-          "auroc": 0.6041666666666666,
+          "auroc": 0.52558125,
           "direction": "higher=fake"
         },
         "noise_sigma": {
-          "auroc": 0.8645833333333334,
+          "auroc": 0.85699375,
           "direction": "higher=real"
         },
         "luminance_mean": {
-          "auroc": 0.6180555555555556,
+          "auroc": 0.6241,
           "direction": "higher=real"
         },
         "luminance_std": {
-          "auroc": 0.7847222222222222,
+          "auroc": 0.5598875,
           "direction": "higher=real"
         },
         "saturation_mean": {
-          "auroc": 0.6458333333333334,
+          "auroc": 0.63815625,
           "direction": "higher=fake"
         },
         "clipped_low_frac": {
-          "auroc": 0.5833333333333333,
-          "direction": "higher=real"
+          "auroc": 0.564509375,
+          "direction": "higher=fake"
         },
         "clipped_high_frac": {
-          "auroc": 0.5381944444444444,
-          "direction": "higher=fake"
+          "auroc": 0.647959375,
+          "direction": "higher=real"
         }
       },
       "logistic_all_descriptors": {
-        "n_train": 18,
-        "n_dev": 6,
+        "n_train": 600,
+        "n_dev": 200,
         "n_features": 8,
-        "dev_auroc": 0.75
+        "dev_auroc": 0.9498197115384616
       },
       "blockiness_class_stats": {
-        "real_mean": 1.2441091656611283,
-        "real_std": 0.06668921465407944,
-        "fake_mean": 1.287714649366494,
-        "fake_std": 0.09873299345394256,
-        "real_frac_above_1.05": 1.0,
+        "real_mean": 1.2925524475088874,
+        "real_std": 0.1683143737687528,
+        "fake_mean": 1.2949834549720598,
+        "fake_std": 0.12626317767506415,
+        "real_frac_above_1.05": 0.97,
         "fake_frac_above_1.05": 1.0
       }
     },
     "png": {
-      "n_rows": 24,
-      "blockiness_auroc": 0.8611111111111112,
+      "n_rows": 800,
+      "blockiness_auroc": 0.90486875,
       "blockiness_auroc_direction": "higher=real",
       "per_descriptor_auroc": {
         "blur_varlap": {
-          "auroc": 0.7152777777777778,
+          "auroc": 0.5029874999999999,
           "direction": "higher=real"
         },
         "blockiness": {
-          "auroc": 0.8611111111111112,
+          "auroc": 0.90486875,
           "direction": "higher=real"
         },
         "noise_sigma": {
-          "auroc": 0.9166666666666666,
+          "auroc": 0.822065625,
           "direction": "higher=real"
         },
         "luminance_mean": {
-          "auroc": 0.6180555555555556,
+          "auroc": 0.62415625,
           "direction": "higher=real"
         },
         "luminance_std": {
-          "auroc": 0.7847222222222222,
+          "auroc": 0.559975,
           "direction": "higher=real"
         },
         "saturation_mean": {
-          "auroc": 0.6388888888888888,
+          "auroc": 0.64150625,
           "direction": "higher=fake"
         },
         "clipped_low_frac": {
-          "auroc": 0.6319444444444444,
-          "direction": "higher=real"
+          "auroc": 0.538665625,
+          "direction": "higher=fake"
         },
         "clipped_high_frac": {
-          "auroc": 0.6006944444444444,
+          "auroc": 0.722503125,
           "direction": "higher=real"
         }
       },
       "logistic_all_descriptors": {
-        "n_train": 18,
-        "n_dev": 6,
+        "n_train": 600,
+        "n_dev": 200,
         "n_features": 8,
-        "dev_auroc": 0.875
+        "dev_auroc": 0.9872796474358975
       },
       "blockiness_class_stats": {
-        "real_mean": 1.0236113825042195,
-        "real_std": 0.03854017830617097,
-        "fake_mean": 0.9905358237974299,
-        "fake_std": 0.011341172397836918,
-        "real_frac_above_1.05": 0.25,
-        "fake_frac_above_1.05": 0.0
+        "real_mean": 1.1018867339504348,
+        "real_std": 0.12659336461633638,
+        "fake_mean": 0.9954258134414462,
+        "fake_std": 0.04095191197103302,
+        "real_frac_above_1.05": 0.5425,
+        "fake_frac_above_1.05": 0.0225
       }
     }
   },
-  "reading": "native quality-only dev AUROC = 0.8750. canonicalized (jpeg_q95/jpeg_q75/png) quality-only dev AUROC in [0.7500, 0.8750]. Canonicalization does NOT remove the leak: quality-only AUROC stays high under a shared container, so the separation is not purely a format artifact and the proposed fix is INSUFFICIENT on its own.",
-  "elapsed_seconds": 6.882421970367432
+  "reading": "native quality-only dev AUROC = 0.9873. canonicalized (jpeg_q95/jpeg_q75/png) quality-only dev AUROC in [0.9498, 0.9873]. Canonicalization does NOT remove the leak: quality-only AUROC stays high under a shared container, so the separation is not purely a format artifact and the proposed fix is INSUFFICIENT on its own.",
+  "elapsed_seconds": 220.90200424194336
 }
