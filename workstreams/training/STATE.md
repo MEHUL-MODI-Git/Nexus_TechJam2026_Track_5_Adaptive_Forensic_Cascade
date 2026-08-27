@@ -2,24 +2,27 @@
 **Owner: Claude · Status: 🟡 2R.1 router repair LANDED + owner-verified (660 tests) — awaiting Codex re-review · corpus 14,999 · full cache NOT launched**
 
 ## ✅ Built (detail in `workstreams/training/CHANGELOG.md` — do not re-derive here)
-- **`scripts/build_router_corpus.py`** — 14,999 sources (silent-underfill defect **R19 open**). **Both
-  classes from SID-Set deliberately**: COCO-reals + SID-fakes would teach the router dataset artefacts.
+- **`scripts/build_router_corpus.py`** — R19 fixed; corpus now exactly 15,000 / 7,500 per class. Its
+  "both classes from SID-Set removes dataset artefacts" rationale is DISPROVEN (see correction below).
 - **`feature_cache.py`** (30 tests) — canonical key with refuse-to-append, **fail-closed denylist** (no denylist ⇒ refuses to build), sealed hit **aborts** the job rather than skipping.
-- **`features.py` + `model.py`** (37 tests) — 43 features, each optional one a `(value, is_present)` pair; standardizer fits on train rows only.
 - **`calibration.py`** (30 tests) — frozen threshold objective: bootstrap worst-FAMILY fake recall, clean excluded from the minimum, severities pooled, `source_id` as the resampling unit.
 - **`train.py`** — B-018 repaired: six-rung ladder, fail-closed consumed-field/split/label/key validation,
   measured (never suppressed) one-expert score change, ≥2 pt-or-CI kill gate, BCE-with-logits, enforced
   two-stage reliability, atomic checkpoint + `load_checkpoint` parity. **Awaiting Codex re-review.**
   `scripts/diagnostics/degradeprint_probe.py` holds the DegradePrint arm table; see CHANGELOG.
 
-## ⚠️ EVIDENCE BOUNDARY — the 24k pilot is diagnostic only
+## ⚠️ EVIDENCE BOUNDARY — the 24k pilot is diagnostic only AND format-confounded
+**⚠️ CORRECTION: the +39.3-pt quality result is CONFOUNDED — do not cite.** All 7,500 reals are JPEG and
+all 7,500 fakes PNG, so format predicts the label for 100.00% of sources (all saved `.jpg`, which hid it).
+On clean pilot rows quality descriptors ALONE hit dev AUROC **0.9867**, `blockiness` alone **0.89**: 53.7%
+of reals show JPEG blocking vs 2.7% of fakes — a container fact. Residual genuine signal is unmeasured.
+
 `UNPROTECTED_SMOKE_ONLY`, obsolete `feature-cache-row.v1`, random source-held-out dev, **no untouched
-test, no generator-held-out split, no paired source bootstrap**. It **parks** the logit-response branch
-(+0.8 pt, unstable sign, ~+2 pt bar); it does not *kill* it. The quality arm (+39.3 pt worst-family) is a
-**hypothesis for the correction head, not a result**, and clean FPR is *not* lower on average (.0437 vs
-.0458). It may debug code; it may **not** train a submitted model or mint a headline. **Corrected
-fallback (B-020 §5):** if the protected cache fails, ship CF-384 + an honestly calibrated threshold if one
-exists + the accepted stress UI and diagnostic table — *not* a pilot-trained router.
+test, no generator-held-out split, no paired source bootstrap** — and now format-confounded on top. It
+**parks** the logit-response branch (+0.8 pt, unstable sign, ~+2 pt bar); it does not *kill* it. It may
+debug code; it may **not** train a submitted model or mint a headline. **Corrected fallback (B-020 §5):**
+if the protected cache fails, ship CF-384 + an honestly calibrated threshold if one exists + the
+accepted stress UI and diagnostic table — *not* a pilot-trained router.
 
 ## ⚠️ FROZEN COMPUTE FACT — 30k does not fit the 12 h cap
 Measured **7.83 rows/sec** on real 1024×1024 images (the old 9.3 h figure came from 256px fixtures,

@@ -21,6 +21,9 @@ release occurs before the existing eval/router gates pass.
 
 ## Evidence boundary
 
+**⚠️ CORRECTION 2026-08-27 (Claude): the +39.3-point quality-descriptor result is CONFOUNDED and must not be cited.** The corpus it came from has a perfect file-format shortcut — all 7,500 reals are JPEG, all 7,500 fakes are PNG, so format predicts the label for 100.00% of sources (every file carries a misleading `.jpg` extension). On the pilot's clean rows, quality descriptors ALONE reach dev AUROC **0.9867** and `blockiness` alone **0.89**, with **53.7%** of reals showing JPEG blocking (>1.05) against **2.7%** of fakes — a container fact, not a content fact. Quality descriptors may still hold genuine signal; the amount is unmeasured until the format-canonicalization test lands. Treat every number derived from that cache as suspect.
+
+
 The 24,000-row pilot produced this diagnostic over three source-held-out seeds at a train-fitted 5%
 clean-FPR target:
 

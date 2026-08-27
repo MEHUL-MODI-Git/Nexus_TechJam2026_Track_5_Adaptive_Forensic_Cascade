@@ -1,0 +1,118 @@
+{
+  "cache_file": "data/feature_cache/pilot-v1/rows.jsonl",
+  "cache_row_count_total": 24000,
+  "clean_row_count": 1200,
+  "seed": 0,
+  "split": {
+    "n_train": 900,
+    "n_dev": 300,
+    "n_sources": 1200
+  },
+  "quality_only_logistic": {
+    "n_train": 900,
+    "n_dev": 300,
+    "n_features": 8,
+    "dev_auroc": 0.9867410714285715,
+    "dev_accuracy_train_threshold": 0.9433333333333334
+  },
+  "blockiness_only_logistic": {
+    "n_train": 900,
+    "n_dev": 300,
+    "n_features": 1,
+    "dev_auroc": 0.8962053571428571,
+    "dev_accuracy_train_threshold": 0.8233333333333334
+  },
+  "p_fake_only_logistic_reference": {
+    "n_train": 900,
+    "n_dev": 300,
+    "n_features": 1,
+    "dev_auroc": 0.9979910714285715,
+    "dev_accuracy_train_threshold": 0.9766666666666667
+  },
+  "quality_descriptor_class_stats": {
+    "n_real": 600,
+    "n_fake": 600,
+    "per_feature": [
+      {
+        "feature": "blockiness",
+        "real_mean": 1.1113726684379417,
+        "real_std": 0.1494345014497214,
+        "fake_mean": 0.9932619588198734,
+        "fake_std": 0.03186333341601484,
+        "abs_standardized_mean_diff": 0.9592513735486301,
+        "standardized_mean_diff": -0.9592513735486301
+      },
+      {
+        "feature": "noise_sigma",
+        "real_mean": 0.0038885053238822934,
+        "real_std": 0.004335730911075249,
+        "fake_mean": 0.00155056355793285,
+        "fake_std": 0.0009111199255823924,
+        "abs_standardized_mean_diff": 0.6991919127577488,
+        "standardized_mean_diff": -0.6991919127577488
+      },
+      {
+        "feature": "saturation_mean",
+        "real_mean": 0.31151396740126874,
+        "real_std": 0.1610142957751188,
+        "fake_mean": 0.40194466741770263,
+        "fake_std": 0.1420471041375215,
+        "abs_standardized_mean_diff": 0.5708399197689276,
+        "standardized_mean_diff": 0.5708399197689276
+      },
+      {
+        "feature": "luminance_mean",
+        "real_mean": 0.42843200697495804,
+        "real_std": 0.1258639475792946,
+        "fake_mean": 0.36704949948939153,
+        "fake_std": 0.15535907799910112,
+        "abs_standardized_mean_diff": 0.42427672563148366,
+        "standardized_mean_diff": -0.42427672563148366
+      },
+      {
+        "feature": "clipped_high_frac",
+        "real_mean": 0.009519072445559289,
+        "real_std": 0.039885460446511735,
+        "fake_mean": 0.00013252735137939453,
+        "fake_std": 0.001366579670399026,
+        "abs_standardized_mean_diff": 0.32811553525281895,
+        "standardized_mean_diff": -0.32811553525281895
+      },
+      {
+        "feature": "blur_varlap",
+        "real_mean": 0.011022085976800065,
+        "real_std": 0.016785224116998072,
+        "fake_mean": 0.007723935800360806,
+        "fake_std": 0.008542506892134899,
+        "abs_standardized_mean_diff": 0.24577598896568056,
+        "standardized_mean_diff": -0.24577598896568056
+      },
+      {
+        "feature": "luminance_std",
+        "real_mean": 0.23798415419707397,
+        "real_std": 0.05398453267393383,
+        "fake_mean": 0.22551741457634117,
+        "fake_std": 0.047395428461297455,
+        "abs_standardized_mean_diff": 0.2435958912750779,
+        "standardized_mean_diff": -0.2435958912750779
+      },
+      {
+        "feature": "clipped_low_frac",
+        "real_mean": 0.008970775235306956,
+        "real_std": 0.04933311246442841,
+        "fake_mean": 0.0008242654800415039,
+        "fake_std": 0.005375097257586566,
+        "abs_standardized_mean_diff": 0.23061047950978217,
+        "standardized_mean_diff": -0.23061047950978217
+      }
+    ]
+  },
+  "p_fake_class_stats_reference": {
+    "real_mean": 0.012415338471450332,
+    "real_std": 0.06792713230253905,
+    "fake_mean": 0.8923188646037913,
+    "fake_std": 0.25202355787425207,
+    "abs_standardized_mean_diff": 1.8442824223365049
+  },
+  "reading": "quality-only dev AUROC = 0.9867 is near 1.0 on clean rows: the +39.3 point quality-descriptor result is confounded by file format (JPEG-real vs PNG-fake) and cannot be reported as evidence about AI-image detection without controlling for format."
+}

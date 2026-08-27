@@ -1,0 +1,49 @@
+{
+  "schema_version": "lota-format-sensitivity.v1",
+  "weights": "LOTA weights/sdv5_scaling_patch32.pth",
+  "manifest": "data/manifests/router_corpus_v2.json",
+  "n_per_class": 100,
+  "n_images_total": 200,
+  "repeats_per_variant": 5,
+  "seed": 0,
+  "native_container_by_label": {
+    "real": {
+      "JPEG": 100
+    },
+    "fake": {
+      "PNG": 100
+    }
+  },
+  "per_variant": {
+    "native": {
+      "auroc": 1.0,
+      "mean_p_fake_real_images": 0.0001006901934438076,
+      "mean_p_fake_fake_images": 0.994262449841147,
+      "fake_recall_at_0_5": 1.0,
+      "false_positive_rate_at_0_5": 0.0,
+      "mean_score_spread_across_repeats": 0.011852590862310981,
+      "max_score_spread_across_repeats": 0.8376280701612965
+    },
+    "jpeg_q95": {
+      "auroc": 0.592,
+      "mean_p_fake_real_images": 0.00010195462067180271,
+      "mean_p_fake_fake_images": 0.00094831939308074,
+      "fake_recall_at_0_5": 0.0,
+      "false_positive_rate_at_0_5": 0.0,
+      "mean_score_spread_across_repeats": 0.0024031678528317934,
+      "max_score_spread_across_repeats": 0.1553982139686636
+    },
+    "png": {
+      "auroc": 1.0,
+      "mean_p_fake_real_images": 0.00012069458201735328,
+      "mean_p_fake_fake_images": 0.9957380368733674,
+      "fake_recall_at_0_5": 1.0,
+      "false_positive_rate_at_0_5": 0.0,
+      "mean_score_spread_across_repeats": 0.009581493462024991,
+      "max_score_spread_across_repeats": 0.7856249035397578
+    }
+  },
+  "latency_ms_per_image_all_variants_mean": 237.77158309152583,
+  "latency_ms_per_image_all_variants_p95": 275.2052107505733,
+  "reading": "native AUROC=1.0000 (near-perfect separability), jpeg_q95 AUROC=0.5920 (weak separability, modestly above chance), png AUROC=1.0000 (near-perfect separability). png stays at near-perfect separability while jpeg_q95 -- built from the SAME decoded pixels, only re-encoded lossy -- drops by 0.4080 AUROC. Since the only thing that changed between B and C is the container, this isolates JPEG quantization as the cause and confirms the LSB/JPEG hypothesis: LOTA's signal lives in the low-bit planes that JPEG re-encoding destroys. native tracks png closely rather than sitting apart from it, so the high native AUROC is NOT simply a 'which container did this file arrive in' shortcut (that would have also collapsed under png, since png forces both classes into the same lossless container and the score stayed high anyway) -- it is consistent with a real pixel-level signal, not a naive file-format artifact. jpeg_q95 AUROC (0.5920) is closer to chance (0.5) than to native/png (1.0000), but it is not exactly 0.5, so a small amount of separable signal survives Q95 recompression -- the collapse is large but not total."
+}
