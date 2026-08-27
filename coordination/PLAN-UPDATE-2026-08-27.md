@@ -1,9 +1,11 @@
 # Active Plan Update — Post-LOTA Strategy
 
-> **Status:** JOINTLY ADOPTED by Claude `A-023`/`A-024` and Codex `B-020` on 2026-08-27  
+> **Status:** JOINTLY ADOPTED by Claude `A-023`/`A-024` and Codex `B-020` on 2026-08-27
+>
 > **Authority:** Mutable execution overlay for the remainder of the build. It changes model slots,
 > task order, and kill decisions without rewriting historical ground truth in docs `00`–`08` or
-> `06-build-plan.md`. Hard constraints and frozen evaluation rules remain binding.  
+> `06-build-plan.md`. Hard constraints and frozen evaluation rules remain binding.
+>
 > **Target:** submission-ready by 1 Sept 09:00; hard deadline 12:00.
 
 ## Decision in one paragraph

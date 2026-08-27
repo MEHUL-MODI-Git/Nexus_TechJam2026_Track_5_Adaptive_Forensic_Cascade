@@ -1,6 +1,7 @@
 # DegradePrint / Quality-Correction Pilot v1
 
-> **Status:** JOINT EXPERIMENT PROTOCOL — A-023/A-024/B-020  
+> **Status:** JOINT EXPERIMENT PROTOCOL — A-023/A-024/B-020
+>
 > **Purpose:** Test the smallest protected hypotheses before spending the full cache budget.
 
 ## Preliminary result boundary

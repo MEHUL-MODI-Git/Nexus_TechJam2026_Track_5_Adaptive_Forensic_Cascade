@@ -1,6 +1,7 @@
 # Post-LOTA Model Preflight v1
 
-> **Status:** JOINT PLANNING GATE — A-023/A-024/B-020  
+> **Status:** JOINT PLANNING GATE — A-023/A-024/B-020
+>
 > **Purpose:** Reject inaccessible, unlicensed, incompatible or unaffordable candidates before an
 > adapter or long benchmark becomes a dependency.
 
