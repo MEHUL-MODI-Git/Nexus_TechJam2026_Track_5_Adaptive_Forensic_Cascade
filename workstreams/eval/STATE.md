@@ -1,31 +1,36 @@
 # eval — harness, metrics, ablations, error analysis
-**Owner: Codex · Status: 🔴 REPAIR RE-REVIEW BLOCKED · task 1.1 requires fixes**
+**Owner: Codex · Status: 🔴 PHASE 2R EVAL REPAIR CLAIMED · E1–E5 jointly ACKed**
 
-## ✅ Verified 2026-08-27
-- Full suite after Claude's repair: 567 passed, 9 warnings.
-- Direct method separation and CLI rejection of partial-grid + real-threshold mode are repaired.
-- Detailed adversarial evidence: `handoffs/2026-08-27_claude-repair-review.md`; B-016 sent.
+## ✅ Current evidence
+- Full suite: 601 passed, 9 warnings (2026-08-27).
+- Claude A-024 ACKed B-016 with no counter; Codex owns the repair.
+- Post-LOTA plan adopted in A-023/A-024/B-020:
+  `coordination/PLAN-UPDATE-2026-08-27.md`.
+- The 24k DegradePrint/quality run is unprotected diagnostic evidence only; it cannot select a
+  submission model, mint a headline, or serve as a trained fallback.
 
-## 🔴 Blocking findings
-1. Sparse method×source×condition coverage can still emit `eval-results.v1`.
-2. Caller-supplied `official_conditions` can redefine the canonical grid to seven conditions.
-3. A directly fabricated, invalid `FrozenThreshold` can still mint a headline.
-4. Diagnostic method records contain literal `headline` blocks.
-5. Paired deltas are input-order dependent instead of key-aligned.
-6. Transform hash is mislabeled, run manifest is optional, and sealed/freeze/failure-denominator provenance is absent.
+## 🔴 Blocking acceptance cases
+1. Require exact method×source×canonical-condition coverage.
+2. Make the canonical 20-condition grid non-overridable for headline evaluation.
+3. Accept only a validated, loaded frozen threshold artifact.
+4. Forbid every literal `headline` field in diagnostic documents.
+5. Align paired bootstrap by `(source_id, condition_id)`, never input position.
+6. Require correct transform/run/method/code/golden/sealed/freeze provenance and fail closed on
+   denominator shrinkage or incomplete failure ledgers.
 
 ## ▶ NEXT ACTION
-1. Await Claude's evidence-based ACK/counters on B-016; do not accept more relay edits without CHANNEL agreement.
-2. Freeze E1–E5 as executable acceptance tests before implementation.
-3. Correct exact coverage, canonical grid authority, threshold validation, diagnostic schema, keyed paired bootstrap, and provenance/freeze guards.
-4. Rerun adversarial cases + full suite and post a new eval gate packet for Claude.
+1. Add E1–E5 adversarial regression tests before production edits.
+2. Repair `src/eval/` within the frozen protocol; rerun adversarial cases + full suite.
+3. Post a new eval gate packet for Claude review.
+4. After the gate, own candidate comparisons and paired deltas; Claude owns candidate adapters.
 
 ## Literal next command
 ```
-cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && tail -120 coordination/CHANNEL.md
+cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && \
+  .venv/bin/python -m pytest tests/test_eval_protocol.py tests/test_eval_results.py -q
 ```
 
 ## Hard constraints
-- One frozen threshold across all conditions; incomplete/partial is diagnostic-only.
-- Sealed WildFake subset: exactly one evaluation run, Phase 4, after production freeze.
+- One frozen threshold per method across every condition; incomplete/partial is diagnostic-only.
+- Sealed WildFake subset: one run after production freeze; never fitting or component selection.
 - Every public number needs method/data/code/config/artifact hashes and source-level uncertainty.

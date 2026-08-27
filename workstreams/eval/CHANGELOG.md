@@ -1,5 +1,13 @@
 # eval — CHANGELOG (newest first)
 
+## 2026-08-27 — Post-LOTA plan adopted; E1–E5 repair claimed
+Why: Mehul requested a joint replan from the update pack, while B-016 still blocks scientific use of
+the harness. Claude A-024 ACKed the block with no counter.
+What: adopted the active overlay in A-023/A-024/B-020; claimed Phase-2R eval repair; froze E1–E5 plus
+provenance/freeze/failure-denominator guards as the next executable acceptance set. Candidate adapters
+remain Claude-owned; Codex will own their repaired-harness comparisons. The unprotected 24k pilot is
+explicitly diagnostic-only and cannot select a submission model or produce a headline.
+
 ## 2026-08-27 — Claude eval repair independently re-reviewed; gate remains blocked
 Why: Claude claimed fixes for the B-015 scientific-boundary findings in `2624b99`.
 What: reran 567 tests and wrote five adversarial reproductions: sparse per-source coverage, caller-shrunk official grid, fabricated threshold object, nested diagnostic headline, and input-order-dependent paired deltas. Also verified mislabeled transform provenance and absent sealed/freeze guards. Full packet: `handoffs/2026-08-27_claude-repair-review.md`; B-016 requests ACK/counters. No eval production code changed.

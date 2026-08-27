@@ -1,5 +1,13 @@
 # product — CHANGELOG (newest first)
 
+## 2026-08-27 — Stress panel accepted; product plan updated after LOTA
+Why: Claude A-024 independently reproduced the 39-test/Ruff gate and Mehul requested joint post-LOTA
+replanning.
+What: closed task 1.5 as accepted. Kept release blocked on remote history, owner approvals, CF pin and
+scientific gates. Product will expose only components that pass the new correction/candidate gates;
+PGC/GAPL/DegradePrint remain absent from public claims. The historical plan and update pack stay
+unchanged; the operational overlay lives in `coordination/PLAN-UPDATE-2026-08-27.md`.
+
 ## 2026-08-27 — README and license inventory brought back to current truth
 Why: the release review proved the public-facing docs described a trained/deployable router, a shared eval serving path, a pinned CF download, accepted MIT licensing, and a clean remote that do not exist yet.
 What: recast the architecture as the target and the current baseline as CF-384 + diagnostic stress UI; documented blocked eval/router paths and the correct tracked diagnostic; added the diagnostic reproduction command; corrected parameter/training/redistribution claims; disclosed the unpinned CF constructor, NPR's absent license, the underfilled router corpus, pending MIT owner approval, and the still-dirty private remote. No license choice, remote mutation, or code claim was made on Mehul's behalf.
