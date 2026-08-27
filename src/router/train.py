@@ -33,6 +33,7 @@ import json
 import math
 import os
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -62,7 +63,11 @@ TRANSFORM_FAMILIES = ("jpeg", "blur", "resize", "noise", "color", "crop")
 LOGIT_PROB_TOLERANCE = 1e-4    # |sigmoid(raw_logit) - p_fake| must not exceed this
 MIN_MEANINGFUL_DELTA = 0.02    # doc 05/08 kill gate: 2 points of worst-family fake recall
 VALID_SPLITS = ("train", "dev")
-_CACHE_KEY_RE = re.compile(r"^[0-9a-f]{16,64}$")   # the sha256 hex digest feature_cache.py emits
+_CACHE_KEY_RE = re.compile(r"^[0-9a-f]{64}$")      # EXACTLY the sha256 hex digest feature_cache.py
+                                                    # emits (B-024 §1) -- {16,64} let a truncated
+                                                    # key through, which is not a format this repo
+                                                    # can produce and should abort like any other
+                                                    # malformed cache_key
 
 
 @dataclass
@@ -196,6 +201,13 @@ def threshold_is_frozen(provenance: str) -> bool:
         and p.lower() != "unspecified"
 
 
+# B-024 §4: the single source of truth for "a rung name `load_checkpoint` can
+# trust" -- shared with `_construct_router`'s own dispatch below so the two
+# can never drift apart.
+KNOWN_RUNG_NAMES = ("quality_only", "static_average", "probability_mean",
+                    "fixed_weights", "logistic", "mlp")
+
+
 def _construct_router(rung: str, n_features: int, n_experts: int, *,
                       hidden: int = 32, hidden2: int = 16, dropout: float = 0.1,
                       fixed_weights: list[float] | None = None) -> nn.Module:
@@ -221,7 +233,7 @@ def _construct_router(rung: str, n_features: int, n_experts: int, *,
         return LogisticRouter(n_features, n_experts)
     if rung == "mlp":
         return MLPRouter(n_features, n_experts, hidden=hidden, hidden2=hidden2, dropout=dropout)
-    raise ValueError(f"unknown rung {rung!r}")
+    raise ValueError(f"unknown rung {rung!r}; expected one of {KNOWN_RUNG_NAMES}")
 
 
 def _fixed_weight_grid(n_experts: int, step: float = 0.1) -> list[list[float]]:
@@ -449,6 +461,31 @@ def validate_cache_rows(rows: list[dict], expert_ids: tuple[str, ...]) -> dict[s
                 raise ValueError(f"row is missing required field {field_name!r}: {row!r}")
         if not isinstance(row["source_id"], str) or not row["source_id"]:
             raise ValueError(f"row has an invalid source_id {row['source_id']!r}")
+        # B-024 §2: `isinstance(v, bool)` MUST be checked before the int check --
+        # `True == 1` in Python, so a bool label would otherwise pass a bare
+        # `in (0, 1)` membership test and silently train as a real label. A
+        # float (`1.0 in (0, 1)` is also True in Python) is rejected for the
+        # same reason: this is exactly the loophole T1 existed to close for
+        # every other field, now closed for the label too.
+        label = row["label"]
+        if isinstance(label, bool) or not isinstance(label, int) or label not in (0, 1):
+            raise ValueError(
+                f"row source_id={row['source_id']!r} has label={label!r} of type "
+                f"{type(label).__name__}; must be int 0 or 1, never bool or float"
+            )
+        # B-024 §2: a malformed `experts` container (list/string/None) must
+        # ABORT naming the row, never fall through `experts.get(eid)` -- a list
+        # or string has no `.get`, and `None` degrades into "every expert
+        # unavailable" -- the exact silent `dropped_all_experts_unavailable`
+        # exclusion T1 existed to end.
+        if not isinstance(row["experts"], Mapping):
+            # ValueError, not TypeError (ruff TRY004): every other malformed-cache-row
+            # rejection in this function is a ValueError, and callers/tests already
+            # match on that -- a type-check exemption here would split the contract.
+            raise ValueError(  # noqa: TRY004
+                f"row source_id={row['source_id']!r} has experts of type "
+                f"{type(row['experts']).__name__} ({row['experts']!r}); expected a Mapping"
+            )
 
     keys = {r["cache_key"] for r in rows}
     if len(keys) > 1:
@@ -496,8 +533,7 @@ def validate_cache_rows(rows: list[dict], expert_ids: tuple[str, ...]) -> dict[s
             raise ValueError(f"unknown condition_id {condition!r}")
         if row.get("family") not in (None, FAMILY_OF[condition]):
             raise ValueError(f"{condition!r} mislabelled as family {row.get('family')!r}")
-        if row["label"] not in (0, 1):
-            raise ValueError(f"invalid label {row['label']!r}")
+        # label type/range already enforced above (B-024 §2); nothing left to check here.
 
         experts = row["experts"] or {}
         any_available = False
@@ -572,6 +608,13 @@ def run_ladder(cache_rows: list[dict], threshold: float, expert_ids: tuple[str, 
                seed: int = DEFAULT_SEED, bootstrap_replicates: int = 200,
                threshold_provenance: str = "unspecified") -> dict[str, Any]:
     """Train every rung on train, compare on dev, and report honestly."""
+    # B-024 §3: normalise `None` to the string "unspecified" ONCE, here, so
+    # every downstream use (the document's `threshold_provenance` field, and
+    # `.startswith("PLACEHOLDER")` below) sees a string. `threshold_is_frozen`
+    # already tolerates `None`, but the warning-string check does not, and a
+    # missing provenance must read as an unfrozen threshold, not crash the run.
+    if threshold_provenance is None:
+        threshold_provenance = "unspecified"
     report = validate_cache_rows(cache_rows, expert_ids)
     rows = report["usable_rows"]
     train_rows = [r for r in rows if r.get("dataset_split") == "train"]
@@ -826,6 +869,21 @@ def save_checkpoint(document: dict[str, Any], path: Path, threshold: float, *,
 _REQUIRED_CHECKPOINT_KEYS = (
     "schema_version", "rung", "state_dict", "feature_spec", "standardizer",
     "expert_order", "threshold",
+    # B-024 §4: the v2 provenance/selection fields `save_checkpoint` writes.
+    # A mutated checkpoint missing any of these previously loaded anyway --
+    # e.g. silently with no `cache_artifact_sha256` to cross-check at deploy
+    # time -- which defeats the point of recording provenance at all.
+    "use_worst_group_loss", "n_parameters", "hyperparameters",
+    "reliability_head_fitted", "cache_artifact_sha256", "code_revision",
+    "selection",
+)
+
+# B-024 §4: `selection` is the sub-document a caller reads to decide whether
+# the router earned its complexity; missing any one of these fields would let
+# a checkpoint answer that question with a KeyError instead of an honest no.
+_REQUIRED_SELECTION_KEYS = (
+    "best_rung", "improvement_over_baseline", "router_earns_its_complexity",
+    "improvement_is_meaningful", "improvement_is_outside_uncertainty",
 )
 
 
@@ -867,12 +925,99 @@ def load_checkpoint(path: Path) -> LoadedRouter:
             f"{CHECKPOINT_SCHEMA!r} (code has moved on; retrain or use a matching checkout)"
         )
 
+    # B-024 §4: `selection` is checked as a unit, by name, before anything
+    # downstream reads it.
+    selection = payload["selection"]
+    if not isinstance(selection, Mapping):
+        # ValueError, not TypeError (ruff TRY004): every load_checkpoint rejection
+        # in this function is a ValueError, and callers/tests already match on
+        # that -- a type-check exemption here would split the contract.
+        raise ValueError(  # noqa: TRY004
+            f"checkpoint {path} has selection of type {type(selection).__name__}; "
+            "expected a Mapping"
+        )
+    for key in _REQUIRED_SELECTION_KEYS:
+        if key not in selection:
+            raise ValueError(f"checkpoint {path} is missing selection field {key!r}")
+
+    # B-024 §4: a rung name `_construct_router` cannot build would already
+    # raise there, but AFTER the (cheaper) checks below have run; check it up
+    # front so a corrupted rung name fails immediately, by name.
+    if payload["rung"] not in KNOWN_RUNG_NAMES:
+        raise ValueError(
+            f"checkpoint {path} has rung {payload['rung']!r}, not one of the known "
+            f"ladder rungs {KNOWN_RUNG_NAMES}"
+        )
+
     feature_spec = payload["feature_spec"]
     spec = FeatureSpec(expert_ids=tuple(payload["expert_order"]))
     if spec.dim != feature_spec["dim"] or spec.names != feature_spec["feature_names"]:
         raise ValueError(
             f"checkpoint feature spec has drifted from the code that built it: code "
             f"computes dim={spec.dim}, checkpoint recorded dim={feature_spec.get('dim')}"
+        )
+
+    # B-024 §4: `expert_order` and `feature_spec["expert_ids"]` are two copies
+    # of the same information written by `save_checkpoint`; if they disagree
+    # the checkpoint was mutated after saving and neither copy can be trusted.
+    if list(payload["expert_order"]) != list(feature_spec["expert_ids"]):
+        raise ValueError(
+            f"checkpoint {path} has expert_order={payload['expert_order']!r} which "
+            f"disagrees with feature_spec['expert_ids']={feature_spec['expert_ids']!r}"
+        )
+
+    # B-024 §4: same story for the top-level `feature_names` copy.
+    if payload["feature_names"] != feature_spec["feature_names"]:
+        raise ValueError(
+            f"checkpoint {path} has top-level feature_names={payload['feature_names']!r} "
+            f"which disagrees with feature_spec['feature_names']={feature_spec['feature_names']!r}"
+        )
+
+    # B-024 §4: threshold must be a usable operating point, not just present.
+    threshold = payload["threshold"]
+    if (
+        not isinstance(threshold, (int, float))
+        or isinstance(threshold, bool)
+        or not math.isfinite(threshold)
+        or not (0.0 <= threshold <= 1.0)
+    ):
+        raise ValueError(
+            f"checkpoint {path} has threshold={threshold!r}; must be a finite float in [0, 1]"
+        )
+
+    # B-024 §4: the standardizer is cross-checked against the rebuilt spec
+    # BEFORE it is trusted -- feature_names/length drift here would silently
+    # mis-scale every input the loaded model ever sees.
+    std = payload["standardizer"]
+    if list(std.get("feature_names", [])) != spec.names:
+        raise ValueError(
+            f"checkpoint {path} standardizer feature_names disagree with the rebuilt "
+            "FeatureSpec's names"
+        )
+    expected_std_schema = Standardizer.__dataclass_fields__["schema_version"].default
+    std_schema = std.get("schema_version")
+    if std_schema != expected_std_schema:
+        raise ValueError(
+            f"checkpoint {path} standardizer schema_version={std_schema!r} != expected "
+            f"{expected_std_schema!r} (code has moved on; retrain or use a matching checkout)"
+        )
+    mean = np.array(std["mean"], dtype=np.float64)
+    scale = np.array(std["scale"], dtype=np.float64)
+    indicator_columns = np.array(std["indicator_columns"], dtype=bool)
+    for field_name, arr in (("mean", mean), ("scale", scale),
+                           ("indicator_columns", indicator_columns)):
+        if arr.shape != (spec.dim,):
+            raise ValueError(
+                f"checkpoint {path} standardizer {field_name!r} has shape {arr.shape}, "
+                f"rebuilt FeatureSpec expects ({spec.dim},)"
+            )
+    if not (np.all(np.isfinite(mean)) and np.all(np.isfinite(scale))):
+        raise ValueError(
+            f"checkpoint {path} standardizer mean/scale contains a non-finite value"
+        )
+    if not np.all(scale > 0):
+        raise ValueError(
+            f"checkpoint {path} standardizer scale has a non-positive entry: {scale.tolist()!r}"
         )
 
     hyperparameters = payload.get("hyperparameters") or {}
@@ -885,13 +1030,9 @@ def load_checkpoint(path: Path) -> LoadedRouter:
     model.load_state_dict(payload["state_dict"], strict=True)
     model.eval()
 
-    std = payload["standardizer"]
     standardizer = Standardizer(
-        mean=np.array(std["mean"], dtype=np.float64),
-        scale=np.array(std["scale"], dtype=np.float64),
-        indicator_columns=np.array(std["indicator_columns"], dtype=bool),
-        feature_names=list(std["feature_names"]),
-        schema_version=std.get("schema_version", "router-standardizer.v1"),
+        mean=mean, scale=scale, indicator_columns=indicator_columns,
+        feature_names=list(std["feature_names"]), schema_version=std_schema,
     )
     return LoadedRouter(model=model, spec=spec, standardizer=standardizer,
-                        threshold=payload["threshold"], payload=payload)
+                        threshold=threshold, payload=payload)

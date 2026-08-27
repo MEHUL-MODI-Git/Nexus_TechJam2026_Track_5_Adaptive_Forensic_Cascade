@@ -600,3 +600,74 @@ def test_cascade_is_justified_requires_both_bars():
     )
     if document["best_rung"] == "quality_only":
         assert document["router_earns_its_complexity"] is False
+
+
+# --- B-024 §1: the cache-key format must be the ACTUAL format -------------
+def test_truncated_cache_key_is_rejected():
+    """`{16,64}` let a truncated key through; `compute_cache_key` never emits
+    anything but a full 64-char sha256 hex digest."""
+    rows = make_rows()
+    truncated = TEST_CACHE_KEY[:32]
+    for row in rows:
+        row["cache_key"] = truncated
+    with pytest.raises(ValueError, match="malformed cache_key"):
+        validate_cache_rows(rows, EXPERTS)
+
+
+def test_full_length_cache_key_is_accepted():
+    """A real key `feature_cache.compute_cache_key` produced in this repo."""
+    rows = make_rows()
+    real_key = "f5b1fa463f98727aa7b960ad425d84af0e4df9db3943b0cf9ff9d4b18b8ef47d"
+    assert len(real_key) == 64
+    for row in rows:
+        row["cache_key"] = real_key
+    report = validate_cache_rows(rows, EXPERTS)      # must not raise
+    assert report["cache_key"] == real_key
+
+
+# --- B-024 §2: strict label and expert-container types ---------------------
+def test_bool_label_is_rejected():
+    """`True == 1` in Python; a bool label must not silently pass as one."""
+    rows = make_rows()
+    rows[0]["label"] = True
+    with pytest.raises(ValueError, match="label"):
+        validate_cache_rows(rows, EXPERTS)
+
+
+def test_float_label_is_rejected():
+    """`1.0 in (0, 1)` is also True in Python; a float label is not an int."""
+    rows = make_rows()
+    rows[0]["label"] = 1.0
+    with pytest.raises(ValueError, match="label"):
+        validate_cache_rows(rows, EXPERTS)
+
+
+@pytest.mark.parametrize("bad_experts", [["not", "a", "mapping"], "not-a-mapping", None])
+def test_non_mapping_experts_is_rejected(bad_experts):
+    """A list, string, or None must raise naming the source_id -- never fall
+    through `experts.get(eid)` returning nothing for every expert id, which
+    is the exact silent `dropped_all_experts_unavailable` exclusion this
+    guards against."""
+    rows = make_rows()
+    rows[0]["experts"] = bad_experts
+    with pytest.raises(ValueError, match=f"{rows[0]['source_id']!r}.*Mapping"):
+        validate_cache_rows(rows, EXPERTS)
+
+
+def test_malformed_container_rejection_does_not_touch_the_real_exclusion_path():
+    """Control: the R20 "every expert genuinely failed" exclusion count is
+    unaffected by the new label/experts type guards -- they reject CORRUPTION,
+    they do not widen or narrow the one real exclusion kind."""
+    rows = make_rows()
+    for row in rows[:5]:
+        row["experts"]["e1"] = {"ok": False, "reason_code": "x", "message": "y"}
+    report = validate_cache_rows(rows, EXPERTS)
+    assert report["dropped_all_experts_unavailable"] == 5
+
+
+# --- B-024 §3: None threshold provenance must be controlled, not crash ----
+def test_none_threshold_provenance_does_not_crash():
+    result = run_ladder(make_rows(), threshold=0.5, expert_ids=EXPERTS,
+                        threshold_provenance=None)
+    assert result["reliability_fitted"] is False
+    assert result["threshold_provenance"] == "unspecified"

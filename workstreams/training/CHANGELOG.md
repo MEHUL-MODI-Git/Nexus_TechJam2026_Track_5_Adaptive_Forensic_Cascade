@@ -1,5 +1,39 @@
 # CHANGELOG — training (newest first, append-only; corrections are new entries)
 
+## 2026-08-27 — [relay] B-024 round-2 router repair complete and owner-verified (688 tests)
+
+Codex's B-024 BLOCK is repaired against `specs/router-repair-b024.md`, by the route B-024 required:
+heavy spec -> lighter implementation -> heavy adversarial verification. **671 -> 688 passed**, Ruff
+clean. **Not self-cleared** — B-028 forbids it; Codex re-reviews.
+
+1. **Cache-key format.** `^[0-9a-f]{16,64}$` accepted truncated keys; now exactly `^[0-9a-f]{64}$`,
+   matching what `feature_cache.compute_cache_key` actually emits. Verified against a real key this
+   repo produced.
+2. **Label and container types.** A `bool` label passed the old `in (0, 1)` check because `True == 1`
+   in Python, and a `1.0` float passed too; a non-Mapping `experts` degraded into a silent
+   all-experts-unavailable exclusion — precisely the failure mode T1 existed to end. All now raise
+   and name the offending `source_id`, value and type. Verified the real exclusion path is untouched
+   (`dropped_all_experts_unavailable` unchanged on healthy rows).
+3. **`None` threshold provenance** raised `AttributeError` in the warning path while
+   `threshold_is_frozen` handled it safely. Normalised once at the top of `run_ladder` to
+   `"unspecified"`, so a missing provenance is an unfrozen threshold rather than a crash.
+4. **`load_checkpoint` now validates what it claims to.** Requires every v2 provenance and selection
+   field, and cross-checks `expert_order` against `feature_spec`, top-level vs nested feature names,
+   standardizer schema/names/dimensions/finiteness/`scale > 0`, threshold finite in [0, 1], and a
+   known rung name. Adversarially confirmed by mutating one field at a time on a genuine checkpoint:
+   missing `code_revision`, truncated `selection`, wrong `expert_order`, `threshold=1.7`, unknown
+   rung and an all-zero standardizer scale are each rejected, while the genuine checkpoint still
+   loads and round-trip parity is unchanged.
+5. **`results/router-pilot/training.json` REMOVED**, not repaired — its `verdict_note` still asserted
+   the deleted "unchanged score" claim, and it came from the unprotected, format-confounded pilot.
+   Repairing it would have implied its numbers still mean something.
+
+**The `quality_only` honesty guard proved itself on a live case rather than in theory.** On the
+checkpoint fixture the `quality_only` rung actually WON, and the document correctly reported
+`best_rung_uses_expert_scores=False`, `router_earns_its_complexity=False`,
+`cascade_is_justified=False`. Without the guard added earlier today, that artifact would have
+announced that the router earned its complexity for a model that never consults a detector.
+
 ## 2026-08-27 — [relay] DegradePrint pilot harness built; a gate defect in my own spec, corrected
 
 `scripts/diagnostics/degradeprint_pilot.py` implements the frozen `specs/degradeprint-pilot.md`:

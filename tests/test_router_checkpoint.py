@@ -66,6 +66,18 @@ def make_rows(n_sources=40, split_at=30, seed=0):
     return rows
 
 
+def _genuine_checkpoint(tmp_path):
+    """A real checkpoint from a real ladder run (B-024 §4 mutation tests all
+    need one: each mutates exactly ONE field of a genuinely saved payload,
+    never a hand-built dict, so the test exercises what `load_checkpoint`
+    actually receives from `save_checkpoint`)."""
+    rows = make_rows()
+    result = run_ladder(rows, threshold=0.5, expert_ids=EXPERTS,
+                        threshold_provenance="fitted-phase4-2026-08-27")
+    return save_checkpoint(result, tmp_path / "router.pt", threshold=0.5,
+                           cache_artifact_sha256="b" * 64)
+
+
 def test_save_load_prediction_parity(tmp_path):
     """The deployability test: load the checkpoint and run it on the SAME dev
     batch tensors the trainer produced, and require identical predictions."""
@@ -147,3 +159,92 @@ def test_checkpoint_records_provenance(tmp_path):
     assert payload["n_parameters"] == best_record["n_parameters"]
     assert payload["cache_artifact_sha256"] == "a" * 64
     assert payload["selection"]["best_rung"] == result["best_rung"]
+
+
+# --- B-024 §4: `load_checkpoint` must validate everything it claims to ----
+# Each test mutates ONE field of a genuine saved checkpoint and asserts a
+# ValueError naming that field -- a mutated checkpoint must never load.
+
+def test_load_rejects_missing_provenance_field(tmp_path):
+    path = _genuine_checkpoint(tmp_path)
+    payload = torch.load(path, weights_only=False)
+    del payload["cache_artifact_sha256"]
+    torch.save(payload, path)
+    with pytest.raises(ValueError, match="cache_artifact_sha256"):
+        load_checkpoint(path)
+
+
+def test_load_rejects_missing_selection_field(tmp_path):
+    path = _genuine_checkpoint(tmp_path)
+    payload = torch.load(path, weights_only=False)
+    del payload["selection"]["best_rung"]
+    torch.save(payload, path)
+    with pytest.raises(ValueError, match="best_rung"):
+        load_checkpoint(path)
+
+
+def test_load_rejects_expert_order_mismatch(tmp_path):
+    """Mutate the NESTED copy (`feature_spec["expert_ids"]`) only, leaving
+    `feature_spec["feature_names"]` untouched -- this isolates the new
+    expert_order-vs-feature_spec cross-check from the pre-existing dim/name
+    drift check, which compares the rebuilt spec (still built from the
+    unmutated top-level `expert_order`) against `feature_names` and would
+    not otherwise fire."""
+    path = _genuine_checkpoint(tmp_path)
+    payload = torch.load(path, weights_only=False)
+    payload["feature_spec"]["expert_ids"] = list(
+        reversed(payload["feature_spec"]["expert_ids"])
+    )
+    torch.save(payload, path)
+    with pytest.raises(ValueError, match="expert_order"):
+        load_checkpoint(path)
+
+
+def test_load_rejects_feature_names_mismatch(tmp_path):
+    """Mutate the top-level `feature_names` copy only, leaving
+    `feature_spec["feature_names"]` untouched, to isolate this check from the
+    pre-existing dim/name drift check."""
+    path = _genuine_checkpoint(tmp_path)
+    payload = torch.load(path, weights_only=False)
+    payload["feature_names"] = list(reversed(payload["feature_names"]))
+    torch.save(payload, path)
+    with pytest.raises(ValueError, match="feature_names"):
+        load_checkpoint(path)
+
+
+def test_load_rejects_standardizer_mismatch(tmp_path):
+    path = _genuine_checkpoint(tmp_path)
+    payload = torch.load(path, weights_only=False)
+    payload["standardizer"]["feature_names"] = list(
+        reversed(payload["standardizer"]["feature_names"])
+    )
+    torch.save(payload, path)
+    with pytest.raises(ValueError, match="standardizer"):
+        load_checkpoint(path)
+
+
+def test_load_rejects_non_finite_standardizer(tmp_path):
+    path = _genuine_checkpoint(tmp_path)
+    payload = torch.load(path, weights_only=False)
+    payload["standardizer"]["mean"][0] = float("nan")
+    torch.save(payload, path)
+    with pytest.raises(ValueError, match="non-finite"):
+        load_checkpoint(path)
+
+
+def test_load_rejects_out_of_range_threshold(tmp_path):
+    path = _genuine_checkpoint(tmp_path)
+    payload = torch.load(path, weights_only=False)
+    payload["threshold"] = 1.5
+    torch.save(payload, path)
+    with pytest.raises(ValueError, match="threshold"):
+        load_checkpoint(path)
+
+
+def test_load_rejects_unknown_rung(tmp_path):
+    path = _genuine_checkpoint(tmp_path)
+    payload = torch.load(path, weights_only=False)
+    payload["rung"] = "not_a_known_rung"
+    torch.save(payload, path)
+    with pytest.raises(ValueError, match="rung"):
+        load_checkpoint(path)
