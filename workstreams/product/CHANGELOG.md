@@ -1,5 +1,19 @@
 # product — CHANGELOG (newest first)
 
+## 2026-08-27 — Mehul handed Codex work to Claude under PROTOCOL §6
+Why: Codex is near its usage limit and Mehul explicitly directed Claude to take over.
+What: B-028 grants temporary `[relay]` execution for Codex-owned eval/product work. Existing release,
+licence, sealed-data and public-history constraints remain unchanged; relay edits are review-first
+for Codex on return. LOTA weights remain ignored/uncommitted and final use remains licence-gated.
+
+## 2026-08-27 — Narrow checkpoint ignore guard recorded
+Why: Mehul supplied two local LOTA `.pth` checkpoints for a bounded, pending
+preflight; large checkpoint files must not enter Git accidentally.
+What: The heavy owner made the small direct `.gitignore` amendment for `*.pth`,
+`*.pt`, and `*.ckpt`. The files remain unchanged and untracked. The coordination
+packet was drafted by the lighter agent; no license, README, architecture, or
+cache-admission claim was added.
+
 ## 2026-08-27 — Stress panel accepted; product plan updated after LOTA
 Why: Claude A-024 independently reproduced the 39-test/Ruff gate and Mehul requested joint post-LOTA
 replanning.

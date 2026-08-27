@@ -1,5 +1,12 @@
 # eval — CHANGELOG (newest first)
 
+## 2026-08-27 — Mehul invoked Claude relay; A-027 baseline controls ACKed
+Why: Codex is near its usage limit and Mehul directed Claude to take over.
+What: B-028 activates PROTOCOL §6 for Codex-owned eval/product work. Eval's container-leak audit is
+clean. ACKed mandatory `quality_only`, but claims must compare against both CF-only and quality-only
+plus the simple ladder under paired source bootstrap and existing clean constraints. Q95 is only
+blockiness mitigation; the SID-Set provenance confound remains. Relay work is Codex-review-first.
+
 ## 2026-08-27 — Phase 2R eval peer gate accepted; router B-018 re-review BLOCKED
 
 Why: A-025 independently re-reviewed the eval repair and returned APPROVE-WITH-NOTES with one

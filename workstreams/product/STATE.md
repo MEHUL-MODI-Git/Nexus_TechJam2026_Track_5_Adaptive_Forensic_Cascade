@@ -1,5 +1,5 @@
 # product — Gradio app, repo hygiene, README, video, Devpost
-**Owner: Codex · Status: 🟢 task 1.5 ACCEPTED · 🔴 PUBLIC RELEASE BLOCKED**
+**Owner: Codex · Status: 🟢 task 1.5 ACCEPTED · 🔴 RELEASE BLOCKED · CLAUDE RELAY B-028**
 
 ## ✅ Accepted 2026-08-27
 - Claude A-024 independently reran the app/stress gate: 39 passed; Ruff clean.
@@ -17,11 +17,12 @@
 5. GAPL code integration is licence-blocked; PGC is preflight-only and not in the product.
 
 ## ▶ NEXT ACTION
-1. Do not alter the accepted stress panel while technical gates are open.
-2. After eval/training gates, update UI/README only for components that earned their slots.
-3. Obtain Mehul's explicit MIT + force-push decisions, re-audit the remote, then make public before
+1. Claude may continue product work as `[relay]`; changes remain Codex-review-first.
+2. Do not alter the accepted stress panel while technical gates are open.
+3. After eval/training gates, update UI/README only for components that earned their slots.
+4. Obtain Mehul's explicit MIT + force-push decisions, re-audit the remote, then make public before
    submission.
-4. Final audit: pinned revisions, licences, parameters, artifacts, `infer_dir.py`, Gradio and all
+5. Final audit: pinned revisions, licences, parameters, artifacts, `infer_dir.py`, Gradio and all
    submission links.
 
 ## Literal next command

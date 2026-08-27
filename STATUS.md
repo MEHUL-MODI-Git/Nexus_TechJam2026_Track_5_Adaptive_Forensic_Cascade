@@ -3,7 +3,7 @@
 > 30-second orientation only. Detail lives in `workstreams/<ws>/STATE.md`. Messages in `coordination/CHANNEL.md`. Rules in `CLAUDE.md` / `AGENTS.md`.
 
 ## Snapshot
-- **Phase:** **POST-LOTA PLAN ADOPTED (A-023/A-024/B-020) — Phase 2R repair gate.** Active overlay: `coordination/PLAN-UPDATE-2026-08-27.md`. **Eval repair is accepted/closed at `0a40ee8` (E3c fixed); router B-018 is BLOCKED by Codex re-review; product release remains blocked.**
+- **Phase:** **Phase 2R repair/data gate under Claude relay (B-028).** Eval repair is accepted at `0a40ee8`; router B-018 remains BLOCKED by B-024; SID-Set quality evidence is confounded; LOTA is outside the common cache; product release remains blocked.
 - **Deadline:** 1 Sept 12:00pm — submit ~9am · **Webinar: dropped by Mehul (27 Aug)**
 - **Repo:** https://github.com/MEHUL-MODI-Git/TechJam_2026_Track_5 — **PRIVATE. ⚠️ MUST BE MADE PUBLIC BEFORE SUBMISSION** (brief deliverable).
 - **Session note:** Mehul moved from the API session to the Claude Code session (~21:00). AGENT-A continuity = these files; the new session resumes via RESUME PROTOCOL.
@@ -20,11 +20,14 @@
 | eval | Codex | ✅ Phase 2R repair accepted/closed at `0a40ee8` (E3c fixed) | Re-review corrected router; protected mini-pilot/candidate comparisons only after router/data gates |
 | product | Codex | 🟢 task 1.5 accepted; 🔴 public release blocked | owner approvals, remote clean-history push, final truthfulness audit |
 
+**Relay:** Mehul invoked PROTOCOL §6 on 27 Aug because Codex is near its limit. Claude may continue
+Codex-owned eval/product tasks as `[relay]`; changes remain Codex-review-first on return.
+
 ## Task claims (claim BEFORE starting; release when done/parked)
 | Task (id from 06-build-plan) | Owner | State |
 |---|---|---|
 | post-LOTA strategy reconciliation + mutable plan refresh | Codex + Claude | ✅ joint plan adopted A-023/A-024/B-020; active overlay written |
-| LOTA checkpoint availability replan | Codex + Claude | ⏳ safe audit/proposal posted B-025; pending Claude ACK |
+| LOTA checkpoint availability replan | Codex + Claude | ✅ joint position B-028: bounded negative/challenger, outside 15k cache; licence-gated |
 | 2R.1 eval scientific-boundary repair | Codex | ✅ `0a40ee8` accepted/closed — E3c fixed; 70 focused / 662 full / 9 warnings |
 | 2R.1 router/deployment repair | Claude | 🔴 repaired `f9c6ecb` BLOCKED by B-024 — five fail-closed/schema fixes required |
 | 2R.2 protected mini-pilot + feature/probe freeze | Claude + Codex review | ⏳ waits on 2R.1 and valid denylist/manifests |
@@ -50,6 +53,7 @@
 | 0.8 Gradio v0 | Codex | ✅ done 00:45 (live local server + parity tests) |
 
 ## Log (newest first)
+- **2026-08-27 — CODEX LIMIT RELAY TO CLAUDE (B-028).** Mehul directed Claude to take over. Codex ACKed A-027: add `quality_only`, compare claims against both CF-only and quality-only plus the full simple ladder, and retain q95 only as blockiness mitigation—not deconfounding. LOTA remains outside the 15k cache/common path; q95 AUROC 0.592 with zero fake recall at 0.5. Router B-018 remains peer-gate BLOCKED; public/sealed actions remain unauthorized.
 - **2026-08-27 — LOTA CHECKPOINT AUDIT; BOTH FIRST SANITY RUNS FAIL.** Both supplied checkpoints safely load into the official module with zero missing/unexpected keys, but balanced 200-image TechJam smoke AUROC is **0.5166 (SD v1.5)** and **0.4798 (SD v1.4)**; both overwhelmingly predict real, and official random-patch preprocessing is non-deterministic. B-025/B-026 propose a small upstream GenImage parity check before any full stress grid: upstream failure means integration repair; upstream success plus persistent TechJam failure means domain-mismatch rejection. No architecture or 15k-cache authorization is granted; weights remain untracked and final adoption remains license-gated.
 - **2026-08-27 — EVAL CLOSED; ROUTER B-018 BLOCKED ON PEER RE-REVIEW.** A-025's B-023 APPROVE-WITH-NOTES is ACKed and E3c is fixed at `0a40ee8` with shared full threshold-artifact validation, sentinel and exact forged-artifact regression, plus fail-safe "unspecified" provenance. Evidence: 70 focused tests, full **662 passed / 9 warnings**, Ruff clean; eval half of 2R.1 is accepted/closed. Codex's B-018 re-review of `f9c6ecb` is BLOCKED on exact 64-hex cache keys, strict labels/experts containers, controlled None provenance, complete v2 checkpoint validation/cross-checks, and removal/repair of the stale unchanged-score artifact. No protected cache or release action may start.
 - **2026-08-27 — 2R.1 BOTH HALVES LANDED, CROSS-REVIEW IN FLIGHT.** Router B-018 repaired (`f9c6ecb`, suite **630 → 660**): consumed-field validation now aborts on a NaN/missing `raw_logit` instead of feeding a fabricated 0.0; split/label/cache-key integrity is fail-closed; the false "one expert ⇒ score necessarily unchanged" claim is deleted and **measured instead — learned rungs move the one-expert dev score by up to 0.1002507 while every parameter-free rung moves it by exactly 0.0**, independently reproducing Codex's 0.2747413; the kill gate now needs ≥2 points or CI95 separation, not delta > 0; reliability is enforced two-stage (unfittable and unsaveable under a placeholder threshold); the `probability_mean`/`fixed_weights` baselines are restored; and checkpoints are atomic with a fail-closed loader — **per-rung save→load prediction parity max|Δ| = 0.00e+00 for all six rungs**. Also fixed `scripts/train_router.py`, which still branched on the deleted field and so dropped the single-expert framing on exactly the N=1 configuration we are about to run. **Claude reviewed Codex's eval repair (B-023) adversarially with its own fixtures: E1/E2/E4/E5 hold; verdict APPROVE-WITH-NOTES with one required fix — `FrozenThreshold._from_loader` mints a capability without re-validating the artifact schema, letting a two-key blob produce an `eval-results.v1` headline stamped `held-out-dev`. Not an accidental-misuse path; must be fixed before any frozen/sealed 4R run.** Next: 2R.2 corpus repair.

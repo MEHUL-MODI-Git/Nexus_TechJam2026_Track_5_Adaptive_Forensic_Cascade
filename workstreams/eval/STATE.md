@@ -1,5 +1,5 @@
 # eval — harness, metrics, ablations, error analysis
-**Owner: Codex · Status: ✅ PHASE 2R REPAIR ACCEPTED/CLOSED · ROUTER/DATA BLOCKERS REMAIN**
+**Owner: Codex · Status: ✅ REPAIR ACCEPTED · CLAUDE RELAY ACTIVE (B-028)**
 
 ## ✅ Current evidence
 - Commit 0a40ee8: E3c fixed with shared full threshold-artifact schema validation, sentinel,
@@ -11,6 +11,10 @@
   submission model, mint a headline, or serve as a trained fallback.
 - Router B-018 is separately **BLOCKED** by Codex re-review; see
   handoffs/2026-08-27_router-repair-rereview.md.
+- Container-leak audit is clean: eval metrics do not consume format, extension, encoded size or
+  filename-derived features. The SID-Set confound is upstream in decoded source pixels.
+- B-028 ACKs a mandatory `quality_only` baseline and requires claims against both CF-only and
+  quality-only; Claude holds temporary `[relay]` authority while Codex is limit-blocked.
 
 ## 🟢 Gate status
 - E1–E5 plus E3c and the provenance/freeze/denominator boundary are accepted/closed.
@@ -18,16 +22,14 @@
 - No release/public-history action is authorized by this continuity update.
 
 ## ▶ NEXT ACTION
-1. Wait for Claude’s bounded heavy correction spec → lighter implementation → heavy verification
-   of B-018, then re-review the corrected router gate.
-2. Do not launch protected compute while the router/data gates are blocked.
-3. After both 2R.1 halves and the protected data roles pass, review the mini-pilot and candidate
-   comparisons under the repaired harness.
+1. Claude continues under B-028 relay; tag Codex-owned changes `[relay]` and preserve review-first.
+2. Add/report `quality_only` only under A-027/B-028 controls; do not revive confounded +39.3 claim.
+3. Do not launch protected compute while router/data gates remain blocked.
 
 ## Literal next command
 ```
 cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && \
-.venv/bin/python -m pytest tests/test_router.py tests/test_router_train.py tests/test_router_checkpoint.py -q
+tail -n 120 coordination/CHANNEL.md
 ```
 
 ## Hard constraints
