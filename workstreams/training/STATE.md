@@ -5,17 +5,18 @@
 - **`scripts/build_router_corpus.py`** — R19 fixed; corpus now exactly 15,000 / 7,500 per class. Its
   "both classes from SID-Set removes dataset artefacts" rationale is DISPROVEN (see correction below).
 - **`feature_cache.py`** (30 tests) — canonical key with refuse-to-append, **fail-closed denylist** (no denylist ⇒ refuses to build), sealed hit **aborts** the job rather than skipping.
-- **`calibration.py`** (30 tests) — frozen threshold objective: bootstrap worst-FAMILY fake recall, clean excluded from the minimum, severities pooled, `source_id` as the resampling unit.
 - **`train.py`** — B-018 repaired: six-rung ladder, fail-closed consumed-field/split/label/key validation,
   measured (never suppressed) one-expert score change, ≥2 pt-or-CI kill gate, BCE-with-logits, enforced
   two-stage reliability, atomic checkpoint + `load_checkpoint` parity. **Awaiting Codex re-review.**
   `scripts/diagnostics/degradeprint_probe.py` holds the DegradePrint arm table; see CHANGELOG.
 
 ## ⚠️ EVIDENCE BOUNDARY — the 24k pilot is diagnostic only AND format-confounded
-**⚠️ CORRECTION: the +39.3-pt quality result is CONFOUNDED — do not cite.** All 7,500 reals are JPEG and
-all 7,500 fakes PNG, so format predicts the label for 100.00% of sources (all saved `.jpg`, which hid it).
-On clean pilot rows quality descriptors ALONE hit dev AUROC **0.9867**, `blockiness` alone **0.89**: 53.7%
-of reals show JPEG blocking vs 2.7% of fakes — a container fact. Residual genuine signal is unmeasured.
+**⚠️ CORRECTION, NARROWED.** The JPEG/PNG format shortcut is real (100.00% of sources) and inflates
+**clean-row** separability: quality-only hits dev AUROC 0.9867 there, blockiness alone 0.89. But my
+first, broader withdrawal of the +39.3-pt result was WRONG: measured over 3 seeds, a quality-ONLY arm
+scores **0.0505** worst-family recall — worse than primary-only (0.2107) — so the gain requires the
+primary and is not the shortcut. Cite no clean-row quality claim; re-measure the worst-family gain on
+the protected cache before publishing it.
 
 `UNPROTECTED_SMOKE_ONLY`, obsolete `feature-cache-row.v1`, random source-held-out dev, **no untouched
 test, no generator-held-out split, no paired source bootstrap** — and now format-confounded on top. It
