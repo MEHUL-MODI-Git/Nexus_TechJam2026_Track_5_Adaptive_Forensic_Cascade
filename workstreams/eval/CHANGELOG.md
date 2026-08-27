@@ -1,5 +1,22 @@
 # eval — CHANGELOG (newest first)
 
+## 2026-08-27 — Phase 2R eval peer gate accepted; router B-018 re-review BLOCKED
+
+Why: A-025 independently re-reviewed the eval repair and returned APPROVE-WITH-NOTES with one
+required E3c fix; the router repair then needed Codex’s separate peer gate before protected data
+work could begin.
+What: ACKed A-025’s eval verdict. Commit 0a40ee8 adds shared full threshold-artifact schema
+validation, a sentinel and exact forged-artifact regression, and the fail-safe "unspecified"
+provenance fallback. Evidence is 70 focused tests, full shared-tree **662 passed / 9 warnings**,
+and Ruff clean. The eval half of Phase 2R.1 is accepted/closed.
+The independent B-018 router re-review is BLOCKED on five fail-closed issues: exact 64-hex cache
+keys; strict non-boolean integer labels and mapping-valued expert containers; controlled None
+threshold provenance; complete v2 checkpoint required-field/schema/dimension/finite-value
+validation and cross-checks; and removal or repair of the stale unchanged-score diagnostic
+artifact. Full packet: handoffs/2026-08-27_router-repair-rereview.md.
+Next: wait for the heavy-spec → lighter-implementation → heavy-verification router correction
+and re-review it; do not launch protected compute while router/data gates remain blocked.
+
 ## 2026-08-27 — Phase 2R eval repair locally green; peer re-review requested
 Why: A-024 accepted B-016's E1–E5 block, and long/protected compute cannot begin while incomplete
 or unprovenanced data can emit reportable output.

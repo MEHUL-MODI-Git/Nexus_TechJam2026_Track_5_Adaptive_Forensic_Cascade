@@ -3,11 +3,11 @@
 > 30-second orientation only. Detail lives in `workstreams/<ws>/STATE.md`. Messages in `coordination/CHANNEL.md`. Rules in `CLAUDE.md` / `AGENTS.md`.
 
 ## Snapshot
-- **Phase:** **POST-LOTA PLAN ADOPTED (A-023/A-024/B-020) — Phase 2R repair gate.** Active overlay: `coordination/PLAN-UPDATE-2026-08-27.md`. **Eval repair is locally green at `ff943c7` and awaits Claude re-review; training B-018 remains under repair; product release remains blocked.**
+- **Phase:** **POST-LOTA PLAN ADOPTED (A-023/A-024/B-020) — Phase 2R repair gate.** Active overlay: `coordination/PLAN-UPDATE-2026-08-27.md`. **Eval repair is accepted/closed at `0a40ee8` (E3c fixed); router B-018 is BLOCKED by Codex re-review; product release remains blocked.**
 - **Deadline:** 1 Sept 12:00pm — submit ~9am · **Webinar: dropped by Mehul (27 Aug)**
 - **Repo:** https://github.com/MEHUL-MODI-Git/TechJam_2026_Track_5 — **PRIVATE. ⚠️ MUST BE MADE PUBLIC BEFORE SUBMISSION** (brief deliverable).
 - **Session note:** Mehul moved from the API session to the Claude Code session (~21:00). AGENT-A continuity = these files; the new session resumes via RESUME PROTOCOL.
-- **Blockers:** **Do not make repo public:** remote `main` still retains the old raw-data history; Mehul must explicitly approve MIT and the verified clean-history force-push. Eval peer re-review and router B-018 remain acceptance blockers. The 14,999-source corpus is underfilled, lacks an untouched internal test and perceptual split-dedup, so no protected fitting cache may launch yet.
+- **Blockers:** **Do not make repo public:** remote `main` still retains the old raw-data history; Mehul must explicitly approve MIT and the verified clean-history force-push. Router B-018 remains an acceptance blocker. The 14,999-source corpus is underfilled, lacks an untouched internal test and perceptual split-dedup, so no protected fitting cache may launch yet.
 - **Model slots:** CF-384 remains primary. The next common-path experiment is a **quality-conditioned correction head**, not one-expert "fusion." PGC (Apache-2.0, heavy) is a bounded preflight/rescue candidate; GAPL code integration is licence-blocked; LOTA reproduction is off the schedule. The logit-response DegradePrint branch is **parked by diagnostic evidence**, not claimed finally killed; embeddings are untested/deferred. Existing probes must still earn their long-cache cost through a protected reliability ablation.
 - **Compute decision:** measured CF + three-probe extraction is **7.83 rows/sec**. 30k sources projects to 21.3 h; the adopted 15k total budget projects to 10.6 h. The revised data roles are 12k fitting sources plus a separate untouched 3k internal test. Any feature/probe/candidate change requires a fresh measured projection before the long run.
 
@@ -15,16 +15,16 @@
 | Workstream | Owner | Status | Next (see its STATE.md) |
 |---|---|---|---|
 | core | Claude | ✅ Phase 0 green; post-LOTA candidate work gated | STATE refreshed; PGC preflight only after repair gate |
-| training | Claude | 🟡 B-018 repair landed + owner-verified (660 tests); Codex re-review pending | 2R.2 corpus repair: R19, 15k/7.5k-per-class, 12k fitting + untouched 3k test, perceptual dedup |
-| eval | Codex | 🟡 repair green locally; peer re-review pending | Claude reviews `ff943c7` / Phase-2R gate packet |
+| training | Claude | 🔴 B-018 repair `f9c6ecb` BLOCKED by Codex B-024 re-review | Heavy correction spec → lighter implementation → heavy verification, then Codex re-review; 2R.2 corpus repair remains gated |
+| eval | Codex | ✅ Phase 2R repair accepted/closed at `0a40ee8` (E3c fixed) | Re-review corrected router; protected mini-pilot/candidate comparisons only after router/data gates |
 | product | Codex | 🟢 task 1.5 accepted; 🔴 public release blocked | owner approvals, remote clean-history push, final truthfulness audit |
 
 ## Task claims (claim BEFORE starting; release when done/parked)
 | Task (id from 06-build-plan) | Owner | State |
 |---|---|---|
 | post-LOTA strategy reconciliation + mutable plan refresh | Codex + Claude | ✅ joint plan adopted A-023/A-024/B-020; active overlay written |
-| 2R.1 eval scientific-boundary repair | Codex | 🟡 `ff943c7` locally green — 85 focused / 630 full; Claude re-review pending |
-| 2R.1 router/deployment repair | Claude | 🟡 repaired `f9c6ecb`, owner-verified (660 tests, per-rung checkpoint parity 0.00e+00); A-025 sent, Codex re-review pending |
+| 2R.1 eval scientific-boundary repair | Codex | ✅ `0a40ee8` accepted/closed — E3c fixed; 70 focused / 662 full / 9 warnings |
+| 2R.1 router/deployment repair | Claude | 🔴 repaired `f9c6ecb` BLOCKED by B-024 — five fail-closed/schema fixes required |
 | 2R.2 protected mini-pilot + feature/probe freeze | Claude + Codex review | ⏳ waits on 2R.1 and valid denylist/manifests |
 | 3R candidate preflight/shootout | Claude adapters + Codex eval | ⏳ PGC first; GAPL licence-blocked |
 | 0.2 canonical decode | Claude | ✅ done 22:10 (14 tests) |
@@ -37,9 +37,9 @@
 | 2.x self-probes (doc 03 step 4) | Claude | ✅ done early (17 tests) |
 | 2.x feature-cache row v1 spec | Claude | ✅ FROZEN (Codex B-009 fixes applied) |
 | 3.x calibration + threshold selection | Claude | ✅ done early (30 tests) |
-| 2.x router: features + fusion ladder | Claude | 🟡 B-018 repaired `f9c6ecb`; six-rung ladder, fail-closed validation, measured one-expert correction; awaiting Codex re-review |
+| 2.x router: features + fusion ladder | Claude | 🔴 B-018 repair `f9c6ecb` BLOCKED by Codex B-024; five fail-closed/schema fixes required |
 | 1.3 full-grid baseline (single-expert) | Claude | ✅ DONE — 8,000 rows, 0 failures, 167s |
-| 1.1 eval harness | Codex (Claude relay re-reviewed) | 🟡 E1–E5 repaired at `ff943c7`; peer gate pending |
+| 1.1 eval harness | Codex (Claude relay re-reviewed) | ✅ E1–E5 plus E3c repaired at `0a40ee8`; peer gate accepted/closed |
 | 1.5 Gradio stress panel | Codex (Claude relay reviewed) | ✅ ACCEPTED by Claude A-024 — 39 focused tests + Ruff |
 | 1.6 repo mechanics | Codex (Claude relay re-reviewed) | 🔴 RELEASE BLOCKED — docs repaired; remote raw history, approvals, CF pin remain |
 | 1.6 repo mechanics/license inventory | Codex | 🟡 truthfulness repaired; final audit waits on technical gates + owner approvals |
@@ -48,6 +48,7 @@
 | 0.8 Gradio v0 | Codex | ✅ done 00:45 (live local server + parity tests) |
 
 ## Log (newest first)
+- **2026-08-27 — EVAL CLOSED; ROUTER B-018 BLOCKED ON PEER RE-REVIEW.** A-025's B-023 APPROVE-WITH-NOTES is ACKed and E3c is fixed at `0a40ee8` with shared full threshold-artifact validation, sentinel and exact forged-artifact regression, plus fail-safe "unspecified" provenance. Evidence: 70 focused tests, full **662 passed / 9 warnings**, Ruff clean; eval half of 2R.1 is accepted/closed. Codex's B-018 re-review of `f9c6ecb` is BLOCKED on exact 64-hex cache keys, strict labels/experts containers, controlled None provenance, complete v2 checkpoint validation/cross-checks, and removal/repair of the stale unchanged-score artifact. No protected cache or release action may start.
 - **2026-08-27 — 2R.1 BOTH HALVES LANDED, CROSS-REVIEW IN FLIGHT.** Router B-018 repaired (`f9c6ecb`, suite **630 → 660**): consumed-field validation now aborts on a NaN/missing `raw_logit` instead of feeding a fabricated 0.0; split/label/cache-key integrity is fail-closed; the false "one expert ⇒ score necessarily unchanged" claim is deleted and **measured instead — learned rungs move the one-expert dev score by up to 0.1002507 while every parameter-free rung moves it by exactly 0.0**, independently reproducing Codex's 0.2747413; the kill gate now needs ≥2 points or CI95 separation, not delta > 0; reliability is enforced two-stage (unfittable and unsaveable under a placeholder threshold); the `probability_mean`/`fixed_weights` baselines are restored; and checkpoints are atomic with a fail-closed loader — **per-rung save→load prediction parity max|Δ| = 0.00e+00 for all six rungs**. Also fixed `scripts/train_router.py`, which still branched on the deleted field and so dropped the single-expert framing on exactly the N=1 configuration we are about to run. **Claude reviewed Codex's eval repair (B-023) adversarially with its own fixtures: E1/E2/E4/E5 hold; verdict APPROVE-WITH-NOTES with one required fix — `FrozenThreshold._from_loader` mints a capability without re-validating the artifact schema, letting a two-key blob produce an `eval-results.v1` headline stamped `held-out-dev`. Not an accidental-misuse path; must be fixed before any frozen/sealed 4R run.** Next: 2R.2 corpus repair.
 - **2026-08-27 — PHASE 2R EVAL REPAIR LOCALLY GREEN.** Heavy spec → lighter implementation → heavy adversarial verification completed at `ff943c7`. E1–E5, exact dataset/source denominator, loaded threshold bytes, keyed pairing, headline-free diagnostics, real transform/golden hashes, method/code/freeze/sealed provenance and failure ledgers now fail closed. Focused eval/run-grid gate **85 passed**, Ruff clean; full shared-tree suite **630 passed / 9 warnings**; live 8,000-row diagnostic CLI check passed. Packet `coordination/gates/phase-2r-eval.md`; awaits Claude approval and does not unblock B-018/data gates.
 - **2026-08-27 — MEHUL MODEL-ECONOMY DIRECTIVE REAFFIRMED.** Routine/manual implementation now defaults to a lighter model from a heavy-written bounded spec; the heavy owner reviews the diff and runs verification before landing. Architecture, eval math, preprocessing, contamination/splits, thresholds, licensing and gates remain heavy. Any non-trivial heavy-direct coding exception must be justified in the owning CHANGELOG.
