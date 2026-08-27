@@ -1,5 +1,36 @@
 # CHANGELOG — training (newest first, append-only; corrections are new entries)
 
+## 2026-08-27 — all downloads moved inside the repo; a 12 GB purge that purged nothing
+
+Mehul's instruction: anything downloaded belongs in the project directory only. Auditing that found
+**13 GB outside it**, in `~/.cache/huggingface`, and a bug that put most of it there.
+
+**Both download sites now use a repo-local cache.** New `src/pipeline/hf_cache.py` sets `HF_HOME` to
+`data/hf_cache/` (git-ignored) and is called at module import in `src/experts/commfor.py` and
+`scripts/build_router_corpus.py` — before either lazily imports `huggingface_hub`, since that library
+reads `HF_HOME` at ITS import. An `HF_HOME` already set in the environment is respected.
+
+**Moved, not re-downloaded:** `datasets--saberzl--SID_Set` (12 GB) and
+`models--OwensLab--commfor-model-384` (83 MB) moved into `data/hf_cache/hub/` — same filesystem, so
+instant. Two unrelated `docling-project` caches (506 MB) were left alone; they belong to something
+else. Verified afterwards: CF-384 loads from the new location at the same revision `6076002b` with
+**21,811,969 parameters**, matching the documented 21.81M, and the suite is **662 passed**.
+
+**The real cause of the 12 GB: `--purge` never purged.** `hf_hub_download` returns a path under
+`snapshots/` that is a SYMLINK into `blobs/`. The purge branch called `Path(path).unlink()`, deleting
+the symlink and leaving the ~490 MB blob behind — while printing nothing to suggest otherwise. Result:
+`snapshots/*/data/` was **empty** while `blobs/` held **27 orphaned files totalling 12 GB**. The
+comment above that branch even explained the disk cost it was failing to avoid. Now the link is
+resolved before unlinking and both are removed.
+
+**Also added `--start-shard`.** In `--augment` mode it defaults to one past the highest shard the
+existing manifest consumed (measured: shards 0..26, so a top-up starts at 27). Every source in a
+consumed shard is already held or already rejected, so re-reading them is pure waste; this turns a
+top-up from a full re-scan into a short one.
+
+The 27 orphaned blobs are kept until the top-up finishes — `hf_hub_download` can reuse an existing
+blob rather than re-fetch it — and are then deletable. With the purge fixed, no future run leaks.
+
 ## 2026-08-27 — sealed denylist COMPLETE (13,843 entries); corpus clean against the whole reference subset
 
 Mehul asked how to obtain the organizers' DALL-E Advanced half. The answer turned out to be better

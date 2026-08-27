@@ -30,7 +30,10 @@ import torchvision.transforms as T
 from PIL import Image
 
 from ..pipeline.decode import DecodedImage
+from ..pipeline.hf_cache import use_repo_local_cache
 from .base import ExpertInferenceError, ExpertInitError, ExpertOutput
+
+use_repo_local_cache()      # HF weights land in data/hf_cache/, not ~/.cache
 
 HF_REPO = "OwensLab/commfor-model-384"
 TIMM_ARCH = "vit_small_patch16_384.augreg_in21k_ft_in1k"

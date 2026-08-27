@@ -37,6 +37,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from src.pipeline.hf_cache import use_repo_local_cache
+
+use_repo_local_cache()      # shards land in data/hf_cache/, not ~/.cache
+
 DATASET = "saberzl/SID_Set"
 REVISION = "dc03ead57929879319ce30a82bfcfb8d317b10bd"
 LICENSE_ID = "SID-CC-BY-4.0"
@@ -107,7 +111,17 @@ def extract_shard(shard_index: int, needed: dict[int, int], out_root: Path,
     if purge:
         # Shards are ~490 MB each; keeping 50 of them would cost ~25 GB of cache
         # for data we have already extracted.
-        Path(path).unlink(missing_ok=True)
+        #
+        # hf_hub_download returns a path under `snapshots/` that is a SYMLINK
+        # into `blobs/`. Unlinking only the symlink left the ~490 MB blob on
+        # disk -- which is how 27 orphaned blobs and 12 GB accumulated while
+        # this branch reported itself as purging. Resolve first, then remove
+        # both.
+        link = Path(path)
+        blob = link.resolve() if link.is_symlink() else None
+        link.unlink(missing_ok=True)
+        if blob is not None and blob.exists():
+            blob.unlink(missing_ok=True)
     return rows
 
 
@@ -133,6 +147,11 @@ def main() -> int:
     parser.add_argument("--per-class", type=int, required=True)
     parser.add_argument("--dev-fraction", type=float, default=0.25)
     parser.add_argument("--max-shards", type=int, default=60)
+    parser.add_argument("--start-shard", type=int, default=None,
+                        help="first shard index to read; in --augment mode this "
+                             "defaults to one past the highest shard the existing "
+                             "manifest already consumed, so a top-up never re-reads "
+                             "shards whose sources it already holds")
     parser.add_argument("--keep-shards", action="store_true",
                         help="do not delete downloaded parquet shards (uses ~490MB each)")
     parser.add_argument("--out", type=Path,
@@ -173,7 +192,19 @@ def main() -> int:
         have = {0: 0, 1: 0}
     needed = {0: args.per_class - have[0], 1: args.per_class - have[1]}
 
-    for shard in range(args.max_shards):
+    # A top-up must look for NEW sources, and every source in an already-consumed
+    # shard is either held or was rejected. Resuming past them turns a top-up
+    # from a full re-scan into a short one.
+    first_shard = args.start_shard
+    if first_shard is None:
+        consumed = [int(r["shard"].split("-")[1]) for r in rows if r.get("shard")]
+        first_shard = (max(consumed) + 1) if consumed else 0
+    if first_shard:
+        print(f"starting at shard {first_shard} "
+              f"({'resuming past consumed shards' if args.augment else 'requested'})",
+              file=sys.stderr)
+
+    for shard in range(first_shard, min(first_shard + args.max_shards, N_TRAIN_SHARDS)):
         if all(v <= 0 for v in needed.values()):
             break
         try:
