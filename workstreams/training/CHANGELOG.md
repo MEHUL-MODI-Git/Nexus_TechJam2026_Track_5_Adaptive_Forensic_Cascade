@@ -1,5 +1,41 @@
 # CHANGELOG — training (newest first, append-only; corrections are new entries)
 
+## 2026-08-27 — [relay] robustness summary + error analysis; the blur failure has a measured mechanism
+
+Built the two required deliverables that did not exist: `results/robustness/summary.{json,md}`
+(deliverable #4, clean-vs-transformed across all 20 conditions with flip rates) and
+`deliverables/error-analysis-note.md` (deliverable #5). Both carry `preliminary: true` and the
+unfitted-threshold / COCO-vs-SID caveat.
+
+**Verified the blur finding before building on it, because our headline rests on it.** A reviewer
+flagged that `blur_s2.0` is an outlier rather than gradual degradation (AUROC 0.98 -> 0.94 -> 0.647
+across sigma 0.5/1.0/2.0) and asked whether our own transform was misbehaving. It is not: k =
+2*ceil(3*sigma)+1 = 13 at sigma 2.0, sigma passed explicitly, clamping engages only below 7 px. I
+rendered a case and looked at it — an ordinary, perfectly recognisable soft-focus photograph. **The
+effect is the detector's, not ours.**
+
+**Both failure modes are at the EXTREMES of the output range, not in the middle.** Worst false
+negatives score `p_fake = 0.0000`; worst false positives score `1.0000`. The model does not become
+uncertain under transformation, it becomes confidently wrong.
+
+**New finding, mechanistically explained and quantitatively supported.** Of the 9 real photographs
+most confidently called AI under blur, **8 are aircraft** and the 9th is a breaking wave — all
+large smooth regions with little fine texture. Tested rather than asserted, on the CLEAN originals:
+the 20 real photos most wrongly called AI have median texture energy **442.9**, the 20 least wrongly
+called have **1176.9** — **2.66x more texture in the ones it gets right**.
+
+The mechanism ties to our own corpus audit: `noise_sigma` was the one image statistic that survived
+every container change, because real photographs carry sensor noise and generated images are smooth.
+**Blur removes sensor noise**, so blurring a real photo moves it along exactly that axis into the
+region generated images occupy. A low-texture real photo starts near that boundary and needs very
+little blur to cross it. That explains why the failure is asymmetric rather than a symmetric loss of
+accuracy, and it is the direct argument for a router that measures degradation and withholds the
+verdict — our actual thesis, now with a mechanism behind it.
+
+**Compliance catch:** the two strongest false-positive images carry legible third-party trademarks
+(FedEx, Polar Air Cargo). The brief forbids third-party trademarks in demo assets, so they must not
+appear in the video or public write-up; trademark-free substitutes identified.
+
 ## 2026-08-27 — [relay] deliverable drafting; caught an unverified number in our own record
 
 Drafted `deliverables/devpost-draft.md` (required deliverable #1), targeting the published judging

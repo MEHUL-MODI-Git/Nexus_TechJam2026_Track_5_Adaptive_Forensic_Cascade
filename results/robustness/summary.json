@@ -1,0 +1,842 @@
+{
+  "preliminary": true,
+  "caveat": "PRELIMINARY. Computed with an unfitted PLACEHOLDER decision threshold (0.5, not calibrated) on the grid-smoke-v1 smoke set, whose real half is COCO images and fake half is SID-Set full-synthetic images. This is not a headline or final result -- it is a robustness triage artifact for internal use pending real threshold calibration and the sealed Phase 4 evaluation.",
+  "threshold": 0.5,
+  "source_file": "results/grid-smoke-v1/prediction_rows.jsonl",
+  "run_id": "grid-20260826T153520Z",
+  "method_id": "commfor_384",
+  "n_rows": 8000,
+  "n_sources": 400,
+  "conditions": [
+    "clean",
+    "jpeg_q90",
+    "jpeg_q70",
+    "jpeg_q50",
+    "jpeg_q30",
+    "blur_s0.5",
+    "blur_s1.0",
+    "blur_s2.0",
+    "resize_0.5",
+    "resize_0.25",
+    "noise_s0.02",
+    "noise_s0.05",
+    "noise_s0.10",
+    "bright_-20",
+    "bright_+20",
+    "contrast_-20",
+    "contrast_+20",
+    "saturation_-20",
+    "saturation_+20",
+    "crop_0.8"
+  ],
+  "families": {
+    "clean": [
+      "clean"
+    ],
+    "jpeg": [
+      "jpeg_q90",
+      "jpeg_q70",
+      "jpeg_q50",
+      "jpeg_q30"
+    ],
+    "blur": [
+      "blur_s0.5",
+      "blur_s1.0",
+      "blur_s2.0"
+    ],
+    "resize": [
+      "resize_0.5",
+      "resize_0.25"
+    ],
+    "noise": [
+      "noise_s0.02",
+      "noise_s0.05",
+      "noise_s0.10"
+    ],
+    "color": [
+      "bright_-20",
+      "bright_+20",
+      "contrast_-20",
+      "contrast_+20",
+      "saturation_-20",
+      "saturation_+20"
+    ],
+    "crop": [
+      "crop_0.8"
+    ]
+  },
+  "overall": {
+    "n": 8000,
+    "n_fake": 4000,
+    "n_real": 4000,
+    "tp": 1658,
+    "fn": 2342,
+    "fp": 81,
+    "tn": 3919,
+    "fake_recall_at_0.5": 0.4145,
+    "false_positive_rate_at_0.5": 0.02025,
+    "balanced_accuracy_at_0.5": 0.697125,
+    "auroc": 0.93108334375,
+    "clean_relative_delta_fake_recall": -0.11550000000000005,
+    "fake_to_real_flip_rate": 0.27358490566037735,
+    "real_to_fake_flip_rate": 0.02131578947368421,
+    "flip_counts": {
+      "fake_to_real_flips": 551,
+      "fake_to_real_total": 2014,
+      "real_to_fake_flips": 81,
+      "real_to_fake_total": 3800
+    }
+  },
+  "by_condition": {
+    "clean": {
+      "n": 400,
+      "n_fake": 200,
+      "n_real": 200,
+      "tp": 106,
+      "fn": 94,
+      "fp": 0,
+      "tn": 200,
+      "fake_recall_at_0.5": 0.53,
+      "false_positive_rate_at_0.5": 0.0,
+      "balanced_accuracy_at_0.5": 0.765,
+      "auroc": 0.99235,
+      "family": "clean",
+      "clean_relative_delta_fake_recall": 0.0,
+      "fake_to_real_flip_rate": null,
+      "real_to_fake_flip_rate": null,
+      "flip_counts": null
+    },
+    "jpeg_q90": {
+      "n": 400,
+      "n_fake": 200,
+      "n_real": 200,
+      "tp": 105,
+      "fn": 95,
+      "fp": 0,
+      "tn": 200,
+      "fake_recall_at_0.5": 0.525,
+      "false_positive_rate_at_0.5": 0.0,
+      "balanced_accuracy_at_0.5": 0.7625,
+      "auroc": 0.987575,
+      "family": "jpeg",
+      "clean_relative_delta_fake_recall": -0.0050000000000000044,
+      "fake_to_real_flip_rate": 0.018867924528301886,
+      "real_to_fake_flip_rate": 0.0,
+      "flip_counts": {
+        "fake_to_real_flips": 2,
+        "fake_to_real_total": 106,
+        "real_to_fake_flips": 0,
+        "real_to_fake_total": 200
+      }
+    },
+    "jpeg_q70": {
+      "n": 400,
+      "n_fake": 200,
+      "n_real": 200,
+      "tp": 76,
+      "fn": 124,
+      "fp": 0,
+      "tn": 200,
+      "fake_recall_at_0.5": 0.38,
+      "false_positive_rate_at_0.5": 0.0,
+      "balanced_accuracy_at_0.5": 0.69,
+      "auroc": 0.965075,
+      "family": "jpeg",
+      "clean_relative_delta_fake_recall": -0.15000000000000002,
+      "fake_to_real_flip_rate": 0.2830188679245283,
+      "real_to_fake_flip_rate": 0.0,
+      "flip_counts": {
+        "fake_to_real_flips": 30,
+        "fake_to_real_total": 106,
+        "real_to_fake_flips": 0,
+        "real_to_fake_total": 200
+      }
+    },
+    "jpeg_q50": {
+      "n": 400,
+      "n_fake": 200,
+      "n_real": 200,
+      "tp": 58,
+      "fn": 142,
+      "fp": 0,
+      "tn": 200,
+      "fake_recall_at_0.5": 0.29,
+      "false_positive_rate_at_0.5": 0.0,
+      "balanced_accuracy_at_0.5": 0.645,
+      "auroc": 0.9586,
+      "family": "jpeg",
+      "clean_relative_delta_fake_recall": -0.24000000000000005,
+      "fake_to_real_flip_rate": 0.4528301886792453,
+      "real_to_fake_flip_rate": 0.0,
+      "flip_counts": {
+        "fake_to_real_flips": 48,
+        "fake_to_real_total": 106,
+        "real_to_fake_flips": 0,
+        "real_to_fake_total": 200
+      }
+    },
+    "jpeg_q30": {
+      "n": 400,
+      "n_fake": 200,
+      "n_real": 200,
+      "tp": 23,
+      "fn": 177,
+      "fp": 0,
+      "tn": 200,
+      "fake_recall_at_0.5": 0.115,
+      "false_positive_rate_at_0.5": 0.0,
+      "balanced_accuracy_at_0.5": 0.5575,
+      "auroc": 0.9373,
+      "family": "jpeg",
+      "clean_relative_delta_fake_recall": -0.41500000000000004,
+      "fake_to_real_flip_rate": 0.7830188679245284,
+      "real_to_fake_flip_rate": 0.0,
+      "flip_counts": {
+        "fake_to_real_flips": 83,
+        "fake_to_real_total": 106,
+        "real_to_fake_flips": 0,
+        "real_to_fake_total": 200
+      }
+    },
+    "blur_s0.5": {
+      "n": 400,
+      "n_fake": 200,
+      "n_real": 200,
+      "tp": 102,
+      "fn": 98,
+      "fp": 1,
+      "tn": 199,
+      "fake_recall_at_0.5": 0.51,
+      "false_positive_rate_at_0.5": 0.005,
+      "balanced_accuracy_at_0.5": 0.7525,
+      "auroc": 0.984475,
+      "family": "blur",
+      "clean_relative_delta_fake_recall": -0.020000000000000018,
+      "fake_to_real_flip_rate": 0.03773584905660377,
+      "real_to_fake_flip_rate": 0.005,
+      "flip_counts": {
+        "fake_to_real_flips": 4,
+        "fake_to_real_total": 106,
+        "real_to_fake_flips": 1,
+        "real_to_fake_total": 200
+      }
+    },
+    "blur_s1.0": {
+      "n": 400,
+      "n_fake": 200,
+      "n_real": 200,
+      "tp": 103,
+      "fn": 97,
+      "fp": 5,
+      "tn": 195,
+      "fake_recall_at_0.5": 0.515,
+      "false_positive_rate_at_0.5": 0.025,
+      "balanced_accuracy_at_0.5": 0.745,
+      "auroc": 0.94065,
+      "family": "blur",
+      "clean_relative_delta_fake_recall": -0.015000000000000013,
+      "fake_to_real_flip_rate": 0.04716981132075472,
+      "real_to_fake_flip_rate": 0.025,
+      "flip_counts": {
+        "fake_to_real_flips": 5,
+        "fake_to_real_total": 106,
+        "real_to_fake_flips": 5,
+        "real_to_fake_total": 200
+      }
+    },
+    "blur_s2.0": {
+      "n": 400,
+      "n_fake": 200,
+      "n_real": 200,
+      "tp": 97,
+      "fn": 103,
+      "fp": 63,
+      "tn": 137,
+      "fake_recall_at_0.5": 0.485,
+      "false_positive_rate_at_0.5": 0.315,
+      "balanced_accuracy_at_0.5": 0.585,
+      "auroc": 0.6470375,
+      "family": "blur",
+      "clean_relative_delta_fake_recall": -0.04500000000000004,
+      "fake_to_real_flip_rate": 0.1509433962264151,
+      "real_to_fake_flip_rate": 0.315,
+      "flip_counts": {
+        "fake_to_real_flips": 16,
+        "fake_to_real_total": 106,
+        "real_to_fake_flips": 63,
+        "real_to_fake_total": 200
+      }
+    },
+    "resize_0.5": {
+      "n": 400,
+      "n_fake": 200,
+      "n_real": 200,
+      "tp": 95,
+      "fn": 105,
+      "fp": 5,
+      "tn": 195,
+      "fake_recall_at_0.5": 0.475,
+      "false_positive_rate_at_0.5": 0.025,
+      "balanced_accuracy_at_0.5": 0.725,
+      "auroc": 0.94495,
+      "family": "resize",
+      "clean_relative_delta_fake_recall": -0.05500000000000005,
+      "fake_to_real_flip_rate": 0.12264150943396226,
+      "real_to_fake_flip_rate": 0.025,
+      "flip_counts": {
+        "fake_to_real_flips": 13,
+        "fake_to_real_total": 106,
+        "real_to_fake_flips": 5,
+        "real_to_fake_total": 200
+      }
+    },
+    "resize_0.25": {
+      "n": 400,
+      "n_fake": 200,
+      "n_real": 200,
+      "tp": 68,
+      "fn": 132,
+      "fp": 4,
+      "tn": 196,
+      "fake_recall_at_0.5": 0.34,
+      "false_positive_rate_at_0.5": 0.02,
+      "balanced_accuracy_at_0.5": 0.66,
+      "auroc": 0.922925,
+      "family": "resize",
+      "clean_relative_delta_fake_recall": -0.19,
+      "fake_to_real_flip_rate": 0.3867924528301887,
+      "real_to_fake_flip_rate": 0.02,
+      "flip_counts": {
+        "fake_to_real_flips": 41,
+        "fake_to_real_total": 106,
+        "real_to_fake_flips": 4,
+        "real_to_fake_total": 200
+      }
+    },
+    "noise_s0.02": {
+      "n": 400,
+      "n_fake": 200,
+      "n_real": 200,
+      "tp": 78,
+      "fn": 122,
+      "fp": 1,
+      "tn": 199,
+      "fake_recall_at_0.5": 0.39,
+      "false_positive_rate_at_0.5": 0.005,
+      "balanced_accuracy_at_0.5": 0.6925,
+      "auroc": 0.97575,
+      "family": "noise",
+      "clean_relative_delta_fake_recall": -0.14,
+      "fake_to_real_flip_rate": 0.27358490566037735,
+      "real_to_fake_flip_rate": 0.005,
+      "flip_counts": {
+        "fake_to_real_flips": 29,
+        "fake_to_real_total": 106,
+        "real_to_fake_flips": 1,
+        "real_to_fake_total": 200
+      }
+    },
+    "noise_s0.05": {
+      "n": 400,
+      "n_fake": 200,
+      "n_real": 200,
+      "tp": 18,
+      "fn": 182,
+      "fp": 1,
+      "tn": 199,
+      "fake_recall_at_0.5": 0.09,
+      "false_positive_rate_at_0.5": 0.005,
+      "balanced_accuracy_at_0.5": 0.5425,
+      "auroc": 0.913275,
+      "family": "noise",
+      "clean_relative_delta_fake_recall": -0.44000000000000006,
+      "fake_to_real_flip_rate": 0.8301886792452831,
+      "real_to_fake_flip_rate": 0.005,
+      "flip_counts": {
+        "fake_to_real_flips": 88,
+        "fake_to_real_total": 106,
+        "real_to_fake_flips": 1,
+        "real_to_fake_total": 200
+      }
+    },
+    "noise_s0.10": {
+      "n": 400,
+      "n_fake": 200,
+      "n_real": 200,
+      "tp": 3,
+      "fn": 197,
+      "fp": 1,
+      "tn": 199,
+      "fake_recall_at_0.5": 0.015,
+      "false_positive_rate_at_0.5": 0.005,
+      "balanced_accuracy_at_0.5": 0.505,
+      "auroc": 0.81735,
+      "family": "noise",
+      "clean_relative_delta_fake_recall": -0.515,
+      "fake_to_real_flip_rate": 0.9716981132075472,
+      "real_to_fake_flip_rate": 0.005,
+      "flip_counts": {
+        "fake_to_real_flips": 103,
+        "fake_to_real_total": 106,
+        "real_to_fake_flips": 1,
+        "real_to_fake_total": 200
+      }
+    },
+    "bright_-20": {
+      "n": 400,
+      "n_fake": 200,
+      "n_real": 200,
+      "tp": 114,
+      "fn": 86,
+      "fp": 0,
+      "tn": 200,
+      "fake_recall_at_0.5": 0.57,
+      "false_positive_rate_at_0.5": 0.0,
+      "balanced_accuracy_at_0.5": 0.7849999999999999,
+      "auroc": 0.9924,
+      "family": "color",
+      "clean_relative_delta_fake_recall": 0.039999999999999925,
+      "fake_to_real_flip_rate": 0.0660377358490566,
+      "real_to_fake_flip_rate": 0.0,
+      "flip_counts": {
+        "fake_to_real_flips": 7,
+        "fake_to_real_total": 106,
+        "real_to_fake_flips": 0,
+        "real_to_fake_total": 200
+      }
+    },
+    "bright_+20": {
+      "n": 400,
+      "n_fake": 200,
+      "n_real": 200,
+      "tp": 81,
+      "fn": 119,
+      "fp": 0,
+      "tn": 200,
+      "fake_recall_at_0.5": 0.405,
+      "false_positive_rate_at_0.5": 0.0,
+      "balanced_accuracy_at_0.5": 0.7025,
+      "auroc": 0.98685,
+      "family": "color",
+      "clean_relative_delta_fake_recall": -0.125,
+      "fake_to_real_flip_rate": 0.25471698113207547,
+      "real_to_fake_flip_rate": 0.0,
+      "flip_counts": {
+        "fake_to_real_flips": 27,
+        "fake_to_real_total": 106,
+        "real_to_fake_flips": 0,
+        "real_to_fake_total": 200
+      }
+    },
+    "contrast_-20": {
+      "n": 400,
+      "n_fake": 200,
+      "n_real": 200,
+      "tp": 116,
+      "fn": 84,
+      "fp": 0,
+      "tn": 200,
+      "fake_recall_at_0.5": 0.58,
+      "false_positive_rate_at_0.5": 0.0,
+      "balanced_accuracy_at_0.5": 0.79,
+      "auroc": 0.992275,
+      "family": "color",
+      "clean_relative_delta_fake_recall": 0.04999999999999993,
+      "fake_to_real_flip_rate": 0.05660377358490566,
+      "real_to_fake_flip_rate": 0.0,
+      "flip_counts": {
+        "fake_to_real_flips": 6,
+        "fake_to_real_total": 106,
+        "real_to_fake_flips": 0,
+        "real_to_fake_total": 200
+      }
+    },
+    "contrast_+20": {
+      "n": 400,
+      "n_fake": 200,
+      "n_real": 200,
+      "tp": 94,
+      "fn": 106,
+      "fp": 0,
+      "tn": 200,
+      "fake_recall_at_0.5": 0.47,
+      "false_positive_rate_at_0.5": 0.0,
+      "balanced_accuracy_at_0.5": 0.735,
+      "auroc": 0.988525,
+      "family": "color",
+      "clean_relative_delta_fake_recall": -0.06000000000000005,
+      "fake_to_real_flip_rate": 0.16981132075471697,
+      "real_to_fake_flip_rate": 0.0,
+      "flip_counts": {
+        "fake_to_real_flips": 18,
+        "fake_to_real_total": 106,
+        "real_to_fake_flips": 0,
+        "real_to_fake_total": 200
+      }
+    },
+    "saturation_-20": {
+      "n": 400,
+      "n_fake": 200,
+      "n_real": 200,
+      "tp": 89,
+      "fn": 111,
+      "fp": 0,
+      "tn": 200,
+      "fake_recall_at_0.5": 0.445,
+      "false_positive_rate_at_0.5": 0.0,
+      "balanced_accuracy_at_0.5": 0.7225,
+      "auroc": 0.99015,
+      "family": "color",
+      "clean_relative_delta_fake_recall": -0.08500000000000002,
+      "fake_to_real_flip_rate": 0.16037735849056603,
+      "real_to_fake_flip_rate": 0.0,
+      "flip_counts": {
+        "fake_to_real_flips": 17,
+        "fake_to_real_total": 106,
+        "real_to_fake_flips": 0,
+        "real_to_fake_total": 200
+      }
+    },
+    "saturation_+20": {
+      "n": 400,
+      "n_fake": 200,
+      "n_real": 200,
+      "tp": 108,
+      "fn": 92,
+      "fp": 0,
+      "tn": 200,
+      "fake_recall_at_0.5": 0.54,
+      "false_positive_rate_at_0.5": 0.0,
+      "balanced_accuracy_at_0.5": 0.77,
+      "auroc": 0.99285,
+      "family": "color",
+      "clean_relative_delta_fake_recall": 0.010000000000000009,
+      "fake_to_real_flip_rate": 0.04716981132075472,
+      "real_to_fake_flip_rate": 0.0,
+      "flip_counts": {
+        "fake_to_real_flips": 5,
+        "fake_to_real_total": 106,
+        "real_to_fake_flips": 0,
+        "real_to_fake_total": 200
+      }
+    },
+    "crop_0.8": {
+      "n": 400,
+      "n_fake": 200,
+      "n_real": 200,
+      "tp": 124,
+      "fn": 76,
+      "fp": 0,
+      "tn": 200,
+      "fake_recall_at_0.5": 0.62,
+      "false_positive_rate_at_0.5": 0.0,
+      "balanced_accuracy_at_0.5": 0.81,
+      "auroc": 0.989925,
+      "family": "crop",
+      "clean_relative_delta_fake_recall": 0.08999999999999997,
+      "fake_to_real_flip_rate": 0.08490566037735849,
+      "real_to_fake_flip_rate": 0.0,
+      "flip_counts": {
+        "fake_to_real_flips": 9,
+        "fake_to_real_total": 106,
+        "real_to_fake_flips": 0,
+        "real_to_fake_total": 200
+      }
+    }
+  },
+  "by_family": {
+    "clean": {
+      "n": 400,
+      "n_fake": 200,
+      "n_real": 200,
+      "tp": 106,
+      "fn": 94,
+      "fp": 0,
+      "tn": 200,
+      "fake_recall_at_0.5": 0.53,
+      "false_positive_rate_at_0.5": 0.0,
+      "balanced_accuracy_at_0.5": 0.765,
+      "auroc": 0.99235,
+      "conditions": [
+        "clean"
+      ],
+      "clean_relative_delta_fake_recall": 0.0,
+      "fake_to_real_flip_rate": null,
+      "real_to_fake_flip_rate": null,
+      "flip_counts": null
+    },
+    "jpeg": {
+      "n": 1600,
+      "n_fake": 800,
+      "n_real": 800,
+      "tp": 262,
+      "fn": 538,
+      "fp": 0,
+      "tn": 800,
+      "fake_recall_at_0.5": 0.3275,
+      "false_positive_rate_at_0.5": 0.0,
+      "balanced_accuracy_at_0.5": 0.6637500000000001,
+      "auroc": 0.959484375,
+      "conditions": [
+        "jpeg_q90",
+        "jpeg_q70",
+        "jpeg_q50",
+        "jpeg_q30"
+      ],
+      "clean_relative_delta_fake_recall": -0.2025,
+      "fake_to_real_flip_rate": 0.38443396226415094,
+      "real_to_fake_flip_rate": 0.0,
+      "flip_counts": {
+        "fake_to_real_flips": 163,
+        "fake_to_real_total": 424,
+        "real_to_fake_flips": 0,
+        "real_to_fake_total": 800
+      }
+    },
+    "blur": {
+      "n": 1200,
+      "n_fake": 600,
+      "n_real": 600,
+      "tp": 302,
+      "fn": 298,
+      "fp": 69,
+      "tn": 531,
+      "fake_recall_at_0.5": 0.5033333333333333,
+      "false_positive_rate_at_0.5": 0.115,
+      "balanced_accuracy_at_0.5": 0.6941666666666666,
+      "auroc": 0.8576347222222223,
+      "conditions": [
+        "blur_s0.5",
+        "blur_s1.0",
+        "blur_s2.0"
+      ],
+      "clean_relative_delta_fake_recall": -0.026666666666666727,
+      "fake_to_real_flip_rate": 0.07861635220125786,
+      "real_to_fake_flip_rate": 0.115,
+      "flip_counts": {
+        "fake_to_real_flips": 25,
+        "fake_to_real_total": 318,
+        "real_to_fake_flips": 69,
+        "real_to_fake_total": 600
+      }
+    },
+    "resize": {
+      "n": 800,
+      "n_fake": 400,
+      "n_real": 400,
+      "tp": 163,
+      "fn": 237,
+      "fp": 9,
+      "tn": 391,
+      "fake_recall_at_0.5": 0.4075,
+      "false_positive_rate_at_0.5": 0.0225,
+      "balanced_accuracy_at_0.5": 0.6925,
+      "auroc": 0.9348,
+      "conditions": [
+        "resize_0.5",
+        "resize_0.25"
+      ],
+      "clean_relative_delta_fake_recall": -0.12250000000000005,
+      "fake_to_real_flip_rate": 0.25471698113207547,
+      "real_to_fake_flip_rate": 0.0225,
+      "flip_counts": {
+        "fake_to_real_flips": 54,
+        "fake_to_real_total": 212,
+        "real_to_fake_flips": 9,
+        "real_to_fake_total": 400
+      }
+    },
+    "noise": {
+      "n": 1200,
+      "n_fake": 600,
+      "n_real": 600,
+      "tp": 99,
+      "fn": 501,
+      "fp": 3,
+      "tn": 597,
+      "fake_recall_at_0.5": 0.165,
+      "false_positive_rate_at_0.5": 0.005,
+      "balanced_accuracy_at_0.5": 0.58,
+      "auroc": 0.8988777777777778,
+      "conditions": [
+        "noise_s0.02",
+        "noise_s0.05",
+        "noise_s0.10"
+      ],
+      "clean_relative_delta_fake_recall": -0.365,
+      "fake_to_real_flip_rate": 0.6918238993710691,
+      "real_to_fake_flip_rate": 0.005,
+      "flip_counts": {
+        "fake_to_real_flips": 220,
+        "fake_to_real_total": 318,
+        "real_to_fake_flips": 3,
+        "real_to_fake_total": 600
+      }
+    },
+    "color": {
+      "n": 2400,
+      "n_fake": 1200,
+      "n_real": 1200,
+      "tp": 602,
+      "fn": 598,
+      "fp": 0,
+      "tn": 1200,
+      "fake_recall_at_0.5": 0.5016666666666667,
+      "false_positive_rate_at_0.5": 0.0,
+      "balanced_accuracy_at_0.5": 0.7508333333333334,
+      "auroc": 0.9901868055555556,
+      "conditions": [
+        "bright_-20",
+        "bright_+20",
+        "contrast_-20",
+        "contrast_+20",
+        "saturation_-20",
+        "saturation_+20"
+      ],
+      "clean_relative_delta_fake_recall": -0.02833333333333332,
+      "fake_to_real_flip_rate": 0.12578616352201258,
+      "real_to_fake_flip_rate": 0.0,
+      "flip_counts": {
+        "fake_to_real_flips": 80,
+        "fake_to_real_total": 636,
+        "real_to_fake_flips": 0,
+        "real_to_fake_total": 1200
+      }
+    },
+    "crop": {
+      "n": 400,
+      "n_fake": 200,
+      "n_real": 200,
+      "tp": 124,
+      "fn": 76,
+      "fp": 0,
+      "tn": 200,
+      "fake_recall_at_0.5": 0.62,
+      "false_positive_rate_at_0.5": 0.0,
+      "balanced_accuracy_at_0.5": 0.81,
+      "auroc": 0.989925,
+      "conditions": [
+        "crop_0.8"
+      ],
+      "clean_relative_delta_fake_recall": 0.08999999999999997,
+      "fake_to_real_flip_rate": 0.08490566037735849,
+      "real_to_fake_flip_rate": 0.0,
+      "flip_counts": {
+        "fake_to_real_flips": 9,
+        "fake_to_real_total": 106,
+        "real_to_fake_flips": 0,
+        "real_to_fake_total": 200
+      }
+    }
+  },
+  "markdown_table": "| Condition | Family | N | AUROC | Fake recall @0.5 | FPR @0.5 | Balanced acc | Delta vs clean | Fake to real flip | Real to fake flip |\n|---|---|---|---|---|---|---|---|---|---|\n| noise_s0.10 | noise | 400 | 0.817 | 1.5% | 0.5% | 50.5% | -51.5pp | 97.2% | 0.5% |\n| noise_s0.05 | noise | 400 | 0.913 | 9.0% | 0.5% | 54.2% | -44.0pp | 83.0% | 0.5% |\n| jpeg_q30 | jpeg | 400 | 0.937 | 11.5% | 0.0% | 55.8% | -41.5pp | 78.3% | 0.0% |\n| jpeg_q50 | jpeg | 400 | 0.959 | 29.0% | 0.0% | 64.5% | -24.0pp | 45.3% | 0.0% |\n| resize_0.25 | resize | 400 | 0.923 | 34.0% | 2.0% | 66.0% | -19.0pp | 38.7% | 2.0% |\n| jpeg_q70 | jpeg | 400 | 0.965 | 38.0% | 0.0% | 69.0% | -15.0pp | 28.3% | 0.0% |\n| noise_s0.02 | noise | 400 | 0.976 | 39.0% | 0.5% | 69.2% | -14.0pp | 27.4% | 0.5% |\n| bright_+20 | color | 400 | 0.987 | 40.5% | 0.0% | 70.2% | -12.5pp | 25.5% | 0.0% |\n| saturation_-20 | color | 400 | 0.990 | 44.5% | 0.0% | 72.2% | -8.5pp | 16.0% | 0.0% |\n| contrast_+20 | color | 400 | 0.989 | 47.0% | 0.0% | 73.5% | -6.0pp | 17.0% | 0.0% |\n| resize_0.5 | resize | 400 | 0.945 | 47.5% | 2.5% | 72.5% | -5.5pp | 12.3% | 2.5% |\n| blur_s2.0 | blur | 400 | 0.647 | 48.5% | 31.5% | 58.5% | -4.5pp | 15.1% | 31.5% |\n| blur_s0.5 | blur | 400 | 0.984 | 51.0% | 0.5% | 75.2% | -2.0pp | 3.8% | 0.5% |\n| blur_s1.0 | blur | 400 | 0.941 | 51.5% | 2.5% | 74.5% | -1.5pp | 4.7% | 2.5% |\n| jpeg_q90 | jpeg | 400 | 0.988 | 52.5% | 0.0% | 76.2% | -0.5pp | 1.9% | 0.0% |\n| clean | clean | 400 | 0.992 | 53.0% | 0.0% | 76.5% | +0.0pp | n/a | n/a |\n| saturation_+20 | color | 400 | 0.993 | 54.0% | 0.0% | 77.0% | +1.0pp | 4.7% | 0.0% |\n| bright_-20 | color | 400 | 0.992 | 57.0% | 0.0% | 78.5% | +4.0pp | 6.6% | 0.0% |\n| contrast_-20 | color | 400 | 0.992 | 58.0% | 0.0% | 79.0% | +5.0pp | 5.7% | 0.0% |\n| crop_0.8 | crop | 400 | 0.990 | 62.0% | 0.0% | 81.0% | +9.0pp | 8.5% | 0.0% |\n",
+  "error_cases": {
+    "selection_method": "Ranked by p_fake extremeness among non-clean, misclassified rows (false_negatives: lowest p_fake among fake sources scored below threshold; false_positives: highest p_fake among real sources scored at/above threshold; flips: largest |p_fake shift| among sources correct when clean but wrong under some transform). Deduplicated to one row per source_id for case diversity.",
+    "false_negatives": [
+      {
+        "rank": 1,
+        "source_id": "1-25f76675e5ab8cb7",
+        "condition_id": "noise_s0.10",
+        "label": 1,
+        "dataset": "SID-Set",
+        "p_fake_transformed": 1.1245657560721156e-06,
+        "copied_file": "results/robustness/cases/false_negatives/fn_1_1-25f76675e5ab8cb7_noise_s0.10.jpg",
+        "note": "Copied file is the ORIGINAL, undistorted source image referenced by image_path -- transformed pixels were not regenerated in this script. condition_id names the transform that was applied when this p_fake was scored."
+      },
+      {
+        "rank": 2,
+        "source_id": "1-8cbe1fdaf9cdedbb",
+        "condition_id": "noise_s0.10",
+        "label": 1,
+        "dataset": "SID-Set",
+        "p_fake_transformed": 1.2341234878476826e-06,
+        "copied_file": "results/robustness/cases/false_negatives/fn_2_1-8cbe1fdaf9cdedbb_noise_s0.10.jpg",
+        "note": "Copied file is the ORIGINAL, undistorted source image referenced by image_path -- transformed pixels were not regenerated in this script. condition_id names the transform that was applied when this p_fake was scored."
+      },
+      {
+        "rank": 3,
+        "source_id": "1-8151cd56db703c2c",
+        "condition_id": "noise_s0.10",
+        "label": 1,
+        "dataset": "SID-Set",
+        "p_fake_transformed": 1.2601361731867655e-06,
+        "copied_file": "results/robustness/cases/false_negatives/fn_3_1-8151cd56db703c2c_noise_s0.10.jpg",
+        "note": "Copied file is the ORIGINAL, undistorted source image referenced by image_path -- transformed pixels were not regenerated in this script. condition_id names the transform that was applied when this p_fake was scored."
+      }
+    ],
+    "false_positives": [
+      {
+        "rank": 1,
+        "source_id": "0-c6cb0ebf33489d78",
+        "condition_id": "blur_s2.0",
+        "label": 0,
+        "dataset": "COCO",
+        "p_fake_transformed": 0.9999959468841553,
+        "copied_file": "results/robustness/cases/false_positives/fp_1_0-c6cb0ebf33489d78_blur_s2.0.jpg",
+        "note": "Copied file is the ORIGINAL, undistorted source image referenced by image_path -- transformed pixels were not regenerated in this script. condition_id names the transform that was applied when this p_fake was scored."
+      },
+      {
+        "rank": 2,
+        "source_id": "0-82085407e0478f82",
+        "condition_id": "blur_s2.0",
+        "label": 0,
+        "dataset": "COCO",
+        "p_fake_transformed": 0.9999479055404663,
+        "copied_file": "results/robustness/cases/false_positives/fp_2_0-82085407e0478f82_blur_s2.0.jpg",
+        "note": "Copied file is the ORIGINAL, undistorted source image referenced by image_path -- transformed pixels were not regenerated in this script. condition_id names the transform that was applied when this p_fake was scored."
+      },
+      {
+        "rank": 3,
+        "source_id": "0-582882c2341706b5",
+        "condition_id": "blur_s2.0",
+        "label": 0,
+        "dataset": "COCO",
+        "p_fake_transformed": 0.9999364614486694,
+        "copied_file": "results/robustness/cases/false_positives/fp_3_0-582882c2341706b5_blur_s2.0.jpg",
+        "note": "Copied file is the ORIGINAL, undistorted source image referenced by image_path -- transformed pixels were not regenerated in this script. condition_id names the transform that was applied when this p_fake was scored."
+      }
+    ],
+    "flips": [
+      {
+        "rank": 1,
+        "source_id": "0-c6cb0ebf33489d78",
+        "condition_id": "blur_s2.0",
+        "label": 0,
+        "dataset": "COCO",
+        "p_fake_clean": 1.1857671779580414e-05,
+        "p_fake_transformed": 0.9999959468841553,
+        "shift": 0.9999840892123757,
+        "copied_file_clean": "results/robustness/cases/flips/flip_1_0-c6cb0ebf33489d78_clean.jpg",
+        "copied_file_transformed": "results/robustness/cases/flips/flip_1_0-c6cb0ebf33489d78_blur_s2.0.jpg",
+        "note": "Copied file is the ORIGINAL, undistorted source image referenced by image_path -- transformed pixels were not regenerated in this script. condition_id names the transform that was applied when this p_fake was scored. Both copied files here are byte-identical (same original image) since the transformed view was never persisted to disk; only the condition_id label distinguishes which p_fake corresponds to which scored view."
+      },
+      {
+        "rank": 2,
+        "source_id": "0-82085407e0478f82",
+        "condition_id": "blur_s2.0",
+        "label": 0,
+        "dataset": "COCO",
+        "p_fake_clean": 1.608771185601654e-06,
+        "p_fake_transformed": 0.9999479055404663,
+        "shift": 0.9999462967692807,
+        "copied_file_clean": "results/robustness/cases/flips/flip_2_0-82085407e0478f82_clean.jpg",
+        "copied_file_transformed": "results/robustness/cases/flips/flip_2_0-82085407e0478f82_blur_s2.0.jpg",
+        "note": "Copied file is the ORIGINAL, undistorted source image referenced by image_path -- transformed pixels were not regenerated in this script. condition_id names the transform that was applied when this p_fake was scored. Both copied files here are byte-identical (same original image) since the transformed view was never persisted to disk; only the condition_id label distinguishes which p_fake corresponds to which scored view."
+      },
+      {
+        "rank": 3,
+        "source_id": "0-6ed4c92c3e9e0844",
+        "condition_id": "blur_s2.0",
+        "label": 0,
+        "dataset": "COCO",
+        "p_fake_clean": 2.1498817659448832e-06,
+        "p_fake_transformed": 0.9998847246170044,
+        "shift": 0.9998825747352384,
+        "copied_file_clean": "results/robustness/cases/flips/flip_3_0-6ed4c92c3e9e0844_clean.jpg",
+        "copied_file_transformed": "results/robustness/cases/flips/flip_3_0-6ed4c92c3e9e0844_blur_s2.0.jpg",
+        "note": "Copied file is the ORIGINAL, undistorted source image referenced by image_path -- transformed pixels were not regenerated in this script. condition_id names the transform that was applied when this p_fake was scored. Both copied files here are byte-identical (same original image) since the transformed view was never persisted to disk; only the condition_id label distinguishes which p_fake corresponds to which scored view."
+      }
+    ]
+  },
+  "notes": []
+}
