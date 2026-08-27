@@ -1,5 +1,34 @@
 # CHANGELOG — training (newest first, append-only; corrections are new entries)
 
+## 2026-08-27 17:35 — [relay] PROTECTED FITTING CACHE LAUNCHED (detached, ~9 h)
+
+Running: `data/feature_cache/fitting-v2`, 11,998 sources x 20 conditions = **239,960 rows**, measured
+**7.22 rows/sec** steady state, ETA ~**02:45**. Launched under `nohup caffeinate -ims`, **verified
+reparented to PID 1**, so it survives this session ending, usage limits or the terminal closing.
+Log: `logs/fitting_cache.log`. Resume is verified: rerunning the same command continues rather than
+restarting.
+
+**The first launch attempt was REFUSED by our own contamination guard, and that was correct.**
+`feature_cache` aborted at startup on
+`data/corpus/canonical/real/044398d7dca30781.jpg (phash within 6 of a sealed image)` — the crow-on-
+white-sky source matching a sealed skier-in-snow at distance exactly 6. It is one of the two known
+false positives I had already opened and confirmed unrelated.
+
+**Resolved by dropping the data, not by arguing with the guard.** Three options existed: lower the
+threshold to our calibrated 4, add an audited exception, or exclude the sources. Excluding wins on
+every axis — it costs **2 sources out of 15,000 (0.017%)**, keeps the conservative threshold of 6
+untouched, needs no override mechanism, and preserves the audit story that we never once overrode a
+contamination refusal. Lowering a contamination threshold to retain two images would be an appalling
+trade against the risk it guards.
+
+Made principled rather than hand-typed: `build_role_manifests.py` now applies the SAME denylist rule
+`feature_cache` uses and pre-excludes any flagged source, recording each with its distance in
+`excluded_by_sealed_denylist`. A source the cache would reject can no longer reach a role manifest
+and kill a 9-hour job at startup.
+
+Roles after exclusion: internal test **1,500/1,500** (still exact), fitting **5,998 real / 6,000
+fake**, train 4,498/4,500, dev 1,500/1,500. Still 0 clusters straddling roles or train/dev.
+
 ## 2026-08-27 — [relay] pre-launch probe caught a crash that would have fired at hour 8.5
 
 Ran the B-020-mandated throughput re-measurement on 200 sources through the REAL launch path

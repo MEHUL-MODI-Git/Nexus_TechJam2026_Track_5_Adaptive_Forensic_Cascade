@@ -61,6 +61,11 @@ def main() -> int:
     ap.add_argument("--dev-fraction", type=float, default=0.25, help="of the FITTING role")
     ap.add_argument("--phash-threshold", type=int, default=4)
     ap.add_argument("--seed", type=int, default=20260827)
+    ap.add_argument("--denylist", type=Path, default=Path("data/manifests/sealed_denylist.txt"),
+                    help="pre-exclude any source the sealed-denylist rule would flag")
+    ap.add_argument("--denylist-phash-threshold", type=int, default=6,
+                    help="must match feature_cache's default; the CACHE aborts on a hit, so a "
+                         "source it would reject must never reach a role manifest")
     ap.add_argument("--out-dir", type=Path, default=Path("data/manifests"))
     args = ap.parse_args()
 
@@ -80,6 +85,41 @@ def main() -> int:
     if collisions:
         raise SystemExit(f"{len(collisions)} SHA-256 collisions across sources: "
                          f"{list(collisions.items())[:3]}")
+
+    # Pre-exclude anything the sealed-denylist rule would flag. `feature_cache`
+    # ABORTS the whole extraction on a hit rather than skipping the row -- correct
+    # behaviour, but it means a single flagged source kills an 8.5-hour job at
+    # startup. Two of ours are known false positives at distance exactly 6 (a
+    # Nokia phone matched against a glittery toilet; a crow on white sky against
+    # a skier in snow), both opened and confirmed unrelated. We drop them anyway:
+    # arguing with a contamination guard to keep 2 sources out of 15,000 is a
+    # terrible trade, and lowering the threshold to accommodate them would weaken
+    # the one check standing between us and a disqualifying result.
+    excluded: list[dict] = []
+    if args.denylist and args.denylist.exists():
+        sealed_ph = []
+        for line in args.denylist.read_text().splitlines():
+            body = line.split("#", 1)[0].strip()
+            if body:
+                for field in body.split()[1:]:
+                    if field.startswith("phash="):
+                        sealed_ph.append(field.split("=", 1)[1])
+        if sealed_ph:
+            sealed = np.stack([np.frombuffer(bytes.fromhex(h), dtype=np.uint8)
+                               for h in sealed_ph])
+            keep = []
+            for row in rows:
+                own = np.frombuffer(bytes.fromhex(hashes[row["source_id"]]["phash"]),
+                                    dtype=np.uint8)
+                dist = int(POPCOUNT[np.bitwise_xor(own[None, :], sealed)].sum(axis=1).min())
+                if dist <= args.denylist_phash_threshold:
+                    excluded.append({"source_id": row["source_id"], "phash_distance": dist})
+                else:
+                    keep.append(row)
+            if excluded:
+                print(f"excluded {len(excluded)} source(s) the sealed denylist would flag: "
+                      f"{[e['source_id'] for e in excluded]}")
+            rows = keep
 
     source_ids = [r["source_id"] for r in rows]
     labels = {r["source_id"]: r["label"] for r in rows}
@@ -167,6 +207,8 @@ def main() -> int:
         "phash_threshold": args.phash_threshold,
         "seed": args.seed,
         "n_sources": len(rows),
+        "excluded_by_sealed_denylist": excluded,
+        "denylist_phash_threshold": args.denylist_phash_threshold,
         "n_clusters": len(clusters),
         "n_multi_source_clusters": sum(1 for m in clusters.values() if len(m) > 1),
         "n_cross_label_clusters": len(mixed),

@@ -3,8 +3,19 @@
   "source_manifest": "data/manifests/router_corpus_v2.json",
   "phash_threshold": 4,
   "seed": 20260827,
-  "n_sources": 15000,
-  "n_clusters": 14926,
+  "n_sources": 14998,
+  "excluded_by_sealed_denylist": [
+    {
+      "source_id": "0-998dfe107ea00215",
+      "phash_distance": 6
+    },
+    {
+      "source_id": "0-044398d7dca30781",
+      "phash_distance": 6
+    }
+  ],
+  "denylist_phash_threshold": 6,
+  "n_clusters": 14924,
   "n_multi_source_clusters": 65,
   "n_cross_label_clusters": 0,
   "clusters_straddling_roles": 0,
@@ -14,11 +25,11 @@
     "fake": 1500
   },
   "fitting": {
-    "real": 6000,
+    "real": 5998,
     "fake": 6000
   },
   "fitting_train": {
-    "real": 4500,
+    "real": 4498,
     "fake": 4500
   },
   "fitting_dev": {

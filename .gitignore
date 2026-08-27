@@ -77,3 +77,4 @@ data/hf_cache/
 data/torch_cache/
 third_party/
 data/corpus/canonical/
+logs/
