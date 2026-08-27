@@ -58,11 +58,12 @@ trained router, calibrated verdict, abstention decision, or rescue path.
 | Quality descriptors | ✅ built, tested |
 | Mild self-probes | ✅ built, tested |
 | Calibration + threshold-selection code under a frozen objective | ✅ built, tested; no fitted artifact yet |
-| Router (fusion ladder: static → logistic → MLP + worst-group loss) | 🔴 implementation under repair; no accepted deployable checkpoint |
+| Router (7-rung ladder: quality-only → static avg → prob mean → fixed weights → logistic → MLP → +worst-group) | ✅ implemented, repaired, 671 tests; peer re-review and a fitted checkpoint still pending |
 | Full-grid baseline run (8,000 predictions) | ✅ complete |
 | Evaluation harness | 🟡 diagnostic path works; headline path blocked on protocol repair |
-| Second expert | ⏸️ parked (see Limitations) |
-| Router trained on a real corpus | ⏳ Phase 2 |
+| Second expert | ❌ evaluated and rejected on measured evidence (see Limitations) |
+| Protected 15,000-source corpus, format-canonicalized, contamination-audited, split 12k fitting / 3k untouched test | ✅ built and verified |
+| Router trained on that corpus | 🟡 feature extraction running |
 
 ## 3. Setup
 
@@ -179,11 +180,39 @@ headline results.
 
 ## 8. Limitations and honest reflection
 
-- **Single expert at present.** The intended second expert (LOTA, ICCV 2025)
-  publishes its pretrained weights only through a login-walled cloud drive with
-  no public mirror. We chose reproducibility over benchmark score: a dependency
-  the judges cannot download is a dependency we should not ship. A
-  training-free substitute is planned.
+- **Our training corpus had a shortcut that would have invalidated everything,
+  and we found it ourselves.** Both classes were drawn from one dataset
+  specifically to avoid learning dataset artefacts. That was not enough: within
+  SID-Set, every real image is stored as JPEG and every synthetic image as PNG,
+  so **file format alone predicted the label for 100.00% of 15,000 sources**.
+  Every file carried a `.jpg` extension regardless of its actual bytes, which is
+  why it went unnoticed. Our own quality descriptors read it directly —
+  `blockiness` alone separates the classes at AUROC 0.89, and 53.7% of reals
+  show JPEG blocking against 2.7% of fakes. We re-encoded every source to a
+  single container before extraction. Full disclosure of what that does and does
+  not fix: it removes the blocking artefact (`blockiness` AUROC 0.90 -> 0.64) but
+  a residual remains, because `noise_sigma` (0.82) is unaffected by container and
+  reflects a genuine difference between photographs and generated images. We
+  therefore also added a mandatory **quality-descriptors-only baseline** to every
+  ablation, so no result of ours can be read without knowing what plain image
+  statistics achieve on the same data.
+
+- **Single expert, and the second one was rejected on evidence.** LOTA (ICCV
+  2025) was our intended second expert. We obtained the weights, integrated them
+  against the authors' own code, and measured rather than assumed. It is MIT
+  licensed, loads cleanly (ResNet-50, 23.5M parameters), and its published
+  results are excellent — AUROC 0.9996-0.9999 across all eight generators it was
+  evaluated on. It is not suitable here, for reasons we can state precisely.
+  Its input is the **least-significant-bit plane** of a randomly chosen 32x32
+  patch, which makes it (a) **non-deterministic** — the same image scored three
+  times varies by up to 0.31 — and (b) dependent on exactly the information
+  lossy compression destroys. Every image in its published evaluation is a
+  lossless PNG. On identical pixels re-encoded as JPEG q95 its AUROC falls from
+  1.000 to **0.592 and its fake recall to 0.000** — it calls every AI image real.
+  We also note that its apparent perfection on our corpus was the format shortcut
+  above, not detection. A detector that works only on uncompressed images cannot
+  help on a platform where every upload is recompressed, and that is a finding
+  worth reporting rather than a dependency worth shipping.
 - **The default operating point is poor and we did not hide it.** At the
   published default threshold of 0.5, the primary detector recovers only 53% of
   AI-generated images on clean data despite an AUROC of 0.992 — the ranking is
@@ -192,8 +221,18 @@ headline results.
   the demo look better.
 - **Noise and heavy blur remain hard.** Gaussian noise at σ=0.10 collapses fake
   recall. We report this rather than excluding the condition.
-- **Smoke-set scale.** Current measurements use 400 source images. They are
-  diagnostics, not benchmark claims.
+- **Smoke-set scale and composition.** The early AUROC 0.992 figure comes from
+  400 source images whose real half is COCO and whose fake half is SID-Set. Two
+  different sources means part of that separation may be dataset provenance
+  rather than AI-generation. It is a diagnostic, not a benchmark claim, and the
+  protected evaluation replaces it.
+
+- **The organizers' reference subset contains substantial duplication.** Of the
+  8,843 supplied AI images, only **3,719 are unique**; 5,124 files are
+  byte-identical copies, some repeated five times. Scored per file, 1,808 images
+  are weighted up to 5x and confidence intervals come out far too narrow. We
+  deduplicate before scoring and report both conventions so our numbers can be
+  reconciled with any computed the other way.
 - **No production hardening.** This is a prototype: no adversarial robustness
   guarantees, no throughput tuning, no deployment path.
 
