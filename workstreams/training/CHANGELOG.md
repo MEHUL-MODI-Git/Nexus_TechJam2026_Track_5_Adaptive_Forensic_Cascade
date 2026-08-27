@@ -1,5 +1,30 @@
 # CHANGELOG — training (newest first, append-only; corrections are new entries)
 
+## 2026-08-27 — [relay] pre-launch probe caught a crash that would have fired at hour 8.5
+
+Ran the B-020-mandated throughput re-measurement on 200 sources through the REAL launch path
+(`launch_fitting.json` + the sealed denylist) rather than trusting the earlier figure.
+
+**Measured 7.83 rows/sec**, reproducing the earlier measurement exactly. 200 sources / 4,000 rows in
+9m06s. 12,000 fitting sources x 20 conditions = 240,000 rows => **8.51 h**, comfortably inside the
+12 h cap. Extracting only the fitting role rather than all 15,000 saves ~2 h on its own.
+
+**The probe earned its 9 minutes: extraction succeeded and then the script crashed printing its own
+summary.** `KeyError: 'rows_written'` — the summary asked for `rows_written`/`decode_failures`, but
+`build_cache` emits `rows_written_this_invocation`/`decode_failures_this_invocation` (named that way
+because a resumed run writes fewer rows than the artifact holds). The failure fires AFTER all
+extraction completes, so on the full job it would have crashed at the ~8.5 h mark and left a
+perfectly good cache looking like a failed run. Fixed, and the summary now warns about missing keys
+instead of raising.
+
+**Resume verified end-to-end, not merely claimed.** Re-running the identical command against the
+finished probe cache found all 4,000 rows present, wrote **0** new rows and exited clean.
+
+**Cache health on the real path:** `denylist_protected: true`, `denylist_perceptual_protected: true`,
+**`UNPROTECTED_SMOKE_ONLY: false`** — this is a genuinely protected cache, the thing every previous
+one was not — `schema_version: feature-cache-row.v2`, `threshold_free: true`, 0 decode failures,
+device `mps`, cache key `f5b1fa46…`.
+
 ## 2026-08-27 — [relay] canonicalized corpus, launch manifests, and a 42%-duplicate sealed set
 
 **Canonicalization landed and works.** All 15,000 sources re-encoded to JPEG q95 from decoded pixels

@@ -62,9 +62,20 @@ def main() -> int:
         print(f"REFUSED: {exc}", file=sys.stderr)
         return 3
 
-    print(json.dumps({k: manifest[k] for k in
-                      ("cache_key", "rows_written", "decode_failures",
-                       "denylist_protected", "UNPROTECTED_SMOKE_ONLY")}, indent=2),
+    # Report only keys `build_cache` actually emits. The previous list asked for
+    # "rows_written"/"decode_failures", which do not exist -- the manifest names
+    # them "*_this_invocation" because a resumed run writes fewer rows than the
+    # artifact contains. That KeyError fired AFTER extraction finished, so it
+    # would have crashed the summary at the end of an 8.5-hour job while leaving
+    # a perfectly good cache on disk looking like a failed run.
+    summary_keys = ("cache_key", "status", "n_sources", "rows_total",
+                    "rows_written_this_invocation", "decode_failures_this_invocation",
+                    "denylist_protected", "denylist_perceptual_protected",
+                    "UNPROTECTED_SMOKE_ONLY")
+    missing = [k for k in summary_keys if k not in manifest]
+    if missing:
+        print(f"WARNING: cache manifest is missing {missing}", file=sys.stderr)
+    print(json.dumps({k: manifest[k] for k in summary_keys if k in manifest}, indent=2),
           file=sys.stderr)
     return 0
 
