@@ -4,10 +4,9 @@
 ## ✅ Built (detail in `workstreams/training/CHANGELOG.md` — do not re-derive here)
 - **`scripts/build_router_corpus.py`** — R19 fixed; corpus now exactly 15,000 / 7,500 per class. Its
   "both classes from SID-Set removes dataset artefacts" rationale is DISPROVEN (see correction below).
-- **`feature_cache.py`** (30 tests) — canonical key with refuse-to-append, **fail-closed denylist** (no denylist ⇒ refuses to build), sealed hit **aborts** the job rather than skipping.
-- **`train.py`** — B-018 repaired: six-rung ladder, fail-closed consumed-field/split/label/key validation,
-  measured (never suppressed) one-expert score change, ≥2 pt-or-CI kill gate, BCE-with-logits, enforced
-  two-stage reliability, atomic checkpoint + `load_checkpoint` parity. **Awaiting Codex re-review.**
+- **`feature_cache.py`** (30 tests) — fail-closed denylist; a sealed hit **aborts**, never skips. It fired on the real launch and was right to.
+- **`train.py`** — B-018 repaired + `quality_only` 7th rung; fail-closed validation, measured one-expert
+  correction, ≥2 pt-or-CI kill gate, two-stage reliability, checkpoint parity. **Awaiting Codex review.**
   `scripts/diagnostics/degradeprint_probe.py` holds the DegradePrint arm table; see CHANGELOG.
 
 ## ⚠️ EVIDENCE BOUNDARY — the 24k pilot is diagnostic only AND format-confounded
