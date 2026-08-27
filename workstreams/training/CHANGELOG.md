@@ -1,5 +1,35 @@
 # CHANGELOG — training (newest first, append-only; corrections are new entries)
 
+## 2026-08-27 — [relay] canonicalized corpus, launch manifests, and a 42%-duplicate sealed set
+
+**Canonicalization landed and works.** All 15,000 sources re-encoded to JPEG q95 from decoded pixels
+(`scripts/canonicalize_corpus.py`, 31 s, 4.2 GB, 0 failures). Verified: **all 15,000 are now JPEG**
+(7,500 real + 7,500 synthetic), so the container no longer carries any class information. pHash
+barely moved — mean shift **0.061**, max **2** — so the images are perceptually unchanged.
+
+**Re-verified the role separation on the NEW pixels rather than assuming it survived.** A max shift of
+2 on both sides of a pair could in principle pull a test image inside the threshold of a fitting one.
+Measured after canonicalization: **min test-vs-fitting pHash distance is still 6**, and **0 pairs**
+fall within the threshold of 4. Separation holds.
+
+**Contamination re-audited on the canonical pixels:** 0 exact hits, 2 perceptual hits at distance 6 —
+the same two already opened and shown to be unrelated. Still clean.
+
+**Launch manifests built** (`scripts/build_launch_manifests.py`): `launch_fitting.json` (12,000) and
+`launch_internal_test.json` (3,000). `relative_path` and `original_sha256` are REWIRED to the
+canonical files, because `validate_manifest_rows` re-hashes the bytes it reads and refuses any
+manifest that does not describe them — annotating a second column would have failed at launch. The
+acquisition path/hash/pHash are preserved as `acquired_*` so provenance is intact.
+
+**Finding, eval-affecting (A-029):** the organizers' sealed "DALL-E Advanced 8,843" contains only
+**3,719 unique images**; 5,124 files are byte-identical duplicates, some repeated 5x. Confirmed as
+their data, not our extraction — the same content-hash filename appears under five different
+timestamped batch folders inside `DALLE.zip`. COCO val2017 is clean (5,000/5,000). Our denylist is
+unaffected (set semantics), but scoring the sealed run per-file would weight 1,808 images up to 5x and
+understate uncertainty badly. Sealed-run protocol proposal sent to Codex.
+
+Relay work under PROTOCOL §6.
+
 ## 2026-08-27 — [relay] `quality_only` mandatory ladder rung + a verdict that could have lied
 
 Adds the 7th rung agreed in A-027: `QualityOnlyRouter`, one linear layer over the router feature
