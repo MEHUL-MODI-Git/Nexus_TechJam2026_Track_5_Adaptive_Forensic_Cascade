@@ -1,5 +1,18 @@
 # eval — CHANGELOG (newest first)
 
+## 2026-08-27 — Phase 2R eval repair locally green; peer re-review requested
+Why: A-024 accepted B-016's E1–E5 block, and long/protected compute cannot begin while incomplete
+or unprovenanced data can emit reportable output.
+What: Landed `ff943c7` using heavy spec → lighter implementation → heavy verification. Exact
+method/source/canonical-condition coverage, canonical-grid authority, loader-only threshold bytes,
+headline-free diagnostics, keyed paired bootstrap, dataset/method/code/transform/golden/freeze/
+sealed provenance, and fail-closed failure denominators now have adversarial tests. Heavy review
+caught and corrected the lighter pass's private-constructor test shortcut, calibration-bootstrap
+schema mismatch, and 20x view-inflated dataset counts; these metric/protocol judgments were kept by
+the heavy owner rather than re-delegated. Focused gate: 85 passed; Ruff clean; full shared-tree suite:
+630 passed, 9 warnings; live 8,000-row diagnostic CLI check passed without rewriting artifacts.
+Packet: `coordination/gates/phase-2r-eval.md`. Acceptance still waits on Claude re-review.
+
 ## 2026-08-27 — Phase 2R heavy repair spec frozen for lighter implementation
 Why: Mehul required visible heavy-spec → lighter-implementation → heavy-verification routing, and
 the jointly ACKed E1–E5 gate needed exact executable semantics before mechanical edits.

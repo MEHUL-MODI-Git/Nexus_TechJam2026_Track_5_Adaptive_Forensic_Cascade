@@ -1,5 +1,5 @@
 # training — router corpus, feature cache, router/fusion, calibration
-**Owner: Claude · Status: 🔴 2R.1 router repair IN FLIGHT (B-018 ACKed, no counter) · corpus 14,999 · full cache NOT launched**
+**Owner: Claude · Status: 🟡 2R.1 router repair LANDED + owner-verified (660 tests) — awaiting Codex re-review · corpus 14,999 · full cache NOT launched**
 
 ## ✅ Built (detail in `workstreams/training/CHANGELOG.md` — do not re-derive here)
 - **`scripts/build_router_corpus.py`** — 14,999 sources (silent-underfill defect **R19 open**). **Both
@@ -7,7 +7,9 @@
 - **`feature_cache.py`** (30 tests) — canonical key with refuse-to-append, **fail-closed denylist** (no denylist ⇒ refuses to build), sealed hit **aborts** the job rather than skipping.
 - **`features.py` + `model.py`** (37 tests) — 43 features, each optional one a `(value, is_present)` pair; standardizer fits on train rows only.
 - **`calibration.py`** (30 tests) — frozen threshold objective: bootstrap worst-FAMILY fake recall, clean excluded from the minimum, severities pooled, `source_id` as the resampling unit.
-- **`train.py`** (14 tests) — full ladder + `router_earns_its_complexity` verdict. **Under repair now.**
+- **`train.py`** — B-018 repaired: six-rung ladder, fail-closed consumed-field/split/label/key validation,
+  measured (never suppressed) one-expert score change, ≥2 pt-or-CI kill gate, BCE-with-logits, enforced
+  two-stage reliability, atomic checkpoint + `load_checkpoint` parity. **Awaiting Codex re-review.**
   `scripts/diagnostics/degradeprint_probe.py` holds the DegradePrint arm table; see CHANGELOG.
 
 ## ⚠️ EVIDENCE BOUNDARY — the 24k pilot is diagnostic only
@@ -25,11 +27,10 @@ optimistic ~2.3×). 30k ⇒ 21.3 h (**over**); **15k ⇒ 10.6 h (adopted)**. Fro
 count, never coverage** — which also keeps PGC (≈311M, ~14× CF-384) out of the cache entirely.
 
 ## ▶ NEXT ACTION — strictly in this order (the cache run is the critical path)
-1. **Land the B-018 repair.** A delegated lighter model is implementing `specs/router-repair-b018.md`
-   (consumed-field validation, fail-closed split/source-label/cache-key, weight-vs-score degeneracy,
-   ≥2 pt-or-CI kill gate, BCE-with-logits, two-stage reliability, baseline rungs, atomic checkpoint +
-   save→load parity). **Claude reviews the diff adversarially and verifies before landing; Codex
-   re-reviews at the 2R.1 gate.**
+1. **Review Codex's eval gate (B-023, NEEDS-REPLY)** — independently rerun E1–E5, dataset identity,
+   loaded-threshold bytes, failure ledger, freeze binding, sealed authorization. Verdict owed.
+   The B-018 repair is landed and owner-verified (660 tests, per-rung checkpoint parity 0.00e+00);
+   **A-025 posted, Codex's re-review is what clears my half of 2R.1.**
 2. **2R.2 corpus repair before any fitting:** fix R19; acquire exactly **15,000 / 7,500 per class**; split
    into a protected **12,000-source fitting manifest** + an **untouched 3,000-source internal test**;
    enforce exact-SHA *and* perceptual near-duplicate separation across roles; a source lives in one split.

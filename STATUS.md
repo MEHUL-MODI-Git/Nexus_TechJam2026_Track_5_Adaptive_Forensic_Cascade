@@ -3,11 +3,11 @@
 > 30-second orientation only. Detail lives in `workstreams/<ws>/STATE.md`. Messages in `coordination/CHANNEL.md`. Rules in `CLAUDE.md` / `AGENTS.md`.
 
 ## Snapshot
-- **Phase:** **POST-LOTA PLAN ADOPTED (A-023/A-024/B-020) — Phase 2R repair gate.** Active overlay: `coordination/PLAN-UPDATE-2026-08-27.md`. **Eval and training remain BLOCKED pending B-016/B-018 fixes + peer re-review; product release remains blocked.**
+- **Phase:** **POST-LOTA PLAN ADOPTED (A-023/A-024/B-020) — Phase 2R repair gate.** Active overlay: `coordination/PLAN-UPDATE-2026-08-27.md`. **Eval repair is locally green at `ff943c7` and awaits Claude re-review; training B-018 remains under repair; product release remains blocked.**
 - **Deadline:** 1 Sept 12:00pm — submit ~9am · **Webinar: dropped by Mehul (27 Aug)**
 - **Repo:** https://github.com/MEHUL-MODI-Git/TechJam_2026_Track_5 — **PRIVATE. ⚠️ MUST BE MADE PUBLIC BEFORE SUBMISSION** (brief deliverable).
 - **Session note:** Mehul moved from the API session to the Claude Code session (~21:00). AGENT-A continuity = these files; the new session resumes via RESUME PROTOCOL.
-- **Blockers:** **Do not make repo public:** remote `main` still retains the old raw-data history; Mehul must explicitly approve MIT and the verified clean-history force-push. Eval E1–E5 and router B-018 remain acceptance blockers. The 14,999-source corpus is underfilled, lacks an untouched internal test and perceptual split-dedup, so no protected fitting cache may launch yet.
+- **Blockers:** **Do not make repo public:** remote `main` still retains the old raw-data history; Mehul must explicitly approve MIT and the verified clean-history force-push. Eval peer re-review and router B-018 remain acceptance blockers. The 14,999-source corpus is underfilled, lacks an untouched internal test and perceptual split-dedup, so no protected fitting cache may launch yet.
 - **Model slots:** CF-384 remains primary. The next common-path experiment is a **quality-conditioned correction head**, not one-expert "fusion." PGC (Apache-2.0, heavy) is a bounded preflight/rescue candidate; GAPL code integration is licence-blocked; LOTA reproduction is off the schedule. The logit-response DegradePrint branch is **parked by diagnostic evidence**, not claimed finally killed; embeddings are untested/deferred. Existing probes must still earn their long-cache cost through a protected reliability ablation.
 - **Compute decision:** measured CF + three-probe extraction is **7.83 rows/sec**. 30k sources projects to 21.3 h; the adopted 15k total budget projects to 10.6 h. The revised data roles are 12k fitting sources plus a separate untouched 3k internal test. Any feature/probe/candidate change requires a fresh measured projection before the long run.
 
@@ -16,14 +16,14 @@
 |---|---|---|---|
 | core | Claude | ✅ Phase 0 green; post-LOTA candidate work gated | refresh stale STATE; PGC preflight only after repair gate |
 | training | Claude | 🔴 router repair re-review blocked | consumed-field validation, one-expert semantics, checkpoint parity, reliability ordering |
-| eval | Codex | 🔴 repair re-review blocked | E1–E5 scientific-boundary corrections + new gate |
+| eval | Codex | 🟡 repair green locally; peer re-review pending | Claude reviews `ff943c7` / Phase-2R gate packet |
 | product | Codex | 🟢 task 1.5 accepted; 🔴 public release blocked | owner approvals, remote clean-history push, final truthfulness audit |
 
 ## Task claims (claim BEFORE starting; release when done/parked)
 | Task (id from 06-build-plan) | Owner | State |
 |---|---|---|
 | post-LOTA strategy reconciliation + mutable plan refresh | Codex + Claude | ✅ joint plan adopted A-023/A-024/B-020; active overlay written |
-| 2R.1 eval scientific-boundary repair | Codex | 🟡 claimed — E1–E5 + provenance/freeze/failure-denominator guards |
+| 2R.1 eval scientific-boundary repair | Codex | 🟡 `ff943c7` locally green — 85 focused / 630 full; Claude re-review pending |
 | 2R.1 router/deployment repair | Claude | 🔴 B-018 ACKed; owner repair + peer re-review required |
 | 2R.2 protected mini-pilot + feature/probe freeze | Claude + Codex review | ⏳ waits on 2R.1 and valid denylist/manifests |
 | 3R candidate preflight/shootout | Claude adapters + Codex eval | ⏳ PGC first; GAPL licence-blocked |
@@ -39,7 +39,7 @@
 | 3.x calibration + threshold selection | Claude | ✅ done early (30 tests) |
 | 2.x router: features + fusion ladder | Claude | 🔴 repair `d64f0b6` blocked by B-018; 601-suite green but adversarial failures remain |
 | 1.3 full-grid baseline (single-expert) | Claude | ✅ DONE — 8,000 rows, 0 failures, 167s |
-| 1.1 eval harness | Codex (Claude relay re-reviewed) | 🔴 BLOCKED — E1–E5 coverage/grid/artifact/diagnostic/pairing fixes required |
+| 1.1 eval harness | Codex (Claude relay re-reviewed) | 🟡 E1–E5 repaired at `ff943c7`; peer gate pending |
 | 1.5 Gradio stress panel | Codex (Claude relay reviewed) | ✅ ACCEPTED by Claude A-024 — 39 focused tests + Ruff |
 | 1.6 repo mechanics | Codex (Claude relay re-reviewed) | 🔴 RELEASE BLOCKED — docs repaired; remote raw history, approvals, CF pin remain |
 | 1.6 repo mechanics/license inventory | Codex | 🟡 truthfulness repaired; final audit waits on technical gates + owner approvals |
@@ -48,6 +48,7 @@
 | 0.8 Gradio v0 | Codex | ✅ done 00:45 (live local server + parity tests) |
 
 ## Log (newest first)
+- **2026-08-27 — PHASE 2R EVAL REPAIR LOCALLY GREEN.** Heavy spec → lighter implementation → heavy adversarial verification completed at `ff943c7`. E1–E5, exact dataset/source denominator, loaded threshold bytes, keyed pairing, headline-free diagnostics, real transform/golden hashes, method/code/freeze/sealed provenance and failure ledgers now fail closed. Focused eval/run-grid gate **85 passed**, Ruff clean; full shared-tree suite **630 passed / 9 warnings**; live 8,000-row diagnostic CLI check passed. Packet `coordination/gates/phase-2r-eval.md`; awaits Claude approval and does not unblock B-018/data gates.
 - **2026-08-27 — MEHUL MODEL-ECONOMY DIRECTIVE REAFFIRMED.** Routine/manual implementation now defaults to a lighter model from a heavy-written bounded spec; the heavy owner reviews the diff and runs verification before landing. Architecture, eval math, preprocessing, contamination/splits, thresholds, licensing and gates remain heavy. Any non-trivial heavy-direct coding exception must be justified in the owning CHANGELOG.
 - **2026-08-27 11:05 — JOINT POST-LOTA PLAN ADOPTED.** A-023's measured proposal, A-024's independent gate audit and B-020's scientific-boundary review converge on: preserve CF; test a quality-conditioned correction head; keep heavy candidates out of the 15k cache; preflight PGC first; block GAPL code on licence; remove LOTA reproduction from schedule; park new DegradePrint work; and repair eval/router/data protection before long compute. The existing 24k pilot is diagnostic-only and is not a submitted-model fallback. Active plan: `coordination/PLAN-UPDATE-2026-08-27.md`; decision/specs recorded. Historical `06-build-plan.md` remains unchanged.
 - **2026-08-27 10:20 — POST-LOTA REPLAN PROPOSED (A-023).** Mehul's update pack (`docs/techjam_track5_update/` 09–12) assessed; **its central idea was measured, not adopted on faith.** DegradePrint's cheap kill test (doc 10 §11) ran at **zero new compute** on the existing pilot cache — `scripts/diagnostics/degradeprint_probe.py`, 4 arms, 3 seeds, grouped split, fixed 5% clean FPR. Dev worst-family (`noise`) fake recall: primary **0.211** → +quality **0.604** → +quality+response **0.612** → response-without-quality **0.254**. **The response branch adds +0.8 pt with unstable sign against its own ~+2 pt bar — it FAILS.** Doc 10 §18's own named risk is what happened: probes are a weak severity proxy for a measurement we already take. **The +39.3 pt win is task 1.4 quality descriptors, already shipped.** Proposed architecture change: **router head becomes a CORRECTION head over the primary logit, not a convex FUSION head** — the pilot's four identical rungs mean fusion was its only lever, not that its 43 features are weak (also resolves B-018 item 3 by deleting the degeneracy claim, not the bias head). Verified availability before proposing: **PGC Apache-2.0, HF, ~311M** ✅; **GAPL MIT on the model card only (no repo LICENSE), HF, ~305M** ⚠️; both ~14× CF-384, so **neither fits the 300,000-row training cache** (10.6 h vs a 12 h cap) — demoted to smoke-grid shootout + selective rescue. Killed: LOTA reproduction, DegradePrint response branch, PGC-as-always-on-expert. Packet: `handoffs/2026-08-27_post-lota-replan.md`. **Awaiting Codex ACK on 5 items; Codex's cache requests due ~17:00 today; the 10.6 h cache run is the hard critical path and must start this evening.**

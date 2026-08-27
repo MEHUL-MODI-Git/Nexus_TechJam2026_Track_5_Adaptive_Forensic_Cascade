@@ -19,8 +19,10 @@ from src.router.features import (
     rows_to_matrix,
 )
 from src.router.model import (
+    FixedWeightFusion,
     LogisticRouter,
     MLPRouter,
+    ProbabilityMeanFusion,
     StaticAverageFusion,
     group_index,
     reliability_targets,
@@ -232,6 +234,38 @@ def test_static_average_fused_logit_is_a_convex_combination():
     assert (out.fused_logit <= logits.max(dim=1).values + 1e-5).all()
 
 
+def test_probability_mean_is_the_mean_of_probabilities():
+    """Baseline rung: fuses in PROBABILITY space, unlike StaticAverageFusion."""
+    logits = torch.logit(torch.tensor([[0.2, 0.8]]))
+    out = ProbabilityMeanFusion(2)(torch.randn(1, SPEC2.dim), logits,
+                                   torch.ones(1, 2, dtype=torch.bool))
+    assert out.p_fake.item() == pytest.approx(0.5, abs=1e-5)   # mean of 0.2 and 0.8
+
+
+def test_probability_mean_no_available_expert_is_half():
+    """No expert available: 0.5/logit-0 ("no verdict"), never a fabricated 0.0."""
+    out = ProbabilityMeanFusion(2)(torch.randn(1, SPEC2.dim), torch.randn(1, 2),
+                                   torch.zeros(1, 2, dtype=torch.bool))
+    assert torch.isfinite(out.p_fake).all()
+    assert out.p_fake.item() == pytest.approx(0.5)
+    assert out.fused_logit.item() == pytest.approx(0.0)
+
+
+def test_fixed_weight_fusion_masks_and_renormalises():
+    """Unavailable experts get exactly 0 weight; available ones sum to 1."""
+    model = FixedWeightFusion(torch.tensor([0.7, 0.3]))
+    available = torch.tensor([[True, False]])
+    out = model(torch.randn(1, SPEC2.dim), torch.tensor([[-1.0, 2.0]]), available)
+    assert out.weights[0, 1].item() == 0.0
+    assert out.weights[0].sum().item() == pytest.approx(1.0)
+    assert out.fused_logit.item() == pytest.approx(-1.0)   # only expert 0 available
+
+
+def test_fixed_weight_fusion_has_zero_trainable_parameters():
+    model = FixedWeightFusion(torch.tensor([0.6, 0.4]))
+    assert sum(p.numel() for p in model.parameters()) == 0
+
+
 @pytest.mark.parametrize("cls", [LogisticRouter, MLPRouter])
 def test_trained_rungs_emit_a_probability_and_its_logit(cls):
     model = cls(SPEC2.dim, 2)
@@ -326,6 +360,9 @@ def test_router_can_learn_to_beat_static_average():
     expert_a = torch.where(context == 0, labels, 1 - labels).float()
     expert_b = torch.where(context == 1, labels, 1 - labels).float()
     p = torch.stack([expert_a, expert_b], dim=1).clamp(0.02, 0.98)
+    # B-018 T9: fusion happens in LOGIT space (Codex R23) -- feed the model
+    # actual logits, not probabilities passed off as logits.
+    expert_logits = torch.logit(p.clamp(1e-6, 1 - 1e-6))
     features = torch.stack([context.float(), torch.randn(n)], dim=1)
     available = torch.ones(n, 2, dtype=torch.bool)
 
@@ -333,15 +370,15 @@ def test_router_can_learn_to_beat_static_average():
     opt = torch.optim.Adam(model.parameters(), lr=0.02)
     for _ in range(300):
         opt.zero_grad()
-        out = model(features, p, available)
+        out = model(features, expert_logits, available)
         loss = torch.nn.functional.binary_cross_entropy(out.p_fake.clamp(1e-6, 1 - 1e-6), labels)
         loss.backward()
         opt.step()
 
     model.eval()
     with torch.no_grad():
-        routed = model(features, p, available).p_fake
-        baseline = StaticAverageFusion(2)(features, p, available).p_fake
+        routed = model(features, expert_logits, available).p_fake
+        baseline = StaticAverageFusion(2)(features, expert_logits, available).p_fake
     routed_acc = ((routed >= 0.5).float() == labels).float().mean().item()
     baseline_acc = ((baseline >= 0.5).float() == labels).float().mean().item()
 

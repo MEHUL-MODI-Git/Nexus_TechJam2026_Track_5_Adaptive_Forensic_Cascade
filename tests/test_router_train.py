@@ -5,12 +5,17 @@ leakage through the scaler, selection on the frozen objective's own quantity,
 and an honest verdict when the router does NOT beat the baseline.
 """
 
+import json
+import math
+
 import numpy as np
 import pytest
 import torch
 
 from src.router.features import FeatureSpec, Standardizer, rows_to_matrix
 from src.router.train import (
+    CHECKPOINT_SCHEMA,
+    MIN_MEANINGFUL_DELTA,
     TRANSFORM_FAMILIES,
     build_batch,
     run_ladder,
@@ -26,6 +31,9 @@ FAMILY_CONDITIONS = {
     "resize": ["resize_0.5"], "noise": ["noise_s0.10"], "color": ["bright_-20"],
     "crop": ["crop_0.8"],
 }
+# The canonical sha256 hex digest format `feature_cache.compute_cache_key` emits
+# (B-018 T2) -- any fixed 64-char lowercase-hex string satisfies the format check.
+TEST_CACHE_KEY = "a1b2c3d4e5f60718" * 4
 
 
 def make_rows(n_sources=40, split_at=30, hard_family=None, seed=0):
@@ -45,7 +53,7 @@ def make_rows(n_sources=40, split_at=30, hard_family=None, seed=0):
                 rows.append({
                     "source_id": f"s{i}", "label": label, "dataset_split": split,
                     "condition_id": condition, "family": family,
-                    "cache_key": "K",
+                    "cache_key": TEST_CACHE_KEY,
                     "experts": {"e1": {"ok": True,
                                        "raw_logit": float(np.log(p / (1 - p))),
                                        "p_fake": p}},
@@ -121,10 +129,15 @@ def test_missing_split_is_an_error():
 
 # --- the ladder -----------------------------------------------------------
 def test_ladder_trains_every_rung():
+    """B-018 §7 grew the ladder from four rungs to six (two new parameter-free
+    baselines); this expected list is updated to match that mandatory change."""
     result = run_ladder(make_rows(), threshold=0.5, expert_ids=EXPERTS)
     rungs = [(r["rung"], r["use_worst_group_loss"]) for r in result["results"]]
-    assert rungs == [("static_average", False), ("logistic", False),
-                     ("mlp", False), ("mlp", True)]
+    assert rungs == [
+        ("static_average", False), ("probability_mean", False),
+        ("fixed_weights", False), ("logistic", False),
+        ("mlp", False), ("mlp", True),
+    ]
 
 
 def test_static_average_has_no_parameters():
@@ -147,7 +160,7 @@ def test_verdict_is_reported_honestly_when_router_does_not_help():
         row["experts"]["e2"] = dict(row["experts"]["e1"])
         row["probes"]["e2"] = dict(row["probes"]["e1"])
     result = run_ladder(rows, threshold=0.5, expert_ids=("e1", "e2"))
-    assert result["fusion_comparison_degenerate"] is False
+    assert result["fusion_weight_degenerate"] is False
     assert isinstance(result["router_earns_its_complexity"], bool)
     assert result["improvement_over_baseline"] == pytest.approx(
         result["best_worst_family_recall"] - result["baseline_worst_family_recall"]
@@ -188,52 +201,56 @@ def test_failed_expert_is_marked_unavailable_in_the_batch():
     assert batch.expert_logits[0, 0].item() == 0.0   # zero WITH an unavailable flag
 
 
-# --- degeneracy guard -----------------------------------------------------
-def test_single_expert_fusion_is_flagged_as_vacuous():
-    """One expert ⇒ softmax weight 1.0 ⇒ every rung emits the primary score.
-
-    Reporting that as "the router did not beat the baseline" would present a
-    configuration artefact as a scientific finding.
+# --- degeneracy guard (B-018 T3: weight degeneracy != score degeneracy) ---
+def test_single_expert_reports_weight_degeneracy_not_score_degeneracy():
+    """One expert => softmax weight 1.0 by construction, but the learned bias/
+    quality correction and reliability head still act on the fused score. The
+    previous claim that every rung "necessarily emits the primary expert's
+    score unchanged" was false (the learned bias head can and does move it)
+    and must not appear anywhere in the artifact.
     """
     result = run_ladder(make_rows(), threshold=0.5, expert_ids=("e1",))
-    assert result["fusion_comparison_degenerate"] is True
-    assert result["router_earns_its_complexity"] is False
-    assert "VACUOUS" in result["verdict_note"]
-    scores = {r["dev_worst_family_fake_recall"] for r in result["results"]}
-    assert len(scores) == 1          # identical by construction, as claimed
+    assert result["fusion_weight_degenerate"] is True
+    assert result["single_expert_learned_correction"] is True
+    assert "unchanged" not in result["verdict_note"].lower()
+    assert "unchanged" not in json.dumps(result["results"]).lower()
 
 
 def test_two_experts_are_not_flagged_degenerate():
     rows = make_rows()
     for row in rows:
         p = row["experts"]["e1"]["p_fake"]
-        row["experts"]["e2"] = {"ok": True, "raw_logit": 0.0, "p_fake": 1.0 - p}
+        p2 = 1.0 - p
+        row["experts"]["e2"] = {"ok": True, "raw_logit": float(math.log(p2 / (1 - p2))),
+                                "p_fake": p2}
         row["probes"]["e2"] = dict(row["probes"]["e1"])
     result = run_ladder(rows, threshold=0.5, expert_ids=("e1", "e2"))
-    assert result["fusion_comparison_degenerate"] is False
+    assert result["fusion_weight_degenerate"] is False
 
 
-def test_degenerate_flag_overrides_a_spurious_improvement():
+def test_one_expert_score_change_is_measured_not_suppressed():
+    """T3: the fused-score delta vs static averaging is MEASURED, even with one
+    expert, rather than suppressed by the weight-degeneracy flag."""
     result = run_ladder(make_rows(), threshold=0.5, expert_ids=("e1",))
-    # even if delta were positive, N=1 must never claim the router earned its keep
-    assert result["router_earns_its_complexity"] is False
+    for entry in result["results"]:
+        assert math.isfinite(entry["max_abs_p_fake_change_vs_static"])
+    static = next(r for r in result["results"] if r["rung"] == "static_average")
+    assert static["max_abs_p_fake_change_vs_static"] == 0.0
 
 
 # --- R12 / R20 / R21: checkpointing, exclusions, validation ---------------
 def test_checkpoint_is_deployable(tmp_path):
     """R12: the trainer previously returned metrics only, so no rung could be
     loaded into the prediction service or reproduced."""
-    import torch
-
     result = run_ladder(make_rows(), threshold=0.5, expert_ids=EXPERTS)
     path = save_checkpoint(result, tmp_path / "router.pt", threshold=0.5)
     payload = torch.load(path, weights_only=False)
-    assert payload["schema_version"] == "router-checkpoint.v1"
+    assert payload["schema_version"] == CHECKPOINT_SCHEMA
     assert payload["rung"] == result["best_rung"]
     assert payload["expert_order"] == list(EXPERTS)
     assert payload["standardizer"]["mean"] and payload["feature_spec"]["dim"] > 0
     assert payload["fusion_space"] == "logit"
-    assert payload["cache_key"] == "K"
+    assert payload["cache_key"] == TEST_CACHE_KEY
 
 
 def test_rows_with_every_expert_failed_are_excluded_not_trained():
@@ -254,17 +271,56 @@ def test_dropped_rows_are_reported_in_the_artifact():
     assert result["rows_dropped_all_experts_unavailable"] == 5
 
 
-def test_non_finite_score_is_dropped():
+def test_non_finite_score_is_rejected():
+    """B-018 T1: invalid scores now ABORT the run rather than being dropped."""
     rows = make_rows()
     rows[0]["experts"]["e1"]["p_fake"] = float("nan")
-    report = validate_cache_rows(rows, EXPERTS)
-    assert report["dropped_invalid_scores"] == 1
+    with pytest.raises(ValueError):
+        validate_cache_rows(rows, EXPERTS)
 
 
 def test_mixed_cache_keys_are_refused():
     rows = make_rows()
     rows[0]["cache_key"] = "OTHER"
     with pytest.raises(ValueError, match="never mix generations"):
+        validate_cache_rows(rows, EXPERTS)
+
+
+# --- T1: every field the trainer CONSUMES is validated, not just p_fake ---
+def test_nan_raw_logit_is_rejected():
+    rows = make_rows()
+    rows[0]["experts"]["e1"]["raw_logit"] = float("nan")
+    with pytest.raises(ValueError, match="raw_logit"):
+        validate_cache_rows(rows, EXPERTS)
+
+
+def test_missing_raw_logit_is_rejected():
+    rows = make_rows()
+    del rows[0]["experts"]["e1"]["raw_logit"]
+    with pytest.raises(ValueError, match="raw_logit"):
+        validate_cache_rows(rows, EXPERTS)
+
+
+def test_logit_probability_mismatch_is_rejected():
+    rows = make_rows()
+    rows[0]["experts"]["e1"]["p_fake"] = 0.9
+    rows[0]["experts"]["e1"]["raw_logit"] = 0.0
+    with pytest.raises(ValueError):
+        validate_cache_rows(rows, EXPERTS)
+
+
+def test_consistent_logit_and_probability_pass():
+    rows = make_rows()
+    rows[0]["experts"]["e1"]["raw_logit"] = 1.0
+    rows[0]["experts"]["e1"]["p_fake"] = 1 / (1 + math.exp(-1.0))
+    report = validate_cache_rows(rows, EXPERTS)          # must not raise
+    assert len(report["usable_rows"]) == len(rows)
+
+
+def test_non_bool_ok_is_rejected():
+    rows = make_rows()
+    rows[0]["experts"]["e1"]["ok"] = "true"
+    with pytest.raises(ValueError, match="non-bool"):
         validate_cache_rows(rows, EXPERTS)
 
 
@@ -284,6 +340,61 @@ def test_unknown_condition_is_refused():
     rows[0]["condition_id"] = "not_a_condition"
     with pytest.raises(ValueError, match="unknown condition_id"):
         validate_cache_rows(rows, EXPERTS)
+
+
+# --- T2: split, source-label, and cache-key integrity are fail-CLOSED -----
+def test_unknown_split_is_rejected():
+    rows = make_rows()
+    rows[0]["dataset_split"] = "test"
+    with pytest.raises(ValueError, match="dataset_split"):
+        validate_cache_rows(rows, EXPERTS)
+
+
+def test_missing_cache_key_is_rejected():
+    rows = make_rows()
+    for row in rows:
+        del row["cache_key"]
+    with pytest.raises(ValueError, match="cache_key"):
+        validate_cache_rows(rows, EXPERTS)
+
+
+def test_inconsistent_source_label_is_rejected():
+    rows = make_rows()
+    for row in rows:
+        if row["source_id"] == "s0" and row["condition_id"] == "clean":
+            row["label"] = 1 - row["label"]     # flip just this one row
+    with pytest.raises(ValueError, match="s0"):
+        validate_cache_rows(rows, EXPERTS)
+
+
+def test_source_split_must_be_consistent():
+    rows = make_rows()
+    for row in rows:
+        if row["source_id"] == "s0" and row["condition_id"] == "clean":
+            row["dataset_split"] = "dev" if row["dataset_split"] == "train" else "train"
+    with pytest.raises(ValueError, match="s0"):
+        validate_cache_rows(rows, EXPERTS)
+
+
+def test_missing_required_field_is_rejected():
+    rows = make_rows()
+    del rows[0]["dataset_split"]
+    with pytest.raises(ValueError, match="dataset_split"):
+        validate_cache_rows(rows, EXPERTS)
+
+
+def test_dev_missing_a_family_is_rejected_before_training():
+    rows = make_rows()
+    rows = [r for r in rows if not (r["dataset_split"] == "dev" and r["family"] == "crop")]
+    with pytest.raises(ValueError, match="crop"):
+        run_ladder(rows, threshold=0.5, expert_ids=EXPERTS)
+
+
+def test_dev_with_one_class_is_rejected():
+    rows = make_rows()
+    rows = [r for r in rows if not (r["dataset_split"] == "dev" and r["label"] == 0)]
+    with pytest.raises(ValueError, match="both labels"):
+        run_ladder(rows, threshold=0.5, expert_ids=EXPERTS)
 
 
 def test_selection_uses_bootstrap_mean_and_clean_constraints():
@@ -311,3 +422,136 @@ def test_placeholder_threshold_provenance_is_warned_about():
 def test_fusion_happens_in_logit_space():
     result = run_ladder(make_rows(), threshold=0.5, expert_ids=EXPERTS)
     assert result["fusion_space"] == "logit"
+
+
+# --- kill gate: a positive delta is not a win (B-018 §4) ------------------
+def _make_tiny_delta_rows():
+    """Empirically tuned (not hand-derived) so the single-expert bias
+    correction can nudge the "noise" family's borderline recall up by ~1
+    point without a large jump: `hard_mean`/`real_mean` sit close enough to
+    the 0.5 threshold and to EACH OTHER that any bias large enough to rescue
+    many more fake rows also starts flipping real ones, which the clean
+    constraint caps quickly. Verified deterministic under seed=1.
+    """
+    family_conditions = FAMILY_CONDITIONS
+    rng = np.random.default_rng(1)
+    rows = []
+    for i in range(40):
+        label = i % 2
+        split = "train" if i < 28 else "dev"
+        for family, conditions in family_conditions.items():
+            for condition in conditions:
+                if label == 1:
+                    if family == "noise":
+                        p = float(np.clip(0.45 + rng.normal(0, 0.03), 1e-3, 1 - 1e-3))
+                    else:
+                        p = float(np.clip(0.9 + rng.normal(0, 1e-4), 1e-3, 1 - 1e-3))
+                else:
+                    p = float(np.clip(0.47 + rng.normal(0, 0.03), 1e-3, 1 - 1e-3))
+                rows.append({
+                    "source_id": f"s{i}", "label": label, "dataset_split": split,
+                    "condition_id": condition, "family": family,
+                    "cache_key": TEST_CACHE_KEY,
+                    "experts": {"e1": {"ok": True,
+                                       "raw_logit": float(np.log(p / (1 - p))),
+                                       "p_fake": p}},
+                    "probes": {"e1": {"probe_mean": p, "probe_std": 0.01,
+                                      "probe_range": 0.02, "probe_max_delta": 0.01,
+                                      "probe_scores": {"probe_jpeg_q92": p},
+                                      "n_probes_ok": 3}},
+                    "quality": {"width": 512, "height": 512, "aspect_ratio": 1.0,
+                                "megapixels": 0.26, "is_portrait": False,
+                                "blur_varlap": 0.01, "blockiness": 1.0,
+                                "noise_sigma": 0.01, "luminance_mean": 0.5,
+                                "luminance_std": 0.2, "saturation_mean": 0.3,
+                                "clipped_low_frac": 0.0, "clipped_high_frac": 0.0},
+                    "disagreement": None,
+                })
+    return rows
+
+
+def test_tiny_positive_delta_does_not_earn_complexity():
+    result = run_ladder(_make_tiny_delta_rows(), threshold=0.5, expert_ids=EXPERTS, seed=1)
+    assert result["improvement_over_baseline"] > 0
+    assert result["improvement_over_baseline"] < MIN_MEANINGFUL_DELTA
+    assert result["router_earns_its_complexity"] is False
+
+
+def test_kill_gate_fields_are_present():
+    result = run_ladder(make_rows(), threshold=0.5, expert_ids=("e1",))
+    assert result["kill_gate"]["min_meaningful_delta"] == MIN_MEANINGFUL_DELTA
+    assert isinstance(result["improvement_is_meaningful"], bool)
+    assert isinstance(result["improvement_is_outside_uncertainty"], bool)
+    assert result["router_earns_its_complexity"] == (
+        result["improvement_is_meaningful"] or result["improvement_is_outside_uncertainty"]
+    )
+
+
+# --- BCE with logits, both heads (B-018 §5) --------------------------------
+def test_class_loss_uses_logits():
+    """doc 04: `train_rung` trains on BCE-WITH-LOGITS for both the class and
+    reliability heads; the reliability head's logit and probability must stay
+    consistent under sigmoid."""
+    rows = make_rows()
+    spec = FeatureSpec(expert_ids=EXPERTS)
+    train_rows = [r for r in rows if r["dataset_split"] == "train"]
+    dev_rows = [r for r in rows if r["dataset_split"] == "dev"]
+    std = Standardizer.fit(rows_to_matrix(train_rows, spec), spec)
+    train_batch = build_batch(train_rows, spec, std)
+    dev_batch = build_batch(dev_rows, spec, std)
+    for name in ("logistic", "mlp"):
+        record = train_rung(name, train_batch, dev_batch, spec.dim, len(EXPERTS), 0.5,
+                            epochs=5, fit_reliability=True)
+        model = record["_model"]
+        model.eval()
+        with torch.no_grad():
+            out = model(dev_batch.features, dev_batch.expert_logits, dev_batch.available)
+        assert out.reliability_logit is not None
+        assert torch.allclose(torch.sigmoid(out.reliability_logit), out.reliability, atol=1e-6)
+
+
+# --- R22: two-stage ordering, enforced, not warned about (B-018 §6) -------
+def test_placeholder_threshold_does_not_fit_reliability():
+    result = run_ladder(make_rows(), threshold=0.5, expert_ids=EXPERTS,
+                        threshold_provenance="PLACEHOLDER-uncalibrated-phase0")
+    assert result["reliability_fitted"] is False
+    assert all(r["reliability_head_fitted"] is False for r in result["results"])
+
+
+def test_frozen_threshold_provenance_fits_reliability():
+    result = run_ladder(make_rows(), threshold=0.5, expert_ids=EXPERTS,
+                        threshold_provenance="fitted-phase4-2026-08-27")
+    assert result["reliability_fitted"] is True
+    assert all(r["reliability_head_fitted"] is True for r in result["results"])
+
+
+def test_checkpoint_refuses_stale_reliability(tmp_path):
+    """A document whose reliability head was fitted (frozen provenance at
+    train time) must not be saveable once its recorded provenance reverts to
+    a placeholder -- the stale target can no longer be trusted."""
+    result = run_ladder(make_rows(), threshold=0.5, expert_ids=EXPERTS,
+                        threshold_provenance="fitted-phase4-2026-08-27")
+    result["threshold_provenance"] = "PLACEHOLDER-uncalibrated-phase0"
+    out_path = tmp_path / "router.pt"
+    with pytest.raises(ValueError, match="reliability"):
+        save_checkpoint(result, out_path, threshold=0.5)
+    assert not out_path.exists()
+
+
+# --- missing baseline rungs (B-018 §7) -------------------------------------
+def test_fixed_weights_are_selected_on_train_only():
+    result = run_ladder(make_rows(), threshold=0.5, expert_ids=EXPERTS)
+    fw = next(r for r in result["results"] if r["rung"] == "fixed_weights")
+    assert fw["fixed_weights_selected_on"] == "train split only"
+    assert fw["n_parameters"] == 0
+    assert fw["fixed_weights"] == [1.0]      # single expert: only one point on the simplex
+
+
+def test_ladder_contains_all_six_rungs():
+    result = run_ladder(make_rows(), threshold=0.5, expert_ids=EXPERTS)
+    rungs = [(r["rung"], r["use_worst_group_loss"]) for r in result["results"]]
+    assert rungs == [
+        ("static_average", False), ("probability_mean", False),
+        ("fixed_weights", False), ("logistic", False),
+        ("mlp", False), ("mlp", True),
+    ]

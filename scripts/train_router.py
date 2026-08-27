@@ -82,15 +82,19 @@ def main() -> int:
               f"{entry['dev_clean_fake_recall']:>14.4f}"
               f"{entry['dev_clean_fpr']:>11.4f}{entry['dev_overall_accuracy']:>10.4f}{flag}")
     delta = result["improvement_over_baseline"]
-    if result.get("fusion_comparison_degenerate"):
-        print("\n*** FUSION COMPARISON IS VACUOUS ***")
-        print("Only one expert is available, so the fusion weight is 1.0 by")
-        print("construction and every rung emits the primary score unchanged.")
-        print("The identical rows above say nothing about the router.")
-        print("With N=1, judge the router by SELECTIVE metrics (coverage vs")
-        print("accuracy on the accepted set), or add a second expert.")
-        print(f"\nwrote {out}", file=sys.stderr)
-        return 0
+    if result.get("single_expert_learned_correction"):
+        # B-018 T3: with one expert the fusion WEIGHTS are 1.0 by construction,
+        # but the learned bias/quality correction still moves the fused SCORE.
+        # The old text claimed the score was necessarily unchanged and returned
+        # early, suppressing a real measured effect. Report the measurement.
+        moved = max((e.get("max_abs_p_fake_change_vs_static") or 0.0)
+                    for e in result["results"])
+        print("\n*** SINGLE-EXPERT LEARNED CORRECTION -- NOT A FUSION TEST ***")
+        print("One expert: the fusion weight is 1.0 by construction, so what the")
+        print("rungs below actually compare is the learned bias/quality correction")
+        print("over the primary logit, not fusion.")
+        print(f"Largest measured dev score change vs the static baseline: {moved:.7f}")
+        print("Add a second expert before drawing ANY conclusion about fusion.")
     verdict = ("ROUTER BEATS the parameter-free baseline"
                if result["router_earns_its_complexity"]
                else "ROUTER DOES NOT BEAT the parameter-free baseline")
