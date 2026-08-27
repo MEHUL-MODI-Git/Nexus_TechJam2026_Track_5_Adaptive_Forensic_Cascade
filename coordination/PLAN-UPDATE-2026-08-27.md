@@ -37,6 +37,24 @@ paired source-bootstrap uncertainty. It cannot support a submission result, fina
 or the claim that quality lowered clean FPR. Reproduce with
 `scripts/diagnostics/degradeprint_probe.py 0`, then seeds `1` and `2`.
 
+## Mandatory model-economy execution rule
+
+Mehul's 2026-08-27 instruction is binding for every implementation task:
+
+1. The heavy owner writes the exact spec, acceptance tests, interfaces, safety boundaries and file
+   ownership first.
+2. A lighter model performs mechanical coding, test scaffolding, adapter wiring from a frozen spec,
+   formatting, batch-job launch/monitoring, and other routine repository work.
+3. The heavy owner reviews the diff, runs adversarial and full verification, and alone makes metric,
+   architecture, threshold, licensing, data-split, kill-gate and release decisions.
+4. Work is implemented directly by the heavy model only when it is too small to delegate safely or
+   delegation would require transferring the same judgment-heavy context; the owner records that
+   reason in the workstream CHANGELOG.
+
+Pattern: **heavy spec → light implementation → heavy verification**. A lighter model never lands
+unreviewed eval logic, router semantics, preprocessing behavior, contamination controls or public
+claims.
+
 ## Phase 2R — Repair and freeze inputs
 
 ### 2R.1 Clear existing gates first
