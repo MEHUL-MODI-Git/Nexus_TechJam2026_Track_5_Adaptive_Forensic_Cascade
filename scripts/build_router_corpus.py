@@ -32,7 +32,7 @@ import io
 import json
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -52,8 +52,16 @@ LABEL_MAP = {
 
 
 def extract_shard(shard_index: int, needed: dict[int, int], out_root: Path,
-                  purge: bool = True) -> list[dict]:
-    """Download one parquet shard, write out the images we still need."""
+                  purge: bool = True, seen: set[str] | None = None) -> list[dict]:
+    """Download one parquet shard, write out the images we still need.
+
+    R19: `seen` carries the exact-SHA dedup ACROSS shards, so `needed` counts
+    UNIQUE sources. The previous version deduplicated only after the whole
+    acquisition loop had finished, by which time `needed` had already been
+    decremented for the duplicate -- which is precisely how a run asked for
+    15,000 sources wrote a manifest containing 14,999 and said nothing.
+    """
+    seen = seen if seen is not None else set()
     import pyarrow.parquet as pq
     from huggingface_hub import hf_hub_download
 
@@ -75,9 +83,12 @@ def extract_shard(shard_index: int, needed: dict[int, int], out_root: Path,
             from PIL import Image
 
             Image.open(io.BytesIO(data)).verify()     # reject corrupt rows now
-        except Exception:                              # noqa: BLE001
-            continue
+        except Exception:      # noqa: BLE001, S112 -- a corrupt shard row is an
+            continue           # expected upstream condition, not our error to log
         digest = hashlib.sha256(data).hexdigest()
+        if digest in seen:
+            continue          # already have this exact image; do NOT spend a slot
+        seen.add(digest)
         img_id = table.column("img_id")[i].as_py()
         rel = f"data/corpus/images/{class_name}/{digest[:16]}.jpg"
         dest = out_root / rel
@@ -126,18 +137,48 @@ def main() -> int:
                         help="do not delete downloaded parquet shards (uses ~490MB each)")
     parser.add_argument("--out", type=Path,
                         default=Path("data/manifests/router_corpus_v1.json"))
+    parser.add_argument("--augment", type=Path, default=None,
+                        help="top up an existing manifest to --per-class instead of "
+                             "starting fresh; rows whose image is missing from disk "
+                             "are dropped and re-acquired")
+    parser.add_argument("--allow-underfill", action="store_true",
+                        help="write the manifest even if fewer sources were acquired "
+                             "than requested (R19: OFF by default -- a silent "
+                             "underfill is what this flag exists to prevent)")
     args = parser.parse_args()
 
     root = Path.cwd()
-    needed = {0: args.per_class, 1: args.per_class}
-    rows: list[dict] = []
     started = time.perf_counter()
+
+    # --augment: keep every existing row whose image is still ON DISK. A row
+    # pointing at a deleted file is not a source we have, and counting it as
+    # one is how the corpus came to claim 14,999 sources while holding 13,799.
+    rows: list[dict] = []
+    seen: set[str] = set()
+    dropped_missing = 0
+    if args.augment:
+        existing = json.loads(args.augment.read_text())["images"]
+        for row in existing:
+            if (root / row["relative_path"]).exists():
+                rows.append(row)
+                seen.add(row["original_sha256"])
+            else:
+                dropped_missing += 1
+        have = {0: sum(1 for r in rows if r["label"] == 0),
+                1: sum(1 for r in rows if r["label"] == 1)}
+        print(f"augmenting: kept {len(rows)} on-disk rows "
+              f"(real={have[0]} fake={have[1]}), dropped {dropped_missing} whose "
+              f"image is gone", file=sys.stderr)
+    else:
+        have = {0: 0, 1: 0}
+    needed = {0: args.per_class - have[0], 1: args.per_class - have[1]}
 
     for shard in range(args.max_shards):
         if all(v <= 0 for v in needed.values()):
             break
         try:
-            got = extract_shard(shard, needed, root, purge=not args.keep_shards)
+            got = extract_shard(shard, needed, root, purge=not args.keep_shards,
+                                seen=seen)
         except Exception as exc:                       # noqa: BLE001
             print(f"  shard {shard} failed: {type(exc).__name__}: {exc}", file=sys.stderr)
             continue
@@ -146,14 +187,20 @@ def main() -> int:
               f"real={max(0, needed[0])} fake={max(0, needed[1])} · "
               f"{time.perf_counter() - started:.0f}s", file=sys.stderr)
 
-    # Exact-duplicate guard: one content hash must map to one source.
-    seen: dict[str, str] = {}
+    # Exact-duplicate guard. Dedup now happens during acquisition (R19), so
+    # this is a post-condition check rather than a filter: if it ever removes a
+    # row, the in-loop guard failed and the counts below cannot be trusted.
+    by_digest: dict[str, str] = {}
     deduped: list[dict] = []
     for row in rows:
-        if row["original_sha256"] in seen:
+        if row["original_sha256"] in by_digest:
             continue
-        seen[row["original_sha256"]] = row["relative_path"]
+        by_digest[row["original_sha256"]] = row["relative_path"]
         deduped.append(row)
+    if len(deduped) != len(rows):
+        print(f"FATAL: {len(rows) - len(deduped)} duplicate(s) survived in-loop "
+              "dedup; acquisition accounting is wrong", file=sys.stderr)
+        return 2
 
     for i, row in enumerate(deduped):
         row["sample_id"] = f"corpus-{i:06d}"
@@ -167,10 +214,14 @@ def main() -> int:
     }
     manifest = {
         "manifest_version": MANIFEST_VERSION,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
         "dataset": DATASET, "dataset_revision": REVISION, "license_id": LICENSE_ID,
         "requested_per_class": args.per_class,
         "acquired": len(deduped),
+        "acquired_per_class": {"real": sum(1 for r in deduped if r["label"] == 0),
+                               "fully_synthetic": sum(1 for r in deduped if r["label"] == 1)},
+        "augmented_from": str(args.augment) if args.augment else None,
+        "rows_dropped_image_missing": dropped_missing,
         "exact_duplicates_dropped": len(rows) - len(deduped),
         "counts": counts,
         "split_method": split_method,
@@ -194,6 +245,22 @@ def main() -> int:
     if any("val2017" in json.dumps(r).lower() for r in deduped):
         print("FATAL: val2017 reference in corpus", file=sys.stderr)
         return 2
+
+    # R19: an underfilled corpus must be LOUD. Every downstream document quoted
+    # `requested_per_class` as though it were delivered.
+    per_class = manifest["acquired_per_class"]
+    short = {name: args.per_class - count for name, count in per_class.items()
+             if count != args.per_class}
+    if short and not args.allow_underfill:
+        print(f"FATAL: acquired {per_class}, requested {args.per_class} per class "
+              f"(short by {short}). Raise --max-shards, or pass --allow-underfill "
+              "to record the shortfall deliberately. Refusing to write a manifest "
+              "that silently claims a corpus size it does not have.", file=sys.stderr)
+        return 2
+    if short:
+        manifest["underfilled"] = short
+        print(f"WARNING: writing an UNDERFILLED manifest, short by {short}",
+              file=sys.stderr)
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(manifest, indent=2) + "\n")

@@ -1,5 +1,58 @@
 # CHANGELOG — training (newest first, append-only; corrections are new entries)
 
+## 2026-08-27 — sealed denylist COMPLETE (13,843 entries); corpus clean against the whole reference subset
+
+Mehul asked how to obtain the organizers' DALL-E Advanced half. The answer turned out to be better
+than "download 1.29 TB": `scripts/fetch_sealed_dalle.py` retrieves **exactly** the sealed subset and
+nothing else.
+
+**How the subset was identified without downloading images.** WildFake's `label_csv_files/dalle3.csv`
+(1.3 MB) has an `IsAdvanced` column. It contains **8,843 rows, every one `IsAdvanced=1`**, all under
+`./Diffusion_based/DALLE/Advanced/DALLE3` — an exact match for the brief's "DALL-E Advanced 8,843".
+`dalle2.csv` is 55,638 rows, all `IsAdvanced=0`. So the organizers' subset is a directory, and its
+identity is confirmed by count rather than assumed.
+
+**How 2.84 GB replaced 25.6 GB.** Those images live inside one `DALLE.zip` of 25.6 GB / 64,495
+entries. ModelScope's API 302s to a CDN that advertises `accept-ranges: bytes`, so the archive's
+ZIP64 central directory (8 MB) was read by range request and parsed directly. The 8,843
+`Advanced/DALLE3` entries proved **perfectly contiguous** — measured span/total = **1.000** — so a
+single range request over bytes 22,741,786,039..25,579,485,327 retrieves the subset and no more.
+Local file headers were then walked by signature and inflated: **8,843 extracted, 0 skipped**. The
+script REFUSES to run if the entry count is not exactly 8,843, rather than guessing at a subset whose
+layout has changed.
+
+**Denylist now covers the complete sealed reference subset:** `data/manifests/sealed_denylist.txt`,
+**13,843 entries** (SHA-256 + pHash) = 5,000 COCO val2017 + 8,843 DALL-E Advanced. The brief's figure
+is 13,841 (4,998 + 8,843); we carry all 5,000 val2017 images, a deliberate **superset** — two extra
+banned fingerprints can only over-protect.
+
+**Contamination audit re-run against the full 13,843:** all 13,799 corpus sources checked.
+**0 exact hits. 2 perceptual hits, both at distance 6, both against COCO, and both are the pairs
+already opened and verified unrelated** (Nokia phone vs glittery toilet; crow on white sky vs skier in
+snow). **Zero hits from the DALL-E Advanced half.** Minimum observed distance between any corpus image
+and any sealed image is 6, i.e. no corpus image is closer to a sealed image than the false-positive
+floor we calibrated by eye.
+
+**The hard constraint is now a measured claim with an artifact behind it**, not an assumption:
+no organizer reference image — real or AI — is in our training corpus. `feature_cache.py`'s
+fail-closed denylist gate can now be satisfied honestly, which unblocks the protected cache run.
+
+Side benefit: the sealed images are on disk (gitignored `data/sealed/`), so the Phase 4R single
+sealed evaluation run no longer needs a download. They stay out of every fitting path; the denylist
+guard is what enforces that, and it aborts rather than skips on a hit.
+
+**R19 fixed in the same pass** (`scripts/build_router_corpus.py`). Root cause: `needed[label] -= 1`
+counted RAW rows while exact-SHA dedup ran only after the acquisition loop, so a duplicate silently
+became a shortfall — exactly how a run asked for 7,500/class wrote 7,499. Dedup now happens *during*
+acquisition via a `seen` set threaded through `extract_shard`, so `needed` counts unique sources; the
+post-loop dedup became a fatal post-condition check; the manifest records `acquired_per_class`; and
+the script **refuses to write an underfilled manifest** unless `--allow-underfill` is passed
+explicitly. Added `--augment` to top up an existing manifest, dropping rows whose image is missing
+from disk — which is what the 1,200 deleted pilot rows are.
+
+Implemented heavy-direct rather than delegated: acquisition dedup and contamination boundaries are
+exactly what the model-economy rule reserves for the owner.
+
 ## 2026-08-27 — 2R.2 corpus audit: sealed denylist built, corpus proven clean, two real defects found
 
 Four measurements, three new scripts (`scripts/hash_corpus.py`, `scripts/build_denylist.py`,
