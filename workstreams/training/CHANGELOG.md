@@ -1,5 +1,40 @@
 # CHANGELOG — training (newest first, append-only; corrections are new entries)
 
+## 2026-08-27 — [relay] 2R.2 role manifests: 12,000 fitting + 3,000 untouched internal test
+
+`scripts/build_role_manifests.py`. Splits the 15,000-source corpus into the two roles B-020 §4
+requires, enforcing the separation rather than trusting it.
+
+**Near-duplicate clusters are the unit of assignment, not `source_id`.** Two samples of the same
+prompt are the same picture for leakage purposes, so a cluster is assigned WHOLE to one role and one
+split. Nothing is deleted — the leak closes at zero data cost, where dropping the 59 redundant
+sources would have cost data to solve a bookkeeping problem.
+
+**Threshold is Hamming <= 4, calibrated by opening images, not taken from a default.** At distance 0
+(snowboarder) and 4 (engineers in a tunnel) the pairs are genuinely two samples of one prompt; at
+distance 6 they are a girl in a paddling pool and an AI puppy. `feature_cache`'s sealed-denylist
+default of 6 is deliberately left alone: contamination has the opposite risk asymmetry, where a false
+positive costs one training image and a false negative is fatal.
+
+Result: **14,926 clusters, 65 multi-source, 0 cross-label** (the single cross-label cluster seen at
+threshold 6 was a chaining artefact and disappears at 4).
+
+| role | real | fake |
+|---|---:|---:|
+| fitting / train | 4,500 | 4,500 |
+| fitting / dev | 1,500 | 1,500 |
+| internal test (untouched) | 1,500 | 1,500 |
+
+**Verified independently of the script's own self-report:** 15,000 sources total, **0 source-id
+overlap**, **0 SHA-256 overlap**, 15,000 distinct decoded hashes, **0 clusters straddling roles**,
+**0 straddling train/dev**, and — the number that actually matters — the **minimum pHash distance
+between ANY internal-test image and ANY fitting image is 6**, comfortably outside the threshold of 4
+and at a distance already shown to be visually unrelated. The internal test set is genuinely
+untouched. For contrast, the previous naive split had **29 clusters straddling train/dev**, so every
+dev number computed before today was optimistic.
+
+Relay note: taken alone under PROTOCOL §6 while Codex is offline. Codex reviews on return.
+
 ## 2026-08-27 — all downloads moved inside the repo; a 12 GB purge that purged nothing
 
 Mehul's instruction: anything downloaded belongs in the project directory only. Auditing that found

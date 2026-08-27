@@ -1,0 +1,28 @@
+{
+  "schema_version": "router-role-manifest.v1",
+  "source_manifest": "data/manifests/router_corpus_v2.json",
+  "phash_threshold": 4,
+  "seed": 20260827,
+  "n_sources": 15000,
+  "n_clusters": 14926,
+  "n_multi_source_clusters": 65,
+  "n_cross_label_clusters": 0,
+  "clusters_straddling_roles": 0,
+  "clusters_straddling_train_dev": 0,
+  "internal_test": {
+    "real": 1500,
+    "fake": 1500
+  },
+  "fitting": {
+    "real": 6000,
+    "fake": 6000
+  },
+  "fitting_train": {
+    "real": 4500,
+    "fake": 4500
+  },
+  "fitting_dev": {
+    "real": 1500,
+    "fake": 1500
+  }
+}
