@@ -1,0 +1,28 @@
+{
+  "schema_version": "sealed-contamination-audit.v1",
+  "denylist": "data/manifests/sealed_denylist.txt",
+  "n_sealed": 5000,
+  "phash_threshold": 6,
+  "min_perceptual_distance_observed": 6,
+  "n_corpus_sources": 13799,
+  "n_exact_hits": 0,
+  "n_perceptual_hits": 2,
+  "exact_hits": [],
+  "perceptual_hits": [
+    {
+      "source_id": "0-998dfe107ea00215",
+      "distance": 6,
+      "sealed_subset": "coco_val2017",
+      "sealed_sha256": "2e37eb02cd2b38e2bd14b4589676f2f0b9c71547335e0cbef43108cf36af10dd"
+    },
+    {
+      "source_id": "0-044398d7dca30781",
+      "distance": 6,
+      "sealed_subset": "coco_val2017",
+      "sealed_sha256": "da7f044214ff627a29b11ca335b2a73bf8f7ba6f999a04f25c614679bcac544c"
+    }
+  ],
+  "clean": false,
+  "decode_failures": [],
+  "elapsed_seconds": 10.7
+}

@@ -1,5 +1,68 @@
 # CHANGELOG — training (newest first, append-only; corrections are new entries)
 
+## 2026-08-27 — 2R.2 corpus audit: sealed denylist built, corpus proven clean, two real defects found
+
+Four measurements, three new scripts (`scripts/hash_corpus.py`, `scripts/build_denylist.py`,
+`scripts/diagnostics/corpus_near_duplicates.py`), all Ruff clean. Nothing here fits anything; this is
+the contamination and integrity groundwork B-020 §4 requires before the long cache run.
+
+**1. The corpus is 1,200 sources smaller than every document says.** The manifest lists 14,999
+sources; only **13,799** exist on disk. The missing 1,200 are **exactly** the pilot set — the ~829 MB
+of SID-Set images Codex found tracked in git, deleted during the local history cleanup. The manifest
+was never updated, so `acquired: 14999` has been wrong in every plan, STATE and STATUS since. Also
+confirms R19 from the other side: the acquisition run took 7,500 real + 7,499 fake and wrote the
+manifest anyway, one short, with no assertion on the requested count.
+
+Consequence for the record: the 24k pilot feature cache can still be REPLAYED (the features are
+cached) but can no longer be RE-EXTRACTED, because its source images are gone. The DegradePrint
+diagnostic remains reproducible via `scripts/diagnostics/degradeprint_probe.py`; it is not
+reproducible from images. Worth one honest line wherever that diagnostic is cited.
+
+**2. Byte integrity is perfect.** All 13,799 present images were re-decoded through the canonical
+pipeline: **0 SHA-256 mismatches** against the acquisition manifest, 0 decode failures among files
+that exist. Nothing has rotted, been resaved, or been swapped.
+
+**3. The perceptual-duplicate threshold was miscalibrated, and I checked it by eye instead of
+trusting it.** At the `feature_cache` default of Hamming ≤6 the corpus shows 135 clusters, 172
+redundant sources, **1 apparently cross-label cluster** — a "real" and a "fake" that look identical,
+which would be a labelling scandal. It is not real. Opening the images: the pair at distance 6 is **a
+girl in a paddling pool and an AI puppy**. A second distance-6 pair (Nokia phone / glittery toilet)
+false-positives the same way — 64-bit pHash collides on coarse layout (bright subject, dark ground).
+Verified in the other direction too: distance **0** (snowboarder, two samples of one prompt) and
+distance **4** (three engineers in a tunnel, two samples of one prompt) are genuine near-duplicates.
+
+**Calibrated threshold: Hamming ≤4** for role/split separation — verified true-positive at 0 and 4,
+verified false-positive at 6. At ≤4: **53 clusters, 112 sources, 59 redundant, 0 cross-label, and 29
+clusters straddling the current train/dev boundary.** Those 29 are real leakage: the current dev
+split contains near-copies of training images, so today's dev numbers are optimistic. Also note 13 of
+the 135 clusters at ≤6 were single-linkage chaining artefacts, not tight groups.
+
+**Policy decision (mine, as owner): group, do not delete.** A near-duplicate cluster becomes one
+grouping unit assigned whole to a role and split, exactly as `source_id` already is. This removes the
+leakage at zero data cost; deleting 59 sources to solve a bookkeeping problem would be the worse
+trade. The `feature_cache` sealed-denylist default of 6 stays as it is — for CONTAMINATION the risk
+is asymmetric (a false positive drops one training image; a false negative is fatal), so a loose
+threshold is the right default there and a tight one is right for dedup. Different jobs, different
+numbers, both now justified by measurement rather than by a shared default.
+
+**4. The sealed denylist exists, and the corpus is clean.** Mehul approved fetching COCO val2017;
+5,000 images downloaded to gitignored `data/sealed/`, fingerprinted through the canonical decode path,
+and written as `data/manifests/sealed_denylist.txt` in `load_denylist`'s exact format (SHA-256 +
+`phash=`). Hashing is not fitting: the images were read once and handed to nothing.
+
+Audit of all 13,799 corpus sources against it: **0 exact hits. 2 perceptual hits, both at exactly
+distance 6, both opened and both visually unrelated** (Nokia phone vs toilet; a crow on white sky vs a
+skier in snow — again the bright-subject/dark-ground collision). The minimum observed distance between
+any corpus image and any sealed image is 6.
+
+**Therefore: no COCO val2017 image is in our training corpus, by exact hash and by inspected
+perceptual match.** That is now a measured claim with an artifact behind it, not an assumption. The
+DALL-E Advanced half (8,843) is still unhashed and needs Mehul's ModelScope account; the denylist and
+this audit must be described as covering the real half only until that lands.
+
+**Not done yet:** the 12,000/3,000 role split, the top-up to exactly 15,000/7,500-per-class, and the
+R19 exact-count assertion in `build_router_corpus.py`.
+
 ## 2026-08-27 — B-018 router repair landed (heavy spec -> light implementation -> heavy verification)
 
 Codex's B-018 BLOCK is repaired against the frozen contract `specs/router-repair-b018.md`. Execution

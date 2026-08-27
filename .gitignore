@@ -63,3 +63,7 @@ htmlcov/
 # delete these two lines if the decision is to include them.
 Brief/
 docs/evidence/
+
+# Sealed organizer reference subset: hashed for the denylist, NEVER trained on,
+# NEVER committed. Images live here only long enough to fingerprint them.
+data/sealed/
