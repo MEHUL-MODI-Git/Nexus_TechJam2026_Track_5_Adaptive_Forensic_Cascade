@@ -56,6 +56,24 @@ to 0.9136** on the held-back test. The deferred images score 0.8191 against 0.93
 the system declines on the images it would have got wrong. For a moderation workflow, an honest
 "route this to a human" is worth more than a confident coin flip.
 
+**4. Audit the verdict, not just the image.** The 20-condition stress grid we built to
+*evaluate* the system turned out to be its best confidence signal. Run on a single image it
+asks: how many of these 20 real-world transformations preserve this verdict? That number
+predicts whether the verdict is wrong **better than the reliability head we trained for the
+job** — AUROC 0.8650 against 0.7206 — and it catches 72.6% of the errors that head passes
+with high confidence. So the product returns a **Forensic Robustness Certificate**:
+
+```
+Verdict: AI-GENERATED (p_fake 0.5739)
+Verdict retention: 11 / 20 stress conditions
+Forensic reliability: VERY LOW
+  — verdicts at this retention were correct for 60.6% of held-out sources
+Verdict changes under: jpeg_q30, noise_s0.05, contrast_+20, ...
+```
+
+The grades are the measured retention→accuracy relationship, not labels we chose, so the
+number on screen is one we actually observed on 3,000 held-out images.
+
 ### What it does
 
 Worst-transformation-family fake recall, on 3,000 untouched sources:
@@ -98,6 +116,14 @@ published evaluation is a lossless PNG. On identical pixels re-encoded as JPEG q
 **0.592 and its fake recall to 0.000** — it calls every AI image real. A detector that only works on
 uncompressed images cannot help on a platform where every upload is recompressed. We report that as a
 finding rather than shipping it as a dependency.
+
+**Two more of our own ideas died, which is why we trust the ones that lived.** Our system
+re-scores every image under three mild perturbations — 3 of its 4 forward passes. An 8-arm,
+3-seed ablation found **no probe budget distinguishable from any other, including none at
+all**: they cost 86% of inference time and buy nothing measurable. We also tried building an
+evidence heatmap by occluding patches; a guard written *before* the experiment compared two
+occlusion operators and found their maps correlate at 0.261, so the method measures the
+artefacts its own masks create. Both are reported rather than quietly kept.
 
 **The second expert failed twice, for the same structural reason — the most interesting thing we
 learned.** After LOTA we integrated PGC (Apache-2.0, 306.7M parameters), which loads cleanly and,
