@@ -1,86 +1,116 @@
-# Error Analysis Note — DRAFT v1
+# Error Analysis Note
 
-> **Status:** Claude draft (Phase 5R); Codex reviews. **PRELIMINARY.** Every number here comes from
-> the committed 8,000-row diagnostic grid (`results/grid-smoke-v1/`), which used an **unfitted 0.5
-> threshold** and a smoke set whose real half is COCO and fake half is SID-Set. It is regenerated on
-> the protected corpus before submission. Nothing here is a headline result.
+> **Status:** regenerated on the **protected, untouched internal test** (3,000 sources ×
+> 20 conditions = 60,000 rows) at the **frozen** decision threshold 0.4667367651127279.
+> This supersedes the earlier draft, which was computed on an 8,000-row smoke grid at an
+> unfitted 0.5 threshold with COCO reals against SID-Set fakes — a comparison we disowned
+> in README §8. Every number below is reproducible from
+> `results/robustness/error-taxonomy.json` via `scripts/error_taxonomy.py`.
+
+At the shipped operating point the cascade misses **8.0% of AI images** (2,390 false
+negatives) and misclassifies **10.2% of real photographs** (3,068 false positives).
 
 ## The one-line finding
 
-**The detector does not become uncertain under transformation. It becomes confidently wrong — in
-both directions, at the extremes of its output range.**
+**The detector does not become uncertain under degradation. It becomes confidently wrong —
+in both directions, at the extremes of its output range.**
 
-- Worst false negatives: AI images under noise σ=0.10 scored **p_fake = 0.0000**
-- Worst false positives: real photographs under blur σ=2.0 scored **p_fake = 1.0000**
+- Worst false negatives: AI images scored **p_fake = 0.0001**
+- Worst false positives: real photographs scored **p_fake = 0.9996**
 
-Not 0.4 and 0.6. Zero and one. A downstream system reading confidence as trust would act on both.
+Not 0.45 and 0.55. A downstream system reading the score as confidence would act on both.
 
-## Failure mode 1 — noise erases the evidence (false negatives)
+## Failure mode 1 — noise erases the evidence, and pushes reals the other way
 
-| condition | fake recall | fake→real flip rate |
+Noise is simultaneously our worst false-negative **and** worst false-positive condition:
+
+| condition | fake recall | FPR |
 |---|---:|---:|
-| clean | 53.0% | — |
-| noise σ=0.05 | 9.0% | 83.0% |
-| **noise σ=0.10** | **1.5%** | **97.2%** |
+| clean | 0.9613 | 0.0833 |
+| noise σ=0.02 | 0.8787 | 0.1153 |
+| noise σ=0.05 | 0.8087 | 0.1787 |
+| **noise σ=0.10** | **0.7900** | **0.2967** |
 
-Of AI images the model correctly catches when clean, **97.2% flip to "real"** once mild Gaussian
-noise is added. The generator fingerprint the detector relies on lives in the high-frequency band,
-and additive noise occupies the same band. This is the single most exploitable weakness in the
-system and we report it as such: adding imperceptible noise defeats this detector almost completely.
+The generator fingerprint lives in the high-frequency band and additive noise occupies the
+same band. At σ=0.10 nearly one real photograph in three is called AI-generated. This is
+the single most exploitable weakness in the system, and adding imperceptible noise is the
+cheapest attack against it.
 
-## Failure mode 2 — blur makes real photographs look generated (false positives)
+**Representative case — `fully_synthetic/190e2b3d3a1e504c.jpg`** (skateboarders on a
+graffitied stairwell): a photorealistic generation whose content is *already* high-texture
+— graffiti, weathered concrete, blown-out backlighting. Under `contrast_+20` it scores
+**0.0001**. Content that looks like noise hides the fingerprint just as added noise does,
+which is why our worst false negatives are gritty documentary-style scenes rather than the
+smooth, over-rendered images people expect a detector to miss.
 
-At the operating point that yields **1.0% false positives on clean images**, blur at σ=2.0 yields
-**64.0%**. Same model, same threshold — a 64× increase. At the naive 0.5 default the same condition
-still gives 31.5%, so this is not an artifact of a badly chosen cut.
+## Failure mode 2 — blur makes real photographs look generated
 
-**These false positives are not random, and that is the interesting part.**
+At clean the false-positive rate is 0.0833; under blur σ=2.0 it is **0.1260**, and the
+errors are not random.
 
-Of the nine real photographs most confidently misclassified as AI-generated under blur, **eight are
-aircraft** — planes against open sky and tarmac. The ninth is a wave breaking on a beach. All ten
-share one property: large smooth regions, simple backgrounds, little fine texture.
+**Representative case — `real/ebaabab805ab2c4f.jpg`** (a row of fire trucks against open
+sky and tarmac): under `blur_s2.0` it scores **0.9994**. The image is dominated by large
+smooth regions — sky, asphalt — with saturated manufactured objects in front of them. Blur
+removes the sensor noise that marks it as a photograph, and what remains looks like a
+render. Our earlier smoke-set analysis found the same pattern in aircraft photographs
+(eight of nine worst false positives were planes against sky and tarmac); the protected
+corpus reproduces it with a different subject, so it is a property of the *content class*,
+not of one dataset.
 
-We tested that observation rather than resting on it. Measuring texture energy on the **clean**
-originals:
+A second family of false positives is heavily processed real photography.
+**`real/95efd34d1ad0803b.jpg`** — a trade-show snapshot with saturated artificial lighting
+and an added white border — scores **0.9996** under `contrast_-20`. Images that have already
+been through a processing pipeline have had the same evidence stripped from them.
 
-| real photographs under blur σ=2.0 | median texture energy |
-|---|---:|
-| 20 most wrongly called "AI" | 442.9 |
-| 20 least wrongly called "AI" | 1176.9 |
+## Failure mode 3 — photometric shifts are not free
 
-**The photographs the detector gets right have 2.66× more fine texture than the ones it gets wrong.**
+Brightness and contrast are usually treated as benign, and for real images they are. For
+synthetic ones they are not: `bright_+20` drops fake recall to 0.8967 and `contrast_+20` to
+0.9173, against 0.9613 clean. Both are one-click operations in any photo app.
 
-### Why this happens
+## What abstention catches, and what it does not
 
-This connects to an independent measurement made elsewhere in the project. When we audited our
-training corpus for a file-format confound, one image statistic survived every container change:
-`noise_sigma`. Real photographs carry sensor noise; generated images are smooth. That is a genuine
-physical difference and it is part of what any detector of this family learns.
+The system declines to decide on the 20% of images it judges least reliable. That set is
+strongly enriched for errors:
 
-Blur **removes sensor noise**. So blurring a real photograph moves it, along precisely the axis the
-detector is sensitive to, into the region of feature space that generated images occupy. A
-low-texture real photo — an aircraft against a clear sky — starts close to that boundary and needs
-very little blur to cross it.
+- **41.8%** of all false negatives fall in it
+- **38.6%** of all false positives fall in it
+- but only **18.1%** of *correct* decisions do
 
-That is why the failure is asymmetric rather than a symmetric loss of accuracy, and it is why we
-believe the fix is not a better detector but a router that measures the degradation and withholds
-the verdict when the image has been pushed into that region.
+So abstention is roughly 2.2× enriched for mistakes, and accuracy on the images the system
+does decide rises from 0.9090 to 0.9317.
 
-## Trade-offs we accepted
+**The honest limitation is where it fails.** Abstention rate tracks degradation almost
+perfectly for noise — 7.2% clean, 85.9% at σ=0.05, 98.6% at σ=0.10 — because the
+reliability head reads quality descriptors, and noise is exactly what those measure. It is
+nearly blind to blur: at blur σ=2.0 it abstains on **0.03%** of images while the
+false-positive rate there is 0.1260. Blur makes an image look *cleaner*, so the head reads
+high quality and stays confident.
 
-1. **A single threshold across all 20 conditions**, never tuned per condition. Per-condition
-   thresholds would improve every number in this note and would be leakage: at inference we do not
-   know which transform was applied.
-2. **Abstention costs coverage.** Refusing to answer on degraded images means answering fewer
-   questions. For moderation triage we judge that correct; for a fully automated filter it would not
-   be.
-3. **We did not solve JPEG q30 or noise σ=0.10.** Fake recall is 11.5% and 1.5%. We report the
-   conditions where the system fails next to those where it works.
+This is why **every one of the worst errors listed above carries reliability between 0.91
+and 0.99 and would not be deferred.** Abstention removes the moderately uncertain middle,
+not the confidently wrong tail. A deployment that treats "did not abstain" as "safe to
+automate" would be wrong in precisely the cases that matter most.
 
-## Compliance note for downstream use
+## Trade-offs we accepted, stated plainly
 
-**The strongest false-positive examples carry third-party trademarks** (FedEx and Polar Air Cargo
-liveries are clearly legible). The brief forbids third-party trademarks in demo assets, so these
-specific images must not appear in the demo video or public write-up. A trademark-free substitute —
-the beach/wave false positive, or the F-22, which carries no commercial mark — should be used for
-public material. The full set remains available in `results/robustness/cases/` for internal review.
+1. **We buy robustness with false positives.** The cascade lifts worst-family fake recall
+   from 0.1227 to 0.8258, but its clean FPR is 0.0833 against the primary's 0.0027. Against
+   a primary handed our own operating point the honest gain is **+0.49**, not +0.70
+   (README §7).
+2. **The gain is not uniform.** At matched FPR the primary *beats* the cascade on blur,
+   colour and resize. The entire advantage is `noise` and `jpeg`. We raise the floor, not
+   the ceiling.
+3. **Nothing is gained on clean images** (0.9613 vs a matched primary's 0.9620).
+4. **The clean-FPR constraint we set ourselves did not hold** on unseen data: 0.0833 against
+   the 0.0756 cap. We reported it rather than re-tuning the threshold.
+5. **Abstention costs coverage.** One image in five is deferred to a human. That is a real
+   operational cost and it is the price of the accuracy gain above.
+
+## What we would fix first
+
+The blur blind spot is the clearest actionable gap: the reliability head needs a feature
+that rises when an image is *too smooth*, not only when it is noisy. `blur_varlap` is
+already computed and cached; it is in the feature vector but is evidently not being used in
+a way that separates "blurred real photograph" from "clean high-quality photograph". That is
+a fixable modelling problem, not a data-collection problem.
