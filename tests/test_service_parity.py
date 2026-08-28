@@ -35,18 +35,63 @@ def test_record_shape_and_invariants(service):
     assert 0.0 <= d["p_fake"] <= 1.0
     assert d["forced_prediction"] in (0, 1)
     assert d["decision"] in ("REAL", "AI-GENERATED")
-    assert d["reliability"] is None          # no validated estimator in Phase 0
+    # The reliability head exists but is NOT fitted, so the service must report
+    # null rather than sigmoid(untrained layer) dressed up as a confidence.
+    assert d["reliability"] is None
     assert d["rescue_invoked"] is False      # rescue lands in Phase 3
     assert d["expert_failures"] == []
     assert d["experts"] and d["experts"][0]["expert_id"] == "commfor_384"
-    assert d["pipeline_version"] and d["threshold_provenance"].startswith("PLACEHOLDER")
+    assert d["pipeline_version"]
+    # The shipped config serves the FROZEN cascade. The provenance string is the
+    # guard that the demo and README section 7 describe the same system: a
+    # regression to the placeholder threshold would silently make the demo
+    # report the uncalibrated baseline again.
+    assert d["fusion"] == "router"
+    assert d["threshold_provenance"].startswith("frozen:")
+    assert d["router"] and d["router"]["rung"] == "mlp"
+    assert d["router"]["n_parameters"] == 1827
 
 
 def test_threshold_boundary_predicts_fake(service):
     # p_fake == threshold must predict AI-generated (matches the eval contract).
-    r = service.predict_image(IMAGE)
-    service_at = PredictionService(service.experts, threshold=r.p_fake)
+    # The rule under test is the comparison itself (`>=`), so it is checked on
+    # the baseline path. The routed path cannot be re-thresholded at all -- see
+    # `test_router_refuses_a_threshold_that_is_not_its_frozen_one`, which is the
+    # stronger guarantee.
+    baseline = PredictionService(service.experts, threshold=0.5, fusion="naive_mean")
+    r = baseline.predict_image(IMAGE)
+    service_at = PredictionService(service.experts, threshold=r.p_fake,
+                                   fusion="naive_mean")
     assert service_at.predict_image(IMAGE).forced_prediction == 1
+
+
+def test_router_refuses_a_threshold_that_is_not_its_frozen_one(service):
+    """The realistic regression: someone edits the YAML threshold and the demo
+    silently starts deciding at a boundary the router was never fitted against.
+    """
+    if service.fusion != "router":
+        pytest.skip("shipped config is not serving the router")
+    with pytest.raises(ValueError, match="frozen threshold"):
+        PredictionService(service.experts, threshold=0.5, fusion="router",
+                          router=service.router)
+
+
+def test_router_fusion_requires_a_router(service):
+    with pytest.raises(ValueError, match="requires a loaded RouterHead"):
+        PredictionService(service.experts, threshold=0.5, fusion="router")
+
+
+def test_router_actually_changes_the_decision_path(service):
+    """Guards against the exact defect this wiring fixed: the service reporting
+    the raw primary while the README reports the cascade."""
+    if service.fusion != "router":
+        pytest.skip("shipped config is not serving the router")
+    routed = service.predict_image(IMAGE)
+    baseline = PredictionService(service.experts, threshold=0.5,
+                                 fusion="naive_mean").predict_image(IMAGE)
+    assert routed.router["primary_p_fake"] == pytest.approx(baseline.p_fake, abs=1e-6)
+    # The router is a correction head; on a real image it must not be a no-op.
+    assert routed.p_fake != pytest.approx(baseline.p_fake, abs=1e-6)
 
 
 def test_determinism_across_calls(service):
@@ -196,3 +241,51 @@ def test_entropy_helpers_agree():
     probs = np.array([0.0, 0.01, 0.3, 0.5, 0.77, 1.0])
     expected = np.array([binary_entropy(float(p)) for p in probs])
     assert np.allclose(binary_entropy_array(probs), expected)
+
+
+def test_live_path_reproduces_the_evaluated_scores(service):
+    """TRAIN/SERVE PARITY -- the guarantee the whole wiring rests on.
+
+    README section 7 reports numbers computed offline from cache rows. Those
+    numbers only describe the shipped system if scoring an image through the
+    live service lands in the same place. This drives real pixels through
+    `PredictionService` and compares against the frozen router run over the
+    cached row for the same image, which is what the one-shot evaluator did.
+    """
+    import json
+
+    import numpy as np
+    import torch
+
+    from src.router.train import build_batch, load_checkpoint
+
+    if service.fusion != "router":
+        pytest.skip("shipped config is not serving the router")
+    rows_path = ROOT / "data" / "feature_cache" / "internal-test-v2" / "rows.jsonl"
+    if not rows_path.exists():
+        pytest.skip("internal-test cache not present")
+
+    rows = []
+    with rows_path.open() as fh:
+        for line in fh:
+            row = json.loads(line)
+            if row["condition_id"] == "clean":
+                rows.append(row)
+            if len(rows) == 12:
+                break
+    rows = [r for r in rows if (ROOT / r["relative_path"]).exists()]
+    if not rows:
+        pytest.skip("corpus images not present")
+
+    loaded = load_checkpoint(ROOT / "results" / "router-fitting-v2" / "router.pt")
+    batch = build_batch(rows, loaded.spec, loaded.standardizer, service.threshold)
+    with torch.no_grad():
+        cached = loaded.model(batch.features, batch.expert_logits,
+                              batch.available).p_fake.numpy()
+    live = np.array([service.predict_image(ROOT / r["relative_path"]).p_fake
+                     for r in rows])
+
+    # float32 batch-vs-single matmul differs in the last bits; a verdict must not.
+    assert np.abs(live - cached).max() < 1e-5
+    thr = service.threshold
+    assert ((live >= thr) == (cached >= thr)).all()

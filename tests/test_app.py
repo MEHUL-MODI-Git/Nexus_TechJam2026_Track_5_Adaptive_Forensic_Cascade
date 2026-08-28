@@ -67,8 +67,13 @@ def test_handler_matches_real_prediction_service_when_checkpoint_is_available():
     direct = service.predict_image(image)
     html, *_ = analyze_image(image, service)
     assert f"{direct.p_fake:.4f}" in html
-    assert "BASELINE SIGNAL" in html
-    assert f"Placeholder verdict: <strong>" in html
+    # The shipped config serves the frozen cascade, so the UI must show the real
+    # verdict rather than demoting it. The placeholder path is still covered by
+    # `test_placeholder_threshold_demotes_binary_verdict` below, so both
+    # branches stay tested.
+    assert "BASELINE SIGNAL" not in html
+    assert "Placeholder verdict" not in html
+    assert direct.decision in html
 
 
 def test_placeholder_threshold_demotes_binary_verdict():

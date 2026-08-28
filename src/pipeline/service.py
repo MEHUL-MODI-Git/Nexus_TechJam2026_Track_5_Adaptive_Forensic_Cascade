@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import math
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
@@ -28,9 +28,10 @@ _CONFIG_PATH = Path(__file__).resolve().parents[2] / "configs" / "predict.yaml"
 
 SCHEMA_VERSION = "prediction.v1"
 
-# Phase 0 implements only the naive mean; the trained router lands in Phase 2.
-# Anything else must fail loudly rather than quietly behaving like the mean.
-_SUPPORTED_FUSION = frozenset({"naive_mean"})
+# `naive_mean` is the Phase-0 baseline path; `router` runs the frozen router
+# head over quality/probe features. Anything else must fail loudly rather than
+# quietly behaving like the mean.
+_SUPPORTED_FUSION = frozenset({"naive_mean", "router"})
 
 
 def _default_registry() -> dict:
@@ -63,6 +64,8 @@ class PredictionRecord:
     pipeline_version: str
     threshold_used: float
     threshold_provenance: str
+    fusion: str = "naive_mean"      # which decision path produced `p_fake`
+    router: dict[str, Any] | None = None
 
     def to_json_dict(self) -> dict:
         return asdict(self)
@@ -70,6 +73,39 @@ class PredictionRecord:
 
 def load_predict_config(path: Path | None = None) -> dict:
     return yaml.safe_load((path or _CONFIG_PATH).read_text())
+
+
+def _load_router_from_config(cfg: dict):
+    """Load the frozen router head and the frozen threshold it must be served at.
+
+    The threshold comes from the VALIDATED artifact, not from `cfg["threshold"]`.
+    A YAML file is easy to edit and carries no provenance; the artifact is
+    schema-checked and hashed, so it is the only thing allowed to move a
+    production decision boundary.
+    """
+    from ..eval.protocol import load_frozen_threshold
+    from ..router.head import RouterHead
+
+    rcfg = cfg.get("router") or {}
+    checkpoint = rcfg.get("checkpoint")
+    artifact = rcfg.get("threshold_artifact")
+    if not checkpoint or not artifact:
+        raise ValueError(
+            "fusion='router' requires router.checkpoint and router.threshold_artifact "
+            f"in the config; got checkpoint={checkpoint!r} artifact={artifact!r}"
+        )
+    root = Path(__file__).resolve().parents[2]
+    checkpoint = Path(checkpoint)
+    artifact = Path(artifact)
+    if not checkpoint.is_absolute():
+        checkpoint = root / checkpoint
+    if not artifact.is_absolute():
+        artifact = root / artifact
+
+    frozen = load_frozen_threshold(artifact)      # validates schema or raises
+    head = RouterHead.from_checkpoint(checkpoint, threshold=float(frozen.value))
+    provenance = f"frozen:{artifact.name}:{frozen.artifact_sha256[:12]}"
+    return head, float(frozen.value), provenance
 
 
 class PredictionService:
@@ -81,6 +117,7 @@ class PredictionService:
         threshold: float,
         threshold_provenance: str = "unspecified",
         fusion: str = "naive_mean",
+        router: Any = None,
     ) -> None:
         if not experts:
             raise ValueError("PredictionService requires at least one expert")
@@ -94,10 +131,29 @@ class PredictionService:
                 f"unknown fusion {fusion!r}; implemented: {sorted(_SUPPORTED_FUSION)}. "
                 "Refusing to run rather than silently averaging."
             )
+        if fusion == "router":
+            if router is None:
+                raise ValueError(
+                    "fusion='router' requires a loaded RouterHead. Refusing to "
+                    "fall back to the mean: a caller that asked for the routed "
+                    "decision must not silently receive the baseline one."
+                )
+            # Config drift is the realistic failure here -- someone flips fusion
+            # to 'router' and leaves the Phase-0 placeholder threshold in place,
+            # and every verdict is then made at a boundary the router was never
+            # fitted against. The frozen threshold travels WITH the checkpoint,
+            # so disagreement means the config is wrong, not the artifact.
+            if abs(float(router.threshold) - threshold) > 1e-12:
+                raise ValueError(
+                    f"threshold {threshold!r} does not match the router's frozen "
+                    f"threshold {router.threshold!r}; refusing to serve a routed "
+                    "decision at an unfrozen boundary"
+                )
         self.experts = experts
         self.threshold = threshold
         self.threshold_provenance = threshold_provenance
         self.fusion = fusion
+        self.router = router
         self.init_failures: list[dict] = []
 
     @classmethod
@@ -133,11 +189,18 @@ class PredictionService:
                     "registry", "no_experts_available",
                     f"every configured expert failed to initialize: {init_failures}",
                 )
+        fusion = cfg.get("fusion", "naive_mean")
+        threshold = cfg["threshold"]
+        threshold_provenance = cfg.get("threshold_provenance", "unspecified")
+        router = None
+        if fusion == "router":
+            router, threshold, threshold_provenance = _load_router_from_config(cfg)
         service = cls(
             experts=experts,
-            threshold=cfg["threshold"],
-            threshold_provenance=cfg.get("threshold_provenance", "unspecified"),
-            fusion=cfg.get("fusion", "naive_mean"),
+            threshold=threshold,
+            threshold_provenance=threshold_provenance,
+            fusion=fusion,
+            router=router,
         )
         # Recorded so the run manifest can report which experts were absent and
         # why; empty when the caller supplied experts directly.
@@ -187,7 +250,34 @@ class PredictionService:
                 f"({len(failures)} failure(s)): {failures}"
             )
 
-        p_fake = sum(o.p_fake for o in outputs) / len(outputs)  # Phase 0 naive mean
+        reliability: float | None = None
+        router_info: dict[str, Any] | None = None
+        if self.fusion == "router":
+            # The router reads quality descriptors and probe responses, so this
+            # is where the extra work happens: probes re-score the expert on
+            # perturbed views. Cost is measured, not hidden -- it lands in
+            # `inference_ms.components.router`.
+            t0 = time.perf_counter()
+            from ..router.feature_cache import extract_feature_blocks
+
+            blocks = extract_feature_blocks(
+                img, self.experts, precomputed={o.expert_id: o for o in outputs},
+            )
+            score = self.router.score_blocks(blocks)
+            components["router"] = round((time.perf_counter() - t0) * 1000.0, 3)
+            p_fake = score.p_fake
+            reliability = score.reliability
+            router_info = {
+                "rung": score.rung,
+                "n_parameters": score.n_parameters,
+                "expert_available": score.expert_available,
+                "primary_p_fake": (
+                    sum(o.p_fake for o in outputs) / len(outputs)
+                ),
+                "quality": blocks.get("quality"),
+            }
+        else:
+            p_fake = sum(o.p_fake for o in outputs) / len(outputs)  # Phase 0 naive mean
         forced = int(p_fake >= self.threshold)  # >= so p == threshold predicts fake
 
         total_ms = (time.perf_counter() - started) * 1000.0
@@ -204,7 +294,7 @@ class PredictionService:
             p_fake=p_fake,
             forced_prediction=forced,
             decision="AI-GENERATED" if forced else "REAL",
-            reliability=None,          # no validated estimator yet
+            reliability=reliability,   # None unless the head was actually fitted
             experts=[o.to_json_dict() for o in outputs],
             expert_failures=failures,
             rescue_invoked=False,      # rescue path lands in Phase 3
@@ -213,6 +303,8 @@ class PredictionService:
             pipeline_version=PIPELINE_VERSION,
             threshold_used=self.threshold,
             threshold_provenance=self.threshold_provenance,
+            fusion=self.fusion,
+            router=router_info,
         )
 
 
@@ -224,6 +316,10 @@ def _with_image(img: DecodedImage, image) -> DecodedImage:
 
 
 __all__ = [
-    "PredictionService", "PredictionRecord", "PredictionError",
-    "DecodeError", "SCHEMA_VERSION", "load_predict_config",
+    "SCHEMA_VERSION",
+    "DecodeError",
+    "PredictionError",
+    "PredictionRecord",
+    "PredictionService",
+    "load_predict_config",
 ]

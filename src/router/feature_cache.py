@@ -248,23 +248,34 @@ def _view_sha256(image) -> str:
     return hashlib.sha256(np.array(image, dtype=np.uint8).tobytes()).hexdigest()
 
 
-def build_row(
-    source: dict,
-    decoded,
-    condition_id: str,
-    view,
-    experts: list[Expert],
-    cache_key: str,
-) -> dict:
-    """Extract one `(source, condition)` row: experts, probes, quality."""
-    view_decoded = replace(decoded, image=view, width=view.width, height=view.height)
+def extract_feature_blocks(view_decoded, experts: list[Expert],
+                           precomputed: dict | None = None) -> dict:
+    """Compute the feature-bearing blocks for one already-decoded view.
 
+    THE single implementation, shared by the offline cache builder (`build_row`)
+    and the live `PredictionService`. Train/serve parity is structural here: the
+    router scores a production image through the same code that produced every
+    row it was fitted on. Two copies that agree today drift apart the first time
+    one is edited, and the drift is silent -- the demo and the results table
+    simply start disagreeing about what the system predicted.
+
+    Returns only what `row_to_vector` consumes. Identity and provenance fields
+    stay with the caller, because a live request has no manifest source behind it.
+
+    `precomputed` maps expert_id -> an ExpertOutput already obtained for THIS
+    view, letting the serving path avoid a second forward pass for a score it
+    just computed. It must come from the same pixels; the experts are
+    deterministic, so a supplied output is identical to the one skipped.
+    """
     expert_blocks: dict[str, dict] = {}
     probe_blocks: dict[str, dict] = {}
     successes: dict[str, float] = {}
+    precomputed = precomputed or {}
     for expert in experts:
         try:
-            out = expert.predict(view_decoded)
+            out = precomputed.get(expert.expert_id)
+            if out is None:
+                out = expert.predict(view_decoded)
         except ExpertInferenceError as exc:
             # A failure block carries NO score fields at all — structurally
             # incapable of contributing a number.
@@ -322,6 +333,26 @@ def build_row(
     quality.pop("schema_version", None)
 
     return {
+        "experts": expert_blocks,
+        "probes": probe_blocks,
+        "quality": quality,
+        "disagreement": disagreement,
+    }
+
+
+def build_row(
+    source: dict,
+    decoded,
+    condition_id: str,
+    view,
+    experts: list[Expert],
+    cache_key: str,
+) -> dict:
+    """Extract one `(source, condition)` row: experts, probes, quality."""
+    view_decoded = replace(decoded, image=view, width=view.width, height=view.height)
+    blocks = extract_feature_blocks(view_decoded, experts)
+
+    return {
         "schema_version": SCHEMA_VERSION,
         "cache_key": cache_key,
         "source_sample_id": source["sample_id"],
@@ -340,10 +371,10 @@ def build_row(
         "decoded_phash": source.get("decoded_phash"),
         "license_id": source.get("license_id"),
         "view_warnings": list(decoded.warnings),
-        "experts": expert_blocks,
-        "probes": probe_blocks,
-        "quality": quality,
-        "disagreement": disagreement,
+        "experts": blocks["experts"],
+        "probes": blocks["probes"],
+        "quality": blocks["quality"],
+        "disagreement": blocks["disagreement"],
         "extracted_at": datetime.now(timezone.utc).isoformat(),
     }
 

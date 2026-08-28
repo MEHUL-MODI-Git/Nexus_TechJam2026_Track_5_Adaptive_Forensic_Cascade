@@ -1,14 +1,21 @@
 # Prediction-path configuration (core spec v2 §6).
 #
-# PHASE 0 STATUS: the decision threshold below is a PLACEHOLDER, not a
-# calibrated value. It exists so the pipeline is end-to-end runnable; it has
-# not been fitted on any dev set. The real threshold is selected in Phase 2 by
-# the frozen objective (bootstrap-mean worst transformation-FAMILY fake recall
-# subject to the clean FPR/BAcc constraints, per DECISIONS 2026-08-26) and
-# arrives as a threshold artifact with its own provenance. Until then, nothing
-# derived from this number may be reported as a headline result.
+# The serving path runs the FROZEN CASCADE: CF-384 as the primary expert, with
+# the trained router head correcting its logit using quality descriptors and
+# probe responses. This is the same system evaluated in README section 7, and it
+# is the same code -- the router scores production images through
+# `feature_cache.extract_feature_blocks`, the one function that also produced
+# every row the router was fitted on.
+#
+# The threshold below is NOT the operative one and is not read when
+# `fusion: router`. The live boundary comes from the validated threshold
+# artifact named under `router:`, because a YAML file carries no provenance and
+# is trivially edited, whereas the artifact is schema-checked and hashed. The
+# service refuses to start if the two disagree.
 schema_version: "predict-config.v1"
 
+# Retained for the `naive_mean` baseline path only (ablations, A/B evidence).
+# Still an uncalibrated Phase-0 placeholder; nothing derived from it is a result.
 threshold: 0.5
 threshold_provenance: "PLACEHOLDER-uncalibrated-phase0"
 
@@ -17,7 +24,11 @@ experts:
     enabled: true
     device: null        # null = auto (mps when available, else cpu)
 
-# Phase 0 fusion is a naive mean over available experts; the trained router
-# replaces it in Phase 2. Recorded explicitly so no reader mistakes the demo
-# number for the cascade's real output.
-fusion: naive_mean
+# `router` = the frozen cascade (default). `naive_mean` = the Phase-0 single
+# expert baseline, kept so the ablation can be reproduced through the same
+# service rather than a second implementation.
+fusion: router
+
+router:
+  checkpoint: results/router-fitting-v2/router.pt
+  threshold_artifact: results/router-fitting-v2/threshold-artifact.v1.json
