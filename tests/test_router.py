@@ -293,7 +293,7 @@ def test_quality_only_ignores_expert_scores():
     all, so wildly different expert scores on the same features must not
     change `p_fake` by even a bit."""
     torch.manual_seed(0)
-    model = QualityOnlyRouter(SPEC2.dim)
+    model = QualityOnlyRouter(SPEC2.non_expert_indices())
     model.eval()
     features = torch.randn(8, SPEC2.dim)
     available = torch.ones(8, 2, dtype=torch.bool)
@@ -305,12 +305,25 @@ def test_quality_only_ignores_expert_scores():
 
 
 def test_quality_only_weights_are_zero():
-    model = QualityOnlyRouter(SPEC2.dim)
+    model = QualityOnlyRouter(SPEC2.non_expert_indices())
     out = model(torch.randn(4, SPEC2.dim), torch.randn(4, 2),
                 torch.ones(4, 2, dtype=torch.bool))
     assert out.weights.shape == (4, 2)
     assert torch.equal(out.weights, torch.zeros(4, 2))
     assert out.reliability is None and out.reliability_logit is None
+
+
+def test_quality_only_reads_no_detector_column():
+    """The floor is only a floor if its columns carry no detector output. Passing
+    the full width -- the pre-repair behaviour -- must not even be expressible as
+    a silently-accepted default."""
+    idx = SPEC2.non_expert_indices()
+    names = [SPEC2.names[i] for i in idx]
+    assert names, "quality_only would have no features at all"
+    assert all(n.startswith(("geom.", "quality.")) for n in names)
+    for leaky in ("raw_logit", "p_fake", "entropy", "probe", "disagreement"):
+        assert not any(leaky in n for n in names), f"{leaky} reached the floor"
+    assert QualityOnlyRouter(idx).linear.in_features == len(idx) < SPEC2.dim
 
 
 def test_router_is_tiny():
