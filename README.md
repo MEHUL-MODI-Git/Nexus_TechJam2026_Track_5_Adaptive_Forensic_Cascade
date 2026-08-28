@@ -236,6 +236,47 @@ headline results.
 - **No production hardening.** This is a prototype: no adversarial robustness
   guarantees, no throughput tuning, no deployment path.
 
+## 8b. What we would do with more time
+
+Ranked by what our own measurements say matters most, not by what sounds impressive.
+
+**1. Fix the corpus at the source, not with a re-encode.** Our reals and fakes differ in processing
+pipeline, not only in being generated — real photographs carry sensor noise, our synthetic images
+never did. Canonicalizing the container removed the JPEG/PNG artefact but not this, and
+`noise_sigma` still separates the classes at AUROC 0.82 afterwards. The correct fix is a corpus where
+both classes share a capture-and-processing history: generate the fakes *from* the same photographs
+that supply the reals, then push both through one identical pipeline. That is a data-collection job,
+not a modelling one, and it is the single highest-value thing we would do next.
+
+**2. Attack the noise hole directly.** Fake recall falls to 1.5% at Gaussian noise sigma=0.10, with a
+97% flip-to-real rate. This is the most exploitable weakness in the system and the one an adversary
+would reach for first. Two concrete routes we did not have time to test: noise-aware augmentation
+while fitting the router, and a denoise-then-detect preflight where the quality descriptors say the
+image is noise-dominated.
+
+**3. Find a second expert whose failures are genuinely different.** We rejected LOTA on evidence, and
+the reason generalizes: it keys on high-frequency, least-significant-bit structure — the same band
+our primary depends on and the same band compression destroys. A useful second expert must read
+*different* evidence, most plausibly low-frequency or semantic inconsistency, which survives
+recompression. Complementarity, measured as P(expert correct | primary wrong), is the selection
+criterion; standalone accuracy is not.
+
+**4. Evaluate against unseen generators.** SID-Set does not expose generator identity, so our
+held-out split tests generalization to unseen *images*, not unseen *generators*. Every robustness
+number we report carries that caveat. A generator-labelled corpus would let us hold out whole
+families and measure what actually matters for deployment: performance against a model that did not
+exist when we trained.
+
+**5. Run the probe-cost gate we skipped.** Our own protocol said to decide whether the three
+self-probes earn their place *before* committing to the long extraction, so we could drop them and
+save three forward passes per image. A data crisis reordered the schedule and we launched with them
+in. The scientific question is still answerable from the finished cache; the compute saving is gone.
+
+**6. Calibration under shift.** We fit one threshold across all conditions, deliberately, because at
+inference we do not know which transform was applied. A better system would estimate the degradation
+first and select a calibration conditioned on it — which is the natural extension of the reliability
+router we already built, and the obvious next architectural step.
+
 ## 9. Parameter inventory
 
 The brief caps total model size at 2B parameters.
