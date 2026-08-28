@@ -1,0 +1,7 @@
+{
+  "schema_version": "evidence-audit.v1",
+  "guard_passed": false,
+  "median_operator_agreement": 0.2609536838427331,
+  "verdict": "VOID - occlusion attribution measures its own artefacts",
+  "n_guard": 30
+}
