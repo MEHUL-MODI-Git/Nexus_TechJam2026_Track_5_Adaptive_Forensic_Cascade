@@ -1,0 +1,55 @@
+{
+  "schema_version": "rescue-analysis.v1",
+  "pgc_threshold": 0.9318,
+  "pgc_threshold_fitted_on": "dev deferred rows",
+  "decision_threshold": 0.4667367651127279,
+  "dev": {
+    "rows_deferred_scored": 12000,
+    "router_accuracy_on_deferred": 0.823,
+    "pgc_accuracy_on_deferred": 0.6206666666666667,
+    "P(pgc correct | router wrong)": 0.5287193973634652,
+    "corrections": 1123,
+    "harms": 3551,
+    "net": -2428,
+    "net_per_1000_rescued": -202.33,
+    "accuracy_if_rescue_applied": 0.6206666666666667,
+    "per_family": {
+      "blur": {
+        "n": 50,
+        "router_acc": 0.88,
+        "pgc_acc": 1.0,
+        "net": 6
+      },
+      "color": {
+        "n": 1065,
+        "router_acc": 0.9099,
+        "pgc_acc": 0.9653,
+        "net": 59
+      },
+      "crop": {
+        "n": 154,
+        "router_acc": 0.8766,
+        "pgc_acc": 0.9156,
+        "net": 6
+      },
+      "jpeg": {
+        "n": 3962,
+        "router_acc": 0.8486,
+        "pgc_acc": 0.636,
+        "net": -842
+      },
+      "noise": {
+        "n": 6532,
+        "router_acc": 0.7887,
+        "pgc_acc": 0.5332,
+        "net": -1669
+      },
+      "resize": {
+        "n": 2,
+        "router_acc": 1.0,
+        "pgc_acc": 1.0,
+        "net": 0
+      }
+    }
+  }
+}
