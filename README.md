@@ -349,6 +349,63 @@ worst individual errors carries reliability 0.91–0.99 and would not be deferre
 Abstention removes the uncertain middle, not the confidently wrong tail. See
 `deliverables/error-analysis-note.md`.
 
+### Audit mode: the evaluation harness became the best confidence signal
+
+We built the 20-condition transform grid to *evaluate* the system. Running it on
+a single image at inference time turns out to predict whether that image's
+verdict is correct better than the reliability head we trained for the job.
+
+Measured on the untouched internal test (3,000 sources), predicting a **wrong**
+clean verdict:
+
+| signal | AUROC |
+|---|---|
+| reliability head (trained for this) | 0.7206 |
+| **verdict retention across 20 conditions** | **0.8650** |
+| both combined | 0.8863 |
+
+And it lands on the exact weakness §8 documents. Of the 157 sources the
+reliability head passes with high confidence but gets **wrong**, mean retention
+is **14.40/20** against **19.00/20** for the confident-and-correct ones. Flagging
+`retention < 18` among high-confidence images catches **72.6%** of those
+blind-spot errors while deferring only 17.3% of them. The two signals fail
+differently: the reliability head reads quality descriptors, so it tracks noise
+and is nearly blind to blur; retention measures the verdict itself.
+
+The demo exposes this as a **Forensic Robustness Certificate**, whose grades are
+the measured relationship rather than labels we chose:
+
+| verdict retention | grade | clean verdict was correct for | share of sources |
+|---|---|---|---|
+| 20/20 | HIGH | 99.1% | 61.4% |
+| 18–19 | MEDIUM | 94.9% | 20.9% |
+| 15–17 | LOW | 84.9% | 10.4% |
+| ≤14 | VERY LOW | 60.6% | 7.4% |
+
+This is **audit mode** — 20 extra forward passes. The normal decision path does
+not run it, and the certificate says so on its face.
+
+### The system can say *why* it is unsure
+
+A 775-parameter classifier reads the eight quality descriptors already computed
+for every image and names the transformation family they look like — *"detected
+image history: JPEG compression (93%)"* — flagging when that family is one where
+our detector is measurably weakest. Balanced accuracy **0.7332** against 0.143
+chance on dev (noise 0.99, resize 0.96, jpeg 0.78, crop 0.76, blur 0.65,
+clean 0.54, colour 0.47).
+
+Two choices that cost accuracy on purpose. **Geometry is excluded**: width and
+height would make crop and resize easy, but a real upload has no known original
+size, so that accuracy would not survive deployment. And the fit is
+**class-weighted**: unweighted it reported 0.00 recall on `clean` and we nearly
+published "clean is inseparable" — it was simply outnumbered six to one by
+`colour`. Weighted, clean recall is 0.54. The confusion that *survives* is real —
+a ±20 brightness shift barely moves blur, blockiness or noise — and the reporter
+emits that caveat itself rather than presenting a coin flip as an explanation.
+
+It is an explanation and never an input: the router cannot see it, and a test
+asserts the feature builder does not so much as mention it.
+
 ### The second expert failed, and we report it as a result
 
 The architecture was designed to escalate hard images to a heavier second
@@ -438,6 +495,21 @@ Full artifacts: `results/internal-test/results.json`,
 - **The cascade does nothing for clean images, and we say so.** At matched FPR
   the primary's clean fake recall is 0.9620 against our 0.9613. Every gain we
   claim is a gain under degradation; there is no clean-image claim in this work.
+- **Our own self-probes do not earn their cost.** The shipped system re-scores
+  every image under three mild perturbations — 3 of its 4 forward passes and
+  ~110 ms of its 128 ms. An 8-arm × 3-seed ablation on dev found **no probe
+  budget distinguishable from any other, including using no probes at all**;
+  every difference sits inside the seed spread. The robustness gain comes from
+  the quality descriptors and the worst-group objective, not from self-probing.
+  We report this rather than quietly keeping a component that looks clever.
+- **Patch-level evidence attribution does not work on this detector.** We tried
+  to build an evidence heatmap by occluding image patches and measuring the score
+  change. A guard written before the experiment compared two occlusion operators
+  (mean-fill vs blur) and found their maps correlate at only **0.261** — so the
+  method measures the artefacts its own masks create, not where the evidence is.
+  This detector reads high-frequency traces and masks manufacture high-frequency
+  content. The audit is reported void rather than shipped as a convincing
+  picture of nothing.
 - **Noise remains hard even after the cascade.** Gaussian noise at σ=0.10 is the
   worst condition for both arms (cascade fake recall 0.790 at FPR 0.297). We
   report it rather than excluding the condition.
