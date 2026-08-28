@@ -1,0 +1,39 @@
+{
+  "router_overall_fpr": 0.10226666666666667,
+  "oracle_threshold": 0.00699383707301069,
+  "arms": {
+    "A. primary @ dev-fitted static_average thr": {
+      "threshold": 0.1272509451955557,
+      "worst_family_fake_recall": 0.18266666666666667,
+      "overall_fpr": 0.020733333333333333,
+      "clean_fpr": 0.012666666666666666,
+      "paired_delta_mean": 0.643266960690435,
+      "ci95_low": 0.6266291248085816,
+      "ci95_high": 0.6608194007517113
+    },
+    "B. primary @ ORACLE test-fitted FPR-matched": {
+      "threshold": 0.00699383707301069,
+      "worst_family_fake_recall": 0.32133333333333336,
+      "overall_fpr": 0.10226666666666667,
+      "clean_fpr": 0.07533333333333334,
+      "paired_delta_mean": 0.5044530743878918,
+      "ci95_low": 0.4869046682871559,
+      "ci95_high": 0.5201717153654983
+    },
+    "primary @0.5 (published default)": {
+      "threshold": 0.5,
+      "worst_family_fake_recall": 0.12266666666666666,
+      "overall_fpr": 0.0057,
+      "clean_fpr": 0.0026666666666666666,
+      "paired_delta_mean": 0.7031110878142713,
+      "ci95_low": 0.6869110275261248,
+      "ci95_high": 0.7201814579042627
+    }
+  },
+  "router": {
+    "threshold": 0.4667367651127279,
+    "worst_family_fake_recall": 0.8257777777777778,
+    "overall_fpr": 0.10226666666666667,
+    "clean_fpr": 0.08333333333333333
+  }
+}

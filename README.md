@@ -57,13 +57,13 @@ trained router, calibrated verdict, abstention decision, or rescue path.
 | Importable prediction service (one decision path for CLI/UI/batch) | ✅ built, tested |
 | Quality descriptors | ✅ built, tested |
 | Mild self-probes | ✅ built, tested |
-| Calibration + threshold-selection code under a frozen objective | ✅ built, tested; no fitted artifact yet |
-| Router (7-rung ladder: quality-only → static avg → prob mean → fixed weights → logistic → MLP → +worst-group) | ✅ implemented, repaired, 671 tests; peer re-review and a fitted checkpoint still pending |
+| Calibration + threshold-selection code under a frozen objective | ✅ built, tested; threshold fitted on dev and frozen |
+| Router (7-rung ladder: quality-only → static avg → prob mean → fixed weights → logistic → MLP → +worst-group) | ✅ implemented, repaired; fitted, frozen and shipped as `results/router-fitting-v2/router.pt` (1,827 params, 17 KB); Codex re-review of the B-024 repair still pending |
 | Full-grid baseline run (8,000 predictions) | ✅ complete |
-| Evaluation harness | 🟡 diagnostic path works; headline path blocked on protocol repair |
+| Evaluation harness | ✅ diagnostic and headline paths both exercised; one-shot internal test run |
 | Second expert | ❌ evaluated and rejected on measured evidence (see Limitations) |
 | Protected 15,000-source corpus, format-canonicalized, contamination-audited, split 12k fitting / 3k untouched test | ✅ built and verified |
-| Router trained on that corpus | 🟡 feature extraction running |
+| Router trained on that corpus | ✅ trained, frozen, and evaluated once on the untouched 3k test (see Results) |
 
 ## 3. Setup
 
@@ -172,11 +172,114 @@ evaluation honest:
 
 ## 7. Results
 
-*Pending.* The headline path is blocked on exact-coverage, threshold-artifact,
-diagnostic-schema, keyed-pairing, and provenance guards, and no threshold has
-been fitted yet. Diagnostic observations from the full-grid run are recorded in
-`results/grid-smoke-v1/diagnostic-results.md` and are explicitly **not**
-headline results.
+**One-shot evaluation on the untouched internal test: 3,000 sources x 20
+conditions = 60,000 rows, 0 decode failures.** Nothing was fitted on these
+sources — not the weights, not the threshold, not the feature set, not the rung
+choice. The architecture was frozen first (`results/router-fitting-v2/freeze.json`,
+stamped `NOT_A_HEADLINE_RESULT`), then this cache was built with
+`role=evaluation`, then the evaluator ran on it. The model and threshold were
+never refit: the evaluator was re-run once, solely to add the FPR-matched control
+below, which strengthens the baseline and can only shrink our reported gain.
+
+Model: 1,827-parameter MLP with worst-group loss over 38 features, one expert
+(CF-384), single threshold 0.4667367651127279 across all 20 conditions.
+
+### Headline
+
+| | worst-family fake recall | clean recall | clean FPR | overall acc |
+|---|---|---|---|---|
+| **Cascade (frozen)** | **0.8258** | 0.9613 | 0.0833 | 0.9090 |
+| Primary @ 0.5 (published default) | 0.1227 | 0.7107 | 0.0027 | 0.7807 |
+
+Worst family is `noise` for both; worst single condition is `noise_s0.10`
+(cascade 0.790, primary 0.007). Paired source bootstrap, 2,000 resamples:
+**+0.7034, CI95 [+0.6872, +0.7205]**.
+
+**Selection did not overfit the dev split**: worst-family recall is **0.8258 on
+the untouched test against 0.8144 on dev** — the number the architecture was
+chosen by. It went up, not down.
+
+### The headline comparison is not FPR-matched, so we matched it
+
+The cascade runs at clean FPR 0.0833 and the primary at 0.5 runs at 0.0027 —
+about 30x apart. A recall gain measured across that gap is partly just a looser
+cut, so quoting +0.70 alone would overclaim. We therefore re-ran the comparison
+with the **baseline strengthened, which biases every number below against us**:
+
+| baseline arm | thr | worst-family recall | clean FPR | cascade advantage (paired) |
+|---|---|---|---|---|
+| Primary @ 0.5 (published default) | 0.5000 | 0.1227 | 0.0027 | +0.7034 [+0.687, +0.720] |
+| Primary @ dev-fitted threshold | 0.1273 | 0.1827 | 0.0127 | +0.6433 [+0.627, +0.661] |
+| **Primary @ our clean FPR, threshold fitted on this test set** | 0.0058 | 0.3342 | 0.0833 | **+0.4916 [+0.475, +0.508]** |
+
+The last row hands the primary **a threshold fitted on the internal test itself**
+to reproduce our exact operating point — leakage we grant the baseline and deny
+ourselves. It closes about a third of the distance, and the cascade still leads
+by **+0.49 worst-family recall**. We report +0.49 as the defensible number. As a
+cross-check, matching on *overall* rather than clean FPR gives an independent
++0.5045 [+0.487, +0.520] (`results/internal-test/fpr-matched-baseline.json`).
+
+**The same control kills any clean-image claim, and we make none.** At matched
+FPR the primary's clean fake recall is **0.9620** against our **0.9613** — a hair
+behind. The cascade buys robustness under degradation and **nothing at all on
+clean images**. That is exactly what a router over degradation-aware features
+should do, and we would have reported it either way.
+
+### Robustness under transformation
+
+Per-family fake recall at the single frozen threshold:
+
+| family | cascade | primary @0.5 | primary @0.0058 (FPR-matched) |
+|---|---|---|---|
+| crop | 0.9620 | 0.7600 | 0.9593 |
+| blur | 0.9471 | 0.7264 | **0.9709** |
+| color | 0.9438 | 0.7367 | **0.9647** |
+| resize | 0.9417 | 0.7120 | **0.9763** |
+| jpeg | **0.9047** | 0.3703 | 0.8102 |
+| **noise** | **0.8258** | 0.1227 | 0.3342 |
+
+**Read the third column, not the second.** Once the primary is given our clean
+FPR, it *beats* the cascade on blur, colour and resize and ties it on crop. The
+cascade's entire advantage is `noise` (+0.49) and `jpeg` (+0.09) — the two
+families where the primary collapses. Because our metric is the *minimum* over
+families, raising that floor is what moves it; but we are not claiming
+across-the-board superiority, and this table is why. A reader who cares only
+about blur should use the primary with a tuned threshold, not our cascade.
+
+**On clean images the cascade buys nothing, and we do not claim otherwise.** At
+matched FPR the primary's clean recall is 0.9620 against our 0.9613. This is
+worth stating twice, because it also means none of our reported gain can come
+from the JPEG/PNG format shortcut in §8 — that confound lives in clean-image
+separability, which is exactly where we show no advantage.
+
+Stability, measured as: of sources decided *correctly* when clean, how often does
+a transform flip the verdict? Cascade **5.30%** of fake views and 5.35% of real
+views. Primary **26.64%** of fake views and 0.43% of real views. The primary's
+apparent stability on reals is an artefact of it calling almost everything real.
+
+### The constraint that did not hold, stated rather than hidden
+
+The threshold was selected on dev under a clean-FPR cap of 0.0756 (dev value
+0.0736). **On the untouched test the cascade's clean FPR is 0.0833 — above that
+cap.** A 300-source pre-flight had flagged this before the full run, and we
+recorded the decision in advance: if the full test confirmed it, it ships as a
+stated limitation and **the threshold does not get re-tuned to hide it**. The
+full test confirmed it, and the threshold is unchanged. The practical meaning is
+that at our operating point roughly 1 in 12 clean real photographs is called
+AI-generated, and that rises to 1 in 3.4 under heavy noise (`noise_s0.10`, FPR
+0.297). Anyone deploying this should pick a threshold against their own
+tolerance rather than inheriting ours.
+
+Two independent operating-point matchings were computed and agree: matching the
+primary on **clean** FPR (threshold 0.0058) gives worst-family 0.3342 and a
+cascade advantage of **+0.4916** [+0.475, +0.508]
+(`results/internal-test/results.json`), while matching on **overall** FPR
+(threshold 0.0070) gives 0.3213 and **+0.5045** [+0.487, +0.520]
+(`results/internal-test/fpr-matched-baseline.json`). Different criteria, different
+thresholds, same conclusion.
+
+Full artifacts: `results/internal-test/results.json` and
+`results/internal-test/fpr-matched-baseline.json`.
 
 ## 8. Limitations and honest reflection
 
@@ -214,13 +317,29 @@ headline results.
   help on a platform where every upload is recompressed, and that is a finding
   worth reporting rather than a dependency worth shipping.
 - **The default operating point is poor and we did not hide it.** At the
-  published default threshold of 0.5, the primary detector recovers only 53% of
-  AI-generated images on clean data despite an AUROC of 0.992 — the ranking is
-  excellent, the cut is misplaced. Fixing this is what the calibration stage is
-  for. We have deliberately *not* fitted a threshold on our smoke set to make
-  the demo look better.
-- **Noise and heavy blur remain hard.** Gaussian noise at σ=0.10 collapses fake
-  recall. We report this rather than excluding the condition.
+  published default threshold of 0.5, the primary detector recovers only 71% of
+  AI-generated images on clean internal-test data and 12% under the worst
+  transformation family — the ranking is excellent, the cut is misplaced. Fixing
+  this is what the calibration stage is for.
+- **We buy robustness with false positives, and the constraint we set ourselves
+  did not hold on unseen data.** The threshold was selected on dev under a clean
+  false-positive cap of 0.0756; on the untouched test the cascade measured
+  **0.0833**, above it. We had pre-registered what to do if this happened and did
+  it: report it, do not re-tune. About 1 in 12 clean real photographs is called
+  AI-generated, rising to 1 in 3.4 under σ=0.10 noise. A deployment should choose
+  its own threshold rather than inherit ours.
+- **Part of our headline gain is operating point, and we measured how much.**
+  Against the primary at its published 0.5 default the cascade gains +0.70 worst
+  family recall, but those two points sit ~30x apart in clean FPR. Handing the
+  baseline a threshold fitted on the test set itself to reproduce our operating
+  point — leakage we deny ourselves — cuts the gain to **+0.49**. That is the
+  number we report.
+- **The cascade does nothing for clean images, and we say so.** At matched FPR
+  the primary's clean fake recall is 0.9620 against our 0.9613. Every gain we
+  claim is a gain under degradation; there is no clean-image claim in this work.
+- **Noise remains hard even after the cascade.** Gaussian noise at σ=0.10 is the
+  worst condition for both arms (cascade fake recall 0.790 at FPR 0.297). We
+  report it rather than excluding the condition.
 - **Smoke-set scale and composition.** The early AUROC 0.992 figure comes from
   400 source images whose real half is COCO and whose fake half is SID-Set. Two
   different sources means part of that separation may be dataset provenance
