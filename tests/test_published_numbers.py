@@ -115,3 +115,52 @@ def test_evidence_audit_is_still_void():
     d = _load("evidence-audit/validation.json")
     assert d["guard_passed"] is False
     assert d["median_operator_agreement"] < 0.5
+
+
+def test_degradation_reporter_numbers_match_their_artifact():
+    """README section 7 and the Devpost quote these."""
+    d = _load("degradation/dev-report.json")
+    assert d["geometry_excluded"] is True, (
+        "geometry must stay excluded: width/height make crop and resize easy, but a "
+        "real upload has no known original size, so that accuracy is not deployable"
+    )
+    assert d["class_weighted"] is True
+    assert d["n_parameters"] == 775
+    assert d["dev_balanced_accuracy"] == pytest.approx(0.7332, abs=0.0001)
+    assert d["chance"] == pytest.approx(1 / 7, abs=1e-6)
+    # the per-family figures quoted in the README
+    expected = {"noise": 0.99, "resize": 0.93, "jpeg": 0.75, "crop": 0.79,
+                "blur": 0.64, "clean": 0.54, "color": 0.48}
+    for fam, approx_recall in expected.items():
+        assert d["per_class"][fam]["recall"] == pytest.approx(approx_recall, abs=0.02), fam
+
+
+def test_rung_gating_oracle_ceiling_still_kills_the_gate():
+    d = _load("probe-ablation/rung-complementarity.json")
+    assert d["oracle_upside_worst_family"] < 0.02, (
+        "if a perfect oracle ever clears 2 points, the gate becomes worth building "
+        "and the README must change"
+    )
+    assert d["verdict"].startswith("KILL")
+
+
+def test_overall_fpr_matched_control_agrees_with_the_clean_fpr_one():
+    """Two independent implementations of the same adversarial control. The
+    README cites both; if they ever diverge, one is wrong."""
+    d = _load("internal-test/fpr-matched-baseline.json")
+    arm = d["arms"]["B. primary @ ORACLE test-fitted FPR-matched"]
+    assert arm["paired_delta_mean"] == pytest.approx(0.5045, abs=0.0001)
+    clean_matched = _load("internal-test/results.json")[
+        "paired_bootstrap_router_vs_primary_matched"]["mean_delta"]
+    # different matching conventions, so not equal -- but they must agree closely
+    assert abs(arm["paired_delta_mean"] - clean_matched) < 0.02
+
+
+def test_lota_rejection_evidence_still_holds():
+    """README section 7/8 rejects LOTA on these numbers."""
+    d = _load("lota/format_sensitivity.json")
+    per = d["per_variant"]
+    assert per["jpeg_q95"]["auroc"] == pytest.approx(0.592, abs=0.001)
+    assert per["png"]["auroc"] > 0.99
+    # the whole argument: same pixels, lossy container, signal gone
+    assert per["png"]["auroc"] - per["jpeg_q95"]["auroc"] > 0.35
