@@ -634,3 +634,38 @@ features**, fusion re-entering only if a second always-on expert earns its slot.
 `fusion_comparison_degenerate` obsolete rather than merely inaccurate, resolving B-018 item 3 by
 deleting the claim rather than the bias head.
 
+
+## 2026-08-28 — freeze, checkpoint persistence, and a suite repair
+
+**Frozen architecture** (`16d2e3b`, re-run 16:32 byte-identical): `mlp` + worst-group loss, threshold
+`0.4667367651127279`, selected on dev worst-transformation-family fake recall under the pre-registered
+clean-FPR/BAcc constraints. 1,827 parameters, feature dim 38, geometry excluded, expert `commfor_384`.
+
+| rung | thr | dev worst-family recall | params |
+|---|---|---|---|
+| static_average | 0.12725 | 0.1849 | 0 |
+| quality_only | 0.49680 | 0.5076 | 17 |
+| logistic | 0.46491 | 0.6860 | — |
+| mlp | 0.42994 | 0.7587 | 1,827 |
+| **mlp+wg** | **0.46674** | **0.8144** | 1,827 |
+
+Paired source bootstrap vs floors: +0.630 (CI95 0.613–0.645) over static average, +0.307 (0.283–0.331)
+over quality-only. Constraint on dev: clean FPR 0.0736 ≤ 0.0756, clean BAcc 0.9445 ≥ 0.9358.
+
+**Reproducibility, unplanned:** rerunning the freeze on the same cache changed only `created_at` and
+`fitting_code_version`. Threshold, objective, CI95 and every rung metric are identical.
+
+**Checkpoint persistence.** The freeze wrote a threshold artifact but not the weights that produced it.
+`freeze_router.py` now calls `save_checkpoint`; `router.pt` reloads through `load_checkpoint` with rung
+`mlp`, `use_worst_group_loss=True`, 1,827 parameters and a threshold identical to the artifact. The
+blanket `*.pt` ignore rule had been excluding it from the repo — narrow named exception added, since a
+17 KB router head is a deliverable, not the 21.8M-parameter expert weights that rule targets.
+
+**Suite repair.** `a659ec5` changed `QualityOnlyRouter` to take an explicit column subset (the label-leak
+fix) but left two tests passing `SPEC2.dim`; both had been failing on TypeError since. Repaired to use
+`non_expert_indices()` and added `test_quality_only_reads_no_detector_column`, which asserts the floor's
+columns hold only `geom.*`/`quality.*` and are strictly narrower than the full vector. A type error was
+the only thing standing between us and the 0.90 phantom baseline returning. **689 passed, Ruff clean.**
+
+**Pending, not done:** the one-shot internal test. Evaluator built and pre-flighted; see STATE.md for the
+clean-FPR watch item it must resolve.
