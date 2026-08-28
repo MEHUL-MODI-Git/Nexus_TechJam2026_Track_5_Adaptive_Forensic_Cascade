@@ -1,0 +1,61 @@
+{
+  "schema_version": "reliability-fit.v1",
+  "NOT_A_HEADLINE_RESULT": "dev-split diagnostic; abstention policy is chosen here and only then reported once on the internal test",
+  "threshold": 0.4667367651127279,
+  "classifier_output_max_shift": 0.0,
+  "dev_reliability_auroc": 0.6841912297411094,
+  "train_reliability_auroc": 0.688302338973749,
+  "constant_predictor_loss": 0.30336758494377136,
+  "final_train_loss": 0.2870328426361084,
+  "dev_base_accuracy": 0.9115333557128906,
+  "selective_risk_dev": [
+    {
+      "coverage": 1.0,
+      "accuracy_on_kept": 0.9115,
+      "n_kept": 60000
+    },
+    {
+      "coverage": 0.95,
+      "accuracy_on_kept": 0.9187,
+      "n_kept": 57000
+    },
+    {
+      "coverage": 0.9,
+      "accuracy_on_kept": 0.925,
+      "n_kept": 54000
+    },
+    {
+      "coverage": 0.8,
+      "accuracy_on_kept": 0.9337,
+      "n_kept": 48000
+    },
+    {
+      "coverage": 0.7,
+      "accuracy_on_kept": 0.9399,
+      "n_kept": 42000
+    },
+    {
+      "coverage": 0.6,
+      "accuracy_on_kept": 0.9468,
+      "n_kept": 36000
+    },
+    {
+      "coverage": 0.5,
+      "accuracy_on_kept": 0.9532,
+      "n_kept": 30000
+    }
+  ],
+  "abstention_policy": {
+    "adopted": true,
+    "rule": "smallest coverage with >= +2 points accuracy on kept",
+    "selected_on": "dev split of the fitting cache",
+    "reliability_threshold": 0.866079568862915,
+    "dev_coverage": 0.8,
+    "dev_accuracy_on_kept": 0.9337,
+    "dev_accuracy_full_coverage": 0.9115,
+    "dev_gain_points": 0.0222
+  },
+  "n_train_rows": 179960,
+  "n_dev_rows": 60000,
+  "code_revision": "8e101baa21387761e07d341114694e1b864accdc"
+}

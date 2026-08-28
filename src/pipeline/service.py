@@ -66,6 +66,10 @@ class PredictionRecord:
     threshold_provenance: str
     fusion: str = "naive_mean"      # which decision path produced `p_fake`
     router: dict[str, Any] | None = None
+    # `decision` stays strictly binary so the required deliverable format is
+    # unaffected; abstention is an ADDITIONAL surface, not a third label.
+    abstain: bool = False
+    abstain_reason: str | None = None
 
     def to_json_dict(self) -> dict:
         return asdict(self)
@@ -267,6 +271,12 @@ class PredictionService:
             components["router"] = round((time.perf_counter() - t0) * 1000.0, 3)
             p_fake = score.p_fake
             reliability = score.reliability
+            abstain = bool(score.abstain)
+            abstain_reason = (
+                f"reliability {score.reliability:.4f} below the frozen policy threshold {score.abstain_threshold:.4f}"
+                if abstain and score.reliability is not None
+                and score.abstain_threshold is not None else None
+            )
             router_info = {
                 "rung": score.rung,
                 "n_parameters": score.n_parameters,
@@ -275,8 +285,10 @@ class PredictionService:
                     sum(o.p_fake for o in outputs) / len(outputs)
                 ),
                 "quality": blocks.get("quality"),
+                "abstain_threshold": score.abstain_threshold,
             }
         else:
+            abstain, abstain_reason = False, None
             p_fake = sum(o.p_fake for o in outputs) / len(outputs)  # Phase 0 naive mean
         forced = int(p_fake >= self.threshold)  # >= so p == threshold predicts fake
 
@@ -305,6 +317,8 @@ class PredictionService:
             threshold_provenance=self.threshold_provenance,
             fusion=self.fusion,
             router=router_info,
+            abstain=abstain,
+            abstain_reason=abstain_reason,
         )
 
 

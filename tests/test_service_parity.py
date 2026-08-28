@@ -35,9 +35,13 @@ def test_record_shape_and_invariants(service):
     assert 0.0 <= d["p_fake"] <= 1.0
     assert d["forced_prediction"] in (0, 1)
     assert d["decision"] in ("REAL", "AI-GENERATED")
-    # The reliability head exists but is NOT fitted, so the service must report
-    # null rather than sigmoid(untrained layer) dressed up as a confidence.
-    assert d["reliability"] is None
+    # Stage 2 fitted the reliability head against the frozen threshold, so a
+    # calibrated-ish confidence is now reported. It must be a real number in
+    # range -- and it must still be None on any checkpoint where the head was
+    # NOT fitted, which `test_unfitted_reliability_head_reports_none` covers.
+    assert isinstance(d["reliability"], float)
+    assert 0.0 <= d["reliability"] <= 1.0
+    assert isinstance(d["abstain"], bool)
     assert d["rescue_invoked"] is False      # rescue lands in Phase 3
     assert d["expert_failures"] == []
     assert d["experts"] and d["experts"][0]["expert_id"] == "commfor_384"
@@ -289,3 +293,26 @@ def test_live_path_reproduces_the_evaluated_scores(service):
     assert np.abs(live - cached).max() < 1e-5
     thr = service.threshold
     assert ((live >= thr) == (cached >= thr)).all()
+
+
+def test_unfitted_reliability_head_reports_none():
+    """A checkpoint whose head was never fitted must report null, not
+    sigmoid(untrained layer) dressed up as a confidence."""
+    from src.router.head import RouterHead
+
+    ckpt = ROOT / "results" / "router-fitting-v2" / "router.pt"
+    if not ckpt.exists():
+        pytest.skip("stage-1 checkpoint not present")
+    head = RouterHead.from_checkpoint(ckpt)
+    assert head.reliability_fitted is False
+    assert head.abstain_threshold is None
+
+
+def test_abstention_threshold_is_a_frozen_value_not_a_percentile(service):
+    """A percentile recomputed per batch would re-tune the policy to whatever
+    data arrived. The policy must be a fixed number chosen on dev."""
+    if service.fusion != "router" or not service.router.abstention_adopted:
+        pytest.skip("abstention not adopted in the shipped config")
+    assert service.router.abstain_threshold == pytest.approx(0.866079568862915)
+    policy = service.router.payload["abstention"]
+    assert policy["selected_on"] == "dev split of the fitting cache"

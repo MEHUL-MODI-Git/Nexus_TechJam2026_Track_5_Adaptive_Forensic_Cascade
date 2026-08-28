@@ -30,5 +30,5 @@ experts:
 fusion: router
 
 router:
-  checkpoint: results/router-fitting-v2/router.pt
+  checkpoint: results/router-fitting-v2/router_reliability.pt
   threshold_artifact: results/router-fitting-v2/threshold-artifact.v1.json

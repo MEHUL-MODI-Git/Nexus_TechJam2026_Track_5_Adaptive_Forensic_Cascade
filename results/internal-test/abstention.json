@@ -1,0 +1,35 @@
+{
+  "schema_version": "abstention-results.v1",
+  "one_shot": "frozen policy measured on the untouched internal test; nothing selected here",
+  "policy_selected_on": "dev split of the fitting cache, before this cache was consulted",
+  "decision_threshold": 0.4667367651127279,
+  "abstention_threshold": 0.866079568862915,
+  "dev_policy": {
+    "adopted": true,
+    "rule": "smallest coverage with >= +2 points accuracy on kept",
+    "selected_on": "dev split of the fitting cache",
+    "reliability_threshold": 0.866079568862915,
+    "dev_coverage": 0.8,
+    "dev_accuracy_on_kept": 0.9337,
+    "dev_accuracy_full_coverage": 0.9115,
+    "dev_gain_points": 0.0222
+  },
+  "all_images": {
+    "coverage": 1.0,
+    "accuracy": 0.9090333333333334,
+    "worst_family_fake_recall": 0.8257777777777778,
+    "n": 60000
+  },
+  "kept": {
+    "coverage": 0.7989,
+    "accuracy": 0.931676889055785,
+    "worst_family_fake_recall": 0.913623595505618,
+    "n": 47934
+  },
+  "deferred": {
+    "n": 12066,
+    "accuracy": 0.8190784021216642
+  },
+  "accuracy_gain_points": 0.0226,
+  "worst_family_gain_points": 0.0878
+}

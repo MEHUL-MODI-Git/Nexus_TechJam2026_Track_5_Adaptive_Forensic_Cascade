@@ -32,6 +32,8 @@ class RouterScore:
     rung: str
     n_parameters: int
     expert_available: dict[str, bool]
+    abstain: bool = False          # reliability below the frozen policy threshold
+    abstain_threshold: float | None = None
 
 
 class RouterHead:
@@ -50,6 +52,16 @@ class RouterHead:
         # Reporting sigmoid(untrained linear layer) as a confidence would be a
         # fabricated number wearing a trustworthy name, so we gate on the flag.
         self.reliability_fitted = bool(payload.get("reliability_head_fitted", False))
+        # The abstention threshold is a frozen VALUE chosen on dev, never a
+        # percentile recomputed on whatever data arrives -- a percentile would
+        # silently re-tune the policy to each new batch.
+        policy = payload.get("abstention") or {}
+        self.abstention_adopted = bool(policy.get("adopted", False))
+        self.abstain_threshold = (
+            float(policy["reliability_threshold"])
+            if self.abstention_adopted and policy.get("reliability_threshold") is not None
+            else None
+        )
 
     @classmethod
     def from_checkpoint(cls, checkpoint_path: Path | str,
@@ -110,10 +122,17 @@ class RouterHead:
         if self.reliability_fitted and getattr(out, "reliability", None) is not None:
             reliability = float(out.reliability[0])
 
+        abstain = bool(
+            self.abstain_threshold is not None
+            and reliability is not None
+            and reliability < self.abstain_threshold
+        )
         return RouterScore(
             p_fake=p_fake,
             reliability=reliability,
             rung=str(self.payload.get("rung", "unknown")),
             n_parameters=int(self.payload.get("n_parameters", 0) or 0),
             expert_available=available,
+            abstain=abstain,
+            abstain_threshold=self.abstain_threshold,
         )
