@@ -103,6 +103,35 @@ decoded receives `"pred": null` with an `"error"` field — never an invented
 score — so the output can always be zipped back to the input list. Use
 `--errors strict` to fail loudly instead.
 
+**Full forensic report for one image** (audit mode)
+
+```bash
+.venv/bin/python scripts/audit_image.py path/to/image.jpg
+.venv/bin/python scripts/audit_image.py path/to/image.jpg --json
+.venv/bin/python scripts/audit_image.py path/to/image.jpg --no-audit   # fast path
+```
+
+Prints the verdict, **what the raw detector alone would have said**, the
+self-assessed reliability, the detected image history, and the robustness
+certificate. Example on a corpus image the raw detector misses:
+
+```
+VERDICT           ◆ AI-GENERATED
+score             0.5739  ███████████·········  (threshold 0.4667)
+raw detector      0.0012  ····················  (+0.5727 after correction)
+                                                 <- the router changed this verdict
+reliability       0.875   ██████████████████··
+IMAGE HISTORY     no strong degradation detected (50% confidence)
+
+verdict retention 11 / 20   ███████████·········
+grade             VERY LOW — correct for 60.6% of held-out sources
+worst case        0.072 at jpeg_q30
+```
+
+The raw detector would have called this real at 0.0012; the router rescues it —
+and the certificate then declines to oversell that rescue. Audit mode costs 80
+forward passes (~3.0 s); `--no-audit` and `infer_dir.py` stay on the fast path.
+
 **Run the demo UI**
 
 ```bash
