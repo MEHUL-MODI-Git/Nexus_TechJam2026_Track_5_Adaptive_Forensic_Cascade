@@ -82,3 +82,8 @@ data/torch_cache/
 third_party/
 data/corpus/canonical/
 logs/
+
+# Derived local index of the organizers' sealed subset (paths + hashes, 2.8 MB).
+# Regenerate with the enumeration step in scripts/sealed_reference_run.py's docstring.
+# The hashes themselves are already published in data/manifests/sealed_denylist.txt.
+data/manifests/sealed_files.json
