@@ -1,6 +1,6 @@
 # Adaptive Forensic Cascade — system state, results, and honest assessment
 
-**Date:** 2026-08-28 · **Author:** Claude (AGENT-A) · **Purpose:** shareable context dump —
+**Date:** 2026-08-28, updated 2026-08-29 · **Author:** Claude (AGENT-A) · **Purpose:** shareable context dump —
 what was built, what the numbers are, what succeeded, what failed, and where it falls short of
 the original design.
 
@@ -15,14 +15,15 @@ the original design.
 The system works and the core claim is unusually well defended: worst-case fake recall under
 image degradation goes from **0.1227 to 0.8258**, and survives an adversarial control where the
 baseline is handed a threshold fitted on the test set itself (**+0.4916**, CI95 [+0.475, +0.508]).
-It generalised — dev predicted 0.8144, the untouched test gave 0.8258. **But it delivers less than
-the architecture promised in one important way:** the designed two-stage cascade with adaptive
-escalation to a heavier second expert does not exist. Two candidate second experts were integrated
-and both failed on measurement, so what ships is a *one-stage* system that escalates to a **human**
-rather than to a second model. The methodology is stronger than planned; the architecture is
-narrower.
-
----
+It generalised — dev predicted 0.8144, the untouched test gave 0.8258. On top of that sit two
+capabilities that earned their place by measurement: an **abstention** policy (defer 20% →
+accuracy 0.9090→0.9317) and an **audit mode** whose verdict-retention signal predicts a wrong
+answer *better than the reliability head trained for the job* (AUROC 0.8650 vs 0.7206).
+**But it delivers less than the architecture promised in one important way:** the designed
+two-stage cascade with adaptive escalation to a heavier second expert does not exist. What
+ships is a *one-stage* system that escalates to a **human**. **Five separate ideas were built or
+specified, measured, and cut on evidence** — LOTA, PGC, our own self-probes, occlusion evidence
+maps, and rung gating. The methodology is stronger than planned; the architecture is narrower.
 
 ## 2. What the system actually is
 
@@ -44,6 +45,10 @@ image
          └─ reliability head (17 params) ───────► reliability → ABSTAIN if < 0.866080
                                                   │
                                           verdict + reliability + defer flag
+                                                  │
+  AUDIT MODE (optional, 20 extra passes) ─────────┤
+    ├─ 20-condition stress grid → verdict retention → Forensic Robustness Certificate
+    └─ degradation reporter (775 params) → "detected image history: JPEG compression (93%)"
 ```
 
 - **Shipped total: 21,813,796 parameters** — 0.001% of the 2B cap. Our own trainable weights are
@@ -156,6 +161,40 @@ treating "did not abstain" as "safe to automate" would be wrong in exactly the c
 
 ---
 
+## 4b. Audit mode — added 2026-08-29
+
+**The evaluation harness turned out to be the best confidence signal.** Running the
+20-condition grid on one image and counting how many conditions preserve the verdict predicts
+a wrong verdict better than the reliability head we trained for it:
+
+| signal | AUROC predicting a wrong clean verdict |
+|---|---|
+| reliability head | 0.7206 |
+| **verdict retention** | **0.8650** |
+| combined | 0.8863 |
+
+It fixes the blind spot §4 documents. Of the **157** sources the head passes confidently but
+gets wrong, mean retention is **14.40/20** vs **19.00/20** for confident-and-correct; flagging
+`retention < 18` catches **72.6%** of them while deferring 17.3%. The two fail differently —
+the head reads quality descriptors so it tracks noise and is blind to blur; retention measures
+the verdict itself. Grades are the measured relationship, not chosen labels:
+
+| retention | grade | clean verdict correct | share |
+|---|---|---|---|
+| 20/20 | HIGH | 99.1% | 61.4% |
+| 18–19 | MEDIUM | 94.9% | 20.9% |
+| 15–17 | LOW | 84.9% | 10.4% |
+| ≤14 | VERY LOW | 60.6% | 7.4% |
+
+Costs 20 forward passes, so it is explicitly audit mode, not the default path.
+Artifact: `results/robustness/retention-signal.json`.
+
+**Degradation reporter** (775 params): names the transformation family from the eight cached
+quality descriptors — dev balanced accuracy **0.7332** vs 0.143 chance. Geometry excluded on
+purpose (a real upload has no known original size) and class-weighted (unweighted it reported
+0.00 recall on `clean`, which was imbalance, not inseparability). It is an explanation and
+structurally cannot reach the verdict.
+
 ## 5. What FAILED — and why the failures are informative
 
 ### 5.1 The second expert failed twice, for the same structural reason
@@ -180,6 +219,30 @@ high-frequency band — exactly what noise and heavy JPEG destroy.
 PGC is genuinely *better* than our cascade where degradation is photometric (colour 0.9532 vs
 0.9159; blur 0.9762 vs 0.9286) — but those families are a sliver of the deferred pool, so the wins
 are swamped. Artifact: `results/pgc/rescue.json`.
+
+### 5.1b Our own self-probes buy nothing (2026-08-29)
+
+The shipped system re-scores every image under three mild perturbations — **3 of its 4 forward
+passes, ~110 ms of its 128 ms**. An 8-arm × 3-seed dev ablation found **no probe budget
+distinguishable from any other, including using none at all**; every difference sits inside the
+seed spread (sd 0.0036–0.0123). The pre-registered rule selected **zero probes**. The robustness
+gain comes from the quality descriptors and the worst-group objective, not from self-probing.
+Independently confirms the earlier 24k pilot. Artifact: `results/probe-ablation/dev-results.json`.
+
+### 5.1c Occlusion evidence maps are void (2026-08-29)
+
+Patch-occlusion attribution was killed by a guard written *before* the experiment: two occlusion
+operators (mean-fill, blur) produce maps correlating at only **0.261**, so the method measures
+the artefacts its own masks create. Predicted from first principles — this detector reads
+high-frequency traces, and masks manufacture high-frequency content.
+Artifact: `results/evidence-audit/validation.json`.
+
+### 5.1d Rung gating is dead on its ceiling (2026-08-29)
+
+`mlp` beats `mlp+wg` on accuracy and clean FPR, so gating between them looked promising. An
+**oracle** that always picks the correct rung — unbeatable by any learnable gate — adds
+**+0.0047** worst-family recall. The rungs agree on 96.9% of rows. Killed in eight minutes
+without building anything. Artifact: `results/probe-ablation/rung-complementarity.json`.
 
 ### 5.2 A constraint we set ourselves did not hold
 Threshold was selected under a clean-FPR cap of **0.0756**; on unseen data it measured **0.0833**.
@@ -253,7 +316,9 @@ meant to amortise — it failed its gate, so the shipped system pays the cost on
 | **Second expert (LOTA/WaRPAD)** | ✅ | ❌ **two candidates, both rejected on evidence** |
 | **Selective rescue / adaptive compute** | ✅ | ❌ **built, measured, failed its gate** |
 | **Complementarity analysis** | ✅ | ⚠️ done, but the answer was "no complementarity" |
-| Gradio demo + stress panel | ✅ | ✅ shows primary→corrected, reliability, DEFERRED banner |
+| Gradio demo + stress panel | ✅ | ✅ primary→corrected, reliability, DEFERRED banner, certificate, degradation |
+| Audit mode / robustness certificate | not planned | ✅ **exceeded scope** — retention beats the trained reliability head |
+| Degradation explanation | not planned | ✅ **exceeded scope** — 0.7332 balanced accuracy |
 | Required deliverables (robustness, error analysis) | ✅ | ✅ both regenerated on protected data |
 
 **Below expectation:** the architecture. It is a one-stage system named after a two-stage one, the
