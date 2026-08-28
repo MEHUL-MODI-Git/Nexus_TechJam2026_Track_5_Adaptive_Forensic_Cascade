@@ -1,0 +1,229 @@
+{
+  "schema_version": "router-training-run.v1",
+  "threshold": 0.5,
+  "n_train_rows": 179960,
+  "n_dev_rows": 60000,
+  "n_train_sources": 8998,
+  "n_dev_sources": 3000,
+  "n_features": 38,
+  "expert_ids": [
+    "commfor_384"
+  ],
+  "standardizer_fitted_on": "train split only",
+  "selection_metric": "bootstrap-mean worst-transformation-family fake recall over six families (clean excluded), subject to clean FPR <= baseline+1pt and clean BAcc >= baseline-1pt \u2014 the frozen objective",
+  "clean_constraints": {
+    "max_clean_fpr": 0.012666666666666666,
+    "min_clean_balanced_accuracy": 0.8536666666666666
+  },
+  "cache_key": "f5b1fa463f98727aa7b960ad425d84af0e4df9db3943b0cf9ff9d4b18b8ef47d",
+  "threshold_provenance": "PLACEHOLDER-uncalibrated-phase0",
+  "rows_dropped_all_experts_unavailable": 0,
+  "fusion_space": "logit",
+  "threshold_provenance_warning": "reliability targets are defined as correctness AT the operating threshold; training under a PLACEHOLDER threshold means the target changes meaning once a real threshold is fitted (Codex R22)",
+  "reliability_fitted": false,
+  "reliability_stage_note": "reliability/abstention is stage 2 (Codex R22) and is deliberately NOT fitted until the class threshold is frozen, so no stale target is trained or saved",
+  "results": [
+    {
+      "rung": "quality_only",
+      "dev_worst_family_bootstrap_mean": 0.49739333333333335,
+      "dev_worst_family_ci95": [
+        0.4733277777777778,
+        0.5176055555555555
+      ],
+      "use_worst_group_loss": false,
+      "n_parameters": 17,
+      "dev_worst_family_fake_recall": 0.49866666666666665,
+      "dev_worst_family": "noise",
+      "dev_clean_fake_recall": 0.7633333333333333,
+      "dev_clean_fpr": 0.43066666666666664,
+      "dev_clean_balanced_accuracy": 0.6663333333333333,
+      "dev_overall_accuracy": 0.6390833333333333,
+      "reliability_head": false,
+      "reliability_head_fitted": false,
+      "hyperparameters": {
+        "seed": 20260827,
+        "epochs": 200,
+        "lr": 0.02
+      },
+      "max_abs_p_fake_change_vs_static": 0.9849452376365662,
+      "satisfies_clean_constraints": false
+    },
+    {
+      "rung": "static_average",
+      "dev_worst_family_bootstrap_mean": 0.12835222222222223,
+      "dev_worst_family_ci95": [
+        0.1173,
+        0.13978888888888888
+      ],
+      "use_worst_group_loss": false,
+      "n_parameters": 0,
+      "dev_worst_family_fake_recall": 0.12866666666666668,
+      "dev_worst_family": "noise",
+      "dev_clean_fake_recall": 0.73,
+      "dev_clean_fpr": 0.0026666666666666666,
+      "dev_clean_balanced_accuracy": 0.8636666666666666,
+      "dev_overall_accuracy": 0.7844166666666667,
+      "reliability_head": false,
+      "reliability_head_fitted": false,
+      "hyperparameters": {
+        "seed": 20260827
+      },
+      "max_abs_p_fake_change_vs_static": 0.0,
+      "satisfies_clean_constraints": true
+    },
+    {
+      "rung": "probability_mean",
+      "dev_worst_family_bootstrap_mean": 0.12835222222222223,
+      "dev_worst_family_ci95": [
+        0.1173,
+        0.13978888888888888
+      ],
+      "use_worst_group_loss": false,
+      "n_parameters": 0,
+      "dev_worst_family_fake_recall": 0.12866666666666668,
+      "dev_worst_family": "noise",
+      "dev_clean_fake_recall": 0.73,
+      "dev_clean_fpr": 0.0026666666666666666,
+      "dev_clean_balanced_accuracy": 0.8636666666666666,
+      "dev_overall_accuracy": 0.7844166666666667,
+      "reliability_head": false,
+      "reliability_head_fitted": false,
+      "hyperparameters": {
+        "seed": 20260827
+      },
+      "max_abs_p_fake_change_vs_static": 0.0,
+      "satisfies_clean_constraints": true
+    },
+    {
+      "rung": "fixed_weights",
+      "dev_worst_family_bootstrap_mean": 0.12835222222222223,
+      "dev_worst_family_ci95": [
+        0.1173,
+        0.13978888888888888
+      ],
+      "use_worst_group_loss": false,
+      "n_parameters": 0,
+      "dev_worst_family_fake_recall": 0.12866666666666668,
+      "dev_worst_family": "noise",
+      "dev_clean_fake_recall": 0.73,
+      "dev_clean_fpr": 0.0026666666666666666,
+      "dev_clean_balanced_accuracy": 0.8636666666666666,
+      "dev_overall_accuracy": 0.7844166666666667,
+      "reliability_head": false,
+      "reliability_head_fitted": false,
+      "hyperparameters": {
+        "seed": 20260827
+      },
+      "fixed_weights": [
+        1.0
+      ],
+      "fixed_weights_selected_on": "train split only",
+      "max_abs_p_fake_change_vs_static": 0.0,
+      "satisfies_clean_constraints": true
+    },
+    {
+      "rung": "logistic",
+      "dev_worst_family_bootstrap_mean": 0.6626866666666666,
+      "dev_worst_family_ci95": [
+        0.6433277777777777,
+        0.6815666666666667
+      ],
+      "use_worst_group_loss": false,
+      "n_parameters": 117,
+      "dev_worst_family_fake_recall": 0.6626666666666666,
+      "dev_worst_family": "noise",
+      "dev_clean_fake_recall": 0.9553333333333334,
+      "dev_clean_fpr": 0.07066666666666667,
+      "dev_clean_balanced_accuracy": 0.9423333333333334,
+      "dev_overall_accuracy": 0.8942,
+      "reliability_head": true,
+      "reliability_head_fitted": false,
+      "hyperparameters": {
+        "seed": 20260827,
+        "epochs": 200,
+        "lr": 0.02
+      },
+      "max_abs_p_fake_change_vs_static": 0.9995161294937134,
+      "satisfies_clean_constraints": false
+    },
+    {
+      "rung": "mlp",
+      "dev_worst_family_bootstrap_mean": 0.7049199999999999,
+      "dev_worst_family_ci95": [
+        0.6877722222222222,
+        0.7246722222222223
+      ],
+      "use_worst_group_loss": false,
+      "n_parameters": 1827,
+      "dev_worst_family_fake_recall": 0.7048888888888889,
+      "dev_worst_family": "noise",
+      "dev_clean_fake_recall": 0.9573333333333334,
+      "dev_clean_fpr": 0.036,
+      "dev_clean_balanced_accuracy": 0.9606666666666667,
+      "dev_overall_accuracy": 0.9206666666666666,
+      "reliability_head": true,
+      "reliability_head_fitted": false,
+      "hyperparameters": {
+        "seed": 20260827,
+        "epochs": 200,
+        "lr": 0.02,
+        "hidden": 32,
+        "hidden2": 16,
+        "dropout": 0.1
+      },
+      "max_abs_p_fake_change_vs_static": 0.9930139780044556,
+      "satisfies_clean_constraints": false
+    },
+    {
+      "rung": "mlp",
+      "dev_worst_family_bootstrap_mean": 0.7960377777777778,
+      "dev_worst_family_ci95": [
+        0.7782166666666667,
+        0.812038888888889
+      ],
+      "use_worst_group_loss": true,
+      "n_parameters": 1827,
+      "dev_worst_family_fake_recall": 0.7962222222222223,
+      "dev_worst_family": "noise",
+      "dev_clean_fake_recall": 0.964,
+      "dev_clean_fpr": 0.07,
+      "dev_clean_balanced_accuracy": 0.9470000000000001,
+      "dev_overall_accuracy": 0.9121833333333333,
+      "reliability_head": true,
+      "reliability_head_fitted": false,
+      "hyperparameters": {
+        "seed": 20260827,
+        "epochs": 200,
+        "lr": 0.02,
+        "hidden": 32,
+        "hidden2": 16,
+        "dropout": 0.1,
+        "lambda_worst": 1.0,
+        "temperature": 0.1
+      },
+      "max_abs_p_fake_change_vs_static": 0.9912436008453369,
+      "satisfies_clean_constraints": false
+    }
+  ],
+  "baseline_worst_family_recall": 0.12835222222222223,
+  "quality_only_worst_family_recall": 0.49739333333333335,
+  "beats_quality_only": false,
+  "quality_only_note": "quality_only uses no expert score at all -- a linear model over the router feature vector (image-statistics descriptors) alone. This corpus's real=JPEG, fake=PNG shortcut lets those descriptors separate the classes with no idea what AI generation is; a cascade that fails to beat this rung has not demonstrated a detection result.",
+  "best_rung": "static_average",
+  "best_worst_family_recall": 0.12835222222222223,
+  "improvement_over_baseline": 0.0,
+  "improvement_is_meaningful": false,
+  "improvement_is_outside_uncertainty": false,
+  "best_rung_uses_expert_scores": true,
+  "router_earns_its_complexity": false,
+  "cascade_is_justified": false,
+  "kill_gate": {
+    "min_meaningful_delta": 0.02,
+    "rule": "delta >= 2 points OR best CI95 low above baseline CI95 high, subject to the clean constraints"
+  },
+  "fusion_weight_degenerate": true,
+  "single_expert_learned_correction": true,
+  "verdict_note": "SINGLE-EXPERT LEARNED CORRECTION, NOT A FUSION TEST: with one expert the fusion weights are 1.0 by construction, so rungs differ only through the learned bias/quality correction and the reliability head -- this comparison tests that correction, not fusion. See max_abs_p_fake_change_vs_static per rung for the measured (not suppressed) effect. A second expert is required before any conclusion about fusion is drawn.",
+  "cache_unprotected": false,
+  "checkpoint": "results/router-fitting-v2/training.pt"
+}

@@ -210,7 +210,8 @@ KNOWN_RUNG_NAMES = ("quality_only", "static_average", "probability_mean",
 
 def _construct_router(rung: str, n_features: int, n_experts: int, *,
                       hidden: int = 32, hidden2: int = 16, dropout: float = 0.1,
-                      fixed_weights: list[float] | None = None) -> nn.Module:
+                      fixed_weights: list[float] | None = None,
+                      quality_only_indices: list[int] | None = None) -> nn.Module:
     """Build a fresh (untrained) module for one ladder rung by name.
 
     Shared by `train_rung` (fitting) and `load_checkpoint` (reconstruction), so
@@ -221,7 +222,7 @@ def _construct_router(rung: str, n_features: int, n_experts: int, *,
     the buffer via `load_state_dict`.
     """
     if rung == "quality_only":
-        return QualityOnlyRouter(n_features)
+        return QualityOnlyRouter(quality_only_indices or range(n_features))
     if rung == "static_average":
         return StaticAverageFusion(n_experts)
     if rung == "probability_mean":
@@ -314,6 +315,7 @@ def train_rung(
     dropout: float = 0.1,
     lambda_worst: float = 1.0,
     temperature: float = 0.1,
+    quality_only_indices: list[int] | None = None,
 ) -> dict[str, Any]:
     """Train one rung and evaluate it on dev. Returns a comparable record.
 
@@ -328,7 +330,8 @@ def train_rung(
         _select_fixed_weights(batch, n_experts, threshold) if name == "fixed_weights" else None
     )
     model = _construct_router(name, n_features, n_experts, hidden=hidden, hidden2=hidden2,
-                              dropout=dropout, fixed_weights=fixed_weights_chosen)
+                              dropout=dropout, fixed_weights=fixed_weights_chosen,
+                              quality_only_indices=quality_only_indices)
 
     trainable = [
         p for param_name, p in model.named_parameters()
@@ -652,7 +655,8 @@ def run_ladder(cache_rows: list[dict], threshold: float, expert_ids: tuple[str, 
     results = [
         train_rung(name, train_batch, dev_batch, spec.dim, len(expert_ids), threshold,
                    use_worst_group=wg, seed=seed, bootstrap_replicates=bootstrap_replicates,
-                   fit_reliability=fit_reliability)
+                   fit_reliability=fit_reliability,
+                   quality_only_indices=spec.non_expert_indices())
         for name, wg in (
             ("quality_only", False), ("static_average", False), ("probability_mean", False),
             ("fixed_weights", False), ("logistic", False),
@@ -1026,6 +1030,7 @@ def load_checkpoint(path: Path) -> LoadedRouter:
         hidden=hyperparameters.get("hidden", 32),
         hidden2=hyperparameters.get("hidden2", 16),
         dropout=hyperparameters.get("dropout", 0.1),
+        quality_only_indices=spec.non_expert_indices(),
     )
     model.load_state_dict(payload["state_dict"], strict=True)
     model.eval()

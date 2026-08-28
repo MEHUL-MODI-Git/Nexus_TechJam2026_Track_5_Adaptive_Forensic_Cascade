@@ -30,6 +30,25 @@ SCHEMA_VERSION = "router-features.v1"
 
 # Feature blocks are built in a fixed, documented order. The order is part of
 # the artifact: a trained router is meaningless against a reordered vector.
+# Geometry features are DISABLED, deliberately, and this is not a tuning choice.
+#
+# Measured on our corpus: 100% of synthetic sources are exactly 1024x1024 while
+# 96.1% of real sources are non-square, so the single boolean "is this image
+# square?" classifies 98.12% of clean rows (AUROC 0.9805). Those columns --
+# log_width, log_height, aspect_ratio, megapixels, is_portrait -- hand the router
+# a label leak, and a model that learns "square means generated" has learned
+# nothing about generation.
+#
+# The organizers' reference subset carries the SAME artefact: 3.4% of its COCO
+# reals are square against 85.4% of its DALL-E images, so dimensions alone score
+# roughly 91% balanced accuracy on the official benchmark. We could exploit that
+# and post a strong number. We are choosing not to be able to, and reporting the
+# benchmark property instead.
+#
+# Re-enable only for a corpus where dimensions are demonstrably independent of
+# the label; resolution is legitimately informative when it is not a giveaway.
+INCLUDE_GEOMETRY_FEATURES = False
+
 QUALITY_KEYS = (
     "blur_varlap", "blockiness", "noise_sigma",
     "luminance_mean", "luminance_std", "saturation_mean",
@@ -68,6 +87,25 @@ class FeatureSpec:
     expert_ids: tuple[str, ...]
     schema_version: str = SCHEMA_VERSION
 
+    def non_expert_indices(self) -> list[int]:
+        """Columns that carry NO detector-derived information.
+
+        The feature vector opens with `<expert>.raw_logit`, `.p_fake`, `.entropy`
+        and the probe statistics -- probes are the expert re-scored on perturbed
+        views, so they are detector output too -- followed by `disagreement.*`,
+        which is computed FROM expert scores. Only `geom.*` and `quality.*` are
+        properties of the image alone.
+
+        This exists because the `quality_only` baseline was originally built by
+        ignoring the `expert_logits` ARGUMENT, which silently left the expert's
+        logit and probability in the feature vector at indices 0 and 2. The
+        "no detector" baseline was therefore the full model under another name.
+        A baseline that secretly reads the thing it is meant to exclude is worse
+        than no baseline at all.
+        """
+        return [i for i, name in enumerate(self.names)
+                if name.startswith(("geom.", "quality."))]
+
     @property
     def names(self) -> list[str]:
         """Human-readable feature names, in vector order. Used in ablations."""
@@ -83,8 +121,9 @@ class FeatureSpec:
         out += ["disagreement.max_abs_p_diff", "disagreement.max_abs_p_diff__present",
                 "disagreement.mean_abs_p_diff", "disagreement.mean_abs_p_diff__present",
                 "disagreement.n_experts_ok"]
-        out += ["geom.log_width", "geom.log_height", "geom.aspect_ratio",
-                "geom.megapixels", "geom.is_portrait"]
+        if INCLUDE_GEOMETRY_FEATURES:
+            out += ["geom.log_width", "geom.log_height", "geom.aspect_ratio",
+                    "geom.megapixels", "geom.is_portrait"]
         for key in QUALITY_KEYS:
             out += [f"quality.{key}", f"quality.{key}__present"]
         return out
@@ -156,13 +195,14 @@ def row_to_vector(row: dict, spec: FeatureSpec, threshold: float = 0.5) -> np.nd
     q = row.get("quality") or {}
     width = float(q.get("width") or 1.0)
     height = float(q.get("height") or 1.0)
-    values += [
-        math.log(max(width, 1.0)),
-        math.log(max(height, 1.0)),
-        float(q.get("aspect_ratio") or (width / max(height, 1.0))),
-        float(q.get("megapixels") or 0.0),
-        1.0 if q.get("is_portrait") else 0.0,
-    ]
+    if INCLUDE_GEOMETRY_FEATURES:
+        values += [
+            math.log(max(width, 1.0)),
+            math.log(max(height, 1.0)),
+            float(q.get("aspect_ratio") or (width / max(height, 1.0))),
+            float(q.get("megapixels") or 0.0),
+            1.0 if q.get("is_portrait") else 0.0,
+        ]
     for key in QUALITY_KEYS:
         v = q.get(key)
         values += list(_pair(v, v is not None))
@@ -196,7 +236,7 @@ class Standardizer:
     schema_version: str = "router-standardizer.v1"
 
     @classmethod
-    def fit(cls, matrix: np.ndarray, spec: FeatureSpec) -> "Standardizer":
+    def fit(cls, matrix: np.ndarray, spec: FeatureSpec) -> Standardizer:
         if matrix.ndim != 2 or matrix.shape[0] == 0:
             raise ValueError("standardizer needs a non-empty 2-D train matrix")
         names = spec.names

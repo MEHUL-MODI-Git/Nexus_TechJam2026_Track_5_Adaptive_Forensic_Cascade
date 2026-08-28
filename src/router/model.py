@@ -90,25 +90,40 @@ def _masked_weights(logits: torch.Tensor, available: torch.Tensor) -> torch.Tens
 
 
 class QualityOnlyRouter(nn.Module):
-    """Rung 0: predicts from the ROUTER FEATURE VECTOR ONLY. No expert score,
-    ever -- `expert_logits` is never read in `forward`.
+    """Rung 0: predicts from IMAGE PROPERTIES ONLY -- no detector evidence at all.
 
     This rung exists so that any claim about the cascade is measured against a
-    model that has only ever seen image statistics; if the cascade cannot beat
-    it, we do not have a detection result. Our training corpus has a shortcut
-    (real images are JPEG, fake images are PNG) that quality descriptors --
-    blockiness, noise_sigma, blur_varlap, luminance/saturation stats -- can
-    exploit at dev AUROC ~0.95-0.99 while knowing nothing about AI generation.
-    Making that shortcut an explicit baseline turns a hidden advantage into a
-    number every other rung must clear.
+    model that has never seen the detector's opinion. If the cascade cannot beat
+    it, we do not have a detection result, only image statistics that happen to
+    correlate with how this corpus was built.
+
+    **It takes an explicit column subset, and that is the whole point.** The
+    router feature vector opens with `<expert>.raw_logit`, `.p_fake`, `.entropy`
+    and the probe statistics (probes are the expert re-scored on perturbed
+    views, so they are detector output too), then `disagreement.*`, which is
+    derived from expert scores. An earlier version of this rung took the FULL
+    vector and merely declined to read the separate `expert_logits` argument --
+    so it still received the detector's logit at index 0 and its probability at
+    index 2. That "no detector" baseline was the full model under another name,
+    and it scored 0.90 worst-family recall for exactly that reason. A baseline
+    that secretly reads the thing it is meant to exclude is worse than no
+    baseline at all, because it silently raises the bar every other rung is
+    measured against.
+
+    `FeatureSpec.non_expert_indices()` is the single source of truth for which
+    columns qualify; this module never picks them itself.
     """
 
-    def __init__(self, n_features: int) -> None:
+    def __init__(self, feature_indices) -> None:
         super().__init__()
-        self.linear = nn.Linear(n_features, 1)
+        idx = torch.as_tensor(list(feature_indices), dtype=torch.long)
+        # A buffer, not a parameter: it must survive save/load so a reloaded
+        # checkpoint reads the same columns, but it is not learned.
+        self.register_buffer("feature_indices", idx)
+        self.linear = nn.Linear(idx.numel(), 1)
 
     def forward(self, features, expert_logits, available) -> FusionOutput:
-        fused = self.linear(features).squeeze(-1)
+        fused = self.linear(features[:, self.feature_indices]).squeeze(-1)
         # No expert is used: weights are all zero, not a uniform/degenerate
         # vector that would suggest some expert contributed.
         weights = torch.zeros_like(expert_logits)
