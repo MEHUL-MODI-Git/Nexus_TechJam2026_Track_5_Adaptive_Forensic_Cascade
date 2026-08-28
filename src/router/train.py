@@ -63,6 +63,12 @@ TRANSFORM_FAMILIES = ("jpeg", "blur", "resize", "noise", "color", "crop")
 LOGIT_PROB_TOLERANCE = 1e-4    # |sigmoid(raw_logit) - p_fake| must not exceed this
 MIN_MEANINGFUL_DELTA = 0.02    # doc 05/08 kill gate: 2 points of worst-family fake recall
 VALID_SPLITS = ("train", "dev")
+# The ladder, in one place so run_ladder and any external driver cannot drift.
+LADDER_RUNGS = (
+    ("quality_only", False), ("static_average", False), ("probability_mean", False),
+    ("fixed_weights", False), ("logistic", False),
+    ("mlp", False), ("mlp", True),
+)
 _CACHE_KEY_RE = re.compile(r"^[0-9a-f]{64}$")      # EXACTLY the sha256 hex digest feature_cache.py
                                                     # emits (B-024 §1) -- {16,64} let a truncated
                                                     # key through, which is not a format this repo
@@ -657,11 +663,7 @@ def run_ladder(cache_rows: list[dict], threshold: float, expert_ids: tuple[str, 
                    use_worst_group=wg, seed=seed, bootstrap_replicates=bootstrap_replicates,
                    fit_reliability=fit_reliability,
                    quality_only_indices=spec.non_expert_indices())
-        for name, wg in (
-            ("quality_only", False), ("static_average", False), ("probability_mean", False),
-            ("fixed_weights", False), ("logistic", False),
-            ("mlp", False), ("mlp", True),
-        )
+        for name, wg in LADDER_RUNGS
     ]
     baseline = next(r for r in results if r["rung"] == "static_average")
     quality_only_result = next(r for r in results if r["rung"] == "quality_only")

@@ -1,0 +1,154 @@
+{
+  "schema_version": "router-threshold-fitted.v1",
+  "NOT_A_HEADLINE_RESULT": "dev-split numbers, single expert; the untouched internal test is the reportable surface",
+  "cache": "data/feature_cache/fitting-v2",
+  "protocol": "weights fitted on train; ONE threshold per rung fitted on train under the frozen objective; all reported metrics measured on dev",
+  "n_train_rows": 179960,
+  "n_dev_rows": 60000,
+  "expert_ids": [
+    "commfor_384"
+  ],
+  "feature_dim": 38,
+  "results": [
+    {
+      "rung": "quality_only",
+      "n_parameters": 17,
+      "threshold": 0.49680385179817677,
+      "threshold_feasible": true,
+      "at_0.5": {
+        "worst_family_fake_recall": 0.49866666666666665,
+        "worst_family": "noise",
+        "clean_fake_recall": 0.7633333333333333,
+        "clean_fpr": 0.43066666666666664,
+        "overall_accuracy": 0.6390833333333333
+      },
+      "at_fitted": {
+        "worst_family_fake_recall": 0.5075555555555555,
+        "worst_family": "noise",
+        "clean_fake_recall": 0.77,
+        "clean_fpr": 0.43866666666666665,
+        "overall_accuracy": 0.6384666666666666
+      }
+    },
+    {
+      "rung": "static_average",
+      "n_parameters": 0,
+      "threshold": 0.1272509451955557,
+      "threshold_feasible": true,
+      "at_0.5": {
+        "worst_family_fake_recall": 0.12866666666666668,
+        "worst_family": "noise",
+        "clean_fake_recall": 0.73,
+        "clean_fpr": 0.0026666666666666666,
+        "overall_accuracy": 0.7844166666666667
+      },
+      "at_fitted": {
+        "worst_family_fake_recall": 0.18488888888888888,
+        "worst_family": "noise",
+        "clean_fake_recall": 0.844,
+        "clean_fpr": 0.010666666666666666,
+        "overall_accuracy": 0.8359666666666666
+      }
+    },
+    {
+      "rung": "probability_mean",
+      "n_parameters": 0,
+      "threshold": 0.1272509451955557,
+      "threshold_feasible": true,
+      "at_0.5": {
+        "worst_family_fake_recall": 0.12866666666666668,
+        "worst_family": "noise",
+        "clean_fake_recall": 0.73,
+        "clean_fpr": 0.0026666666666666666,
+        "overall_accuracy": 0.7844166666666667
+      },
+      "at_fitted": {
+        "worst_family_fake_recall": 0.18488888888888888,
+        "worst_family": "noise",
+        "clean_fake_recall": 0.844,
+        "clean_fpr": 0.010666666666666666,
+        "overall_accuracy": 0.8359666666666666
+      }
+    },
+    {
+      "rung": "fixed_weights",
+      "n_parameters": 0,
+      "threshold": 0.1272509451955557,
+      "threshold_feasible": true,
+      "at_0.5": {
+        "worst_family_fake_recall": 0.12866666666666668,
+        "worst_family": "noise",
+        "clean_fake_recall": 0.73,
+        "clean_fpr": 0.0026666666666666666,
+        "overall_accuracy": 0.7844166666666667
+      },
+      "at_fitted": {
+        "worst_family_fake_recall": 0.18488888888888888,
+        "worst_family": "noise",
+        "clean_fake_recall": 0.844,
+        "clean_fpr": 0.010666666666666666,
+        "overall_accuracy": 0.8359666666666666
+      }
+    },
+    {
+      "rung": "logistic",
+      "n_parameters": 117,
+      "threshold": 0.46490725642070174,
+      "threshold_feasible": true,
+      "at_0.5": {
+        "worst_family_fake_recall": 0.6626666666666666,
+        "worst_family": "noise",
+        "clean_fake_recall": 0.9553333333333334,
+        "clean_fpr": 0.07066666666666667,
+        "overall_accuracy": 0.8942
+      },
+      "at_fitted": {
+        "worst_family_fake_recall": 0.686,
+        "worst_family": "noise",
+        "clean_fake_recall": 0.9573333333333334,
+        "clean_fpr": 0.078,
+        "overall_accuracy": 0.89275
+      }
+    },
+    {
+      "rung": "mlp",
+      "n_parameters": 1827,
+      "threshold": 0.4299381768796593,
+      "threshold_feasible": true,
+      "at_0.5": {
+        "worst_family_fake_recall": 0.7048888888888889,
+        "worst_family": "noise",
+        "clean_fake_recall": 0.9573333333333334,
+        "clean_fpr": 0.036,
+        "overall_accuracy": 0.9206666666666666
+      },
+      "at_fitted": {
+        "worst_family_fake_recall": 0.7586666666666667,
+        "worst_family": "noise",
+        "clean_fake_recall": 0.9666666666666667,
+        "clean_fpr": 0.04933333333333333,
+        "overall_accuracy": 0.9226333333333333
+      }
+    },
+    {
+      "rung": "mlp+wg",
+      "n_parameters": 1827,
+      "threshold": 0.4667367651127279,
+      "threshold_feasible": true,
+      "at_0.5": {
+        "worst_family_fake_recall": 0.7962222222222223,
+        "worst_family": "noise",
+        "clean_fake_recall": 0.964,
+        "clean_fpr": 0.07,
+        "overall_accuracy": 0.9121833333333333
+      },
+      "at_fitted": {
+        "worst_family_fake_recall": 0.8144444444444444,
+        "worst_family": "noise",
+        "clean_fake_recall": 0.968,
+        "clean_fpr": 0.076,
+        "overall_accuracy": 0.9115166666666666
+      }
+    }
+  ]
+}

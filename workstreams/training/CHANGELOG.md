@@ -1,5 +1,56 @@
 # CHANGELOG — training (newest first, append-only; corrections are new entries)
 
+## 2026-08-28 — [relay] FIRST PROTECTED RESULT: the cascade beats both floors at fitted thresholds
+
+Extraction completed 12:26: **239,960 rows**, 11,998 sources x 20 conditions, **every condition
+exactly 11,998**, 0 decode failures, 0 malformed expert blocks, `denylist_protected=true`,
+`denylist_perceptual_protected=true`, **`UNPROTECTED_SMOKE_ONLY=false`** — the first genuinely
+protected cache in this project. ~8.6 h of compute spread over 19 h of wall clock because the
+machine slept overnight; nothing was lost.
+
+**Two label leaks found and removed before any number was trusted.** Detailed in the preceding
+commit: `quality_only` was reading the detector's logit through feature index 0, and geometry was a
+98.12%-accurate giveaway (100% of synthetic sources are 1024x1024 square against 96.1% non-square
+reals). The organizers' reference subset carries the same geometry artefact — 3.4% square reals
+against 85.4% square DALL-E images, so dimensions alone score ~91% balanced accuracy on the official
+benchmark. We removed our ability to exploit it rather than bank the number.
+
+**The placeholder threshold made the first verdict meaningless.** At an unfitted 0.5 every learned
+rung breached the clean-FPR budget, was excluded from selection, and a parameter-free baseline "won"
+with delta 0.0000. That was an artifact of the operating point, not a finding.
+
+`scripts/fit_threshold_and_compare.py` fixes the protocol: weights fitted on train, **ONE threshold
+per rung fitted on train** under the frozen objective (bootstrap worst-FAMILY fake recall, clean
+excluded from the minimum, severities pooled, `source_id` the resampling unit, clean FPR/BAcc
+constraints binding), every reported metric measured on **dev**, which no threshold was fitted on.
+The default candidate grid — every unique observed score — is intractable at 180k rows, so
+candidates are 257 quantile-spaced values.
+
+**Dev results at each rung's own fitted threshold (all feasible):**
+
+| rung | params | threshold | worst-family recall | clean FPR | clean recall | accuracy |
+|---|---:|---:|---:|---:|---:|---:|
+| quality_only (no detector) | 17 | 0.4968 | 0.5076 | 0.4387 | 0.7700 | 0.6385 |
+| static_average | 0 | 0.1273 | 0.1849 | 0.0107 | 0.8440 | 0.8360 |
+| probability_mean | 0 | 0.1273 | 0.1849 | 0.0107 | 0.8440 | 0.8360 |
+| fixed_weights | 0 | 0.1273 | 0.1849 | 0.0107 | 0.8440 | 0.8360 |
+| logistic | 117 | 0.4649 | 0.6860 | 0.0780 | 0.9573 | 0.8928 |
+| mlp | 1,827 | 0.4299 | 0.7587 | 0.0493 | 0.9667 | 0.9226 |
+| **mlp + worst-group** | 1,827 | 0.4667 | **0.8144** | 0.0760 | 0.9680 | 0.9115 |
+
+**+62.95 points over parameter-free averaging, and +30.7 points over the no-detector baseline.**
+Both of Codex's B-028 control-2 floors are cleared. The worst family is `noise` for every rung,
+consistent with every earlier measurement.
+
+`quality_only`'s 0.5076 is bought at a **43.9% clean false-positive rate** — image statistics can
+reach that recall only by flagging nearly half of all clean real photographs, which is not a usable
+operating point. `mlp` is the best-balanced rung (0.7587 at 4.9% clean FPR); `mlp+wg` buys +5.6
+points of worst-family recall for +2.7 points of clean FPR.
+
+**What this is NOT.** Dev-split numbers, single expert — so this measures single-expert learned
+correction, not fusion. The untouched 3,000-source internal test has not been touched and remains
+the only reportable surface. Nothing here is a headline until that runs and Codex reviews it.
+
 ## 2026-08-27 — [relay] robustness summary + error analysis; the blur failure has a measured mechanism
 
 Built the two required deliverables that did not exist: `results/robustness/summary.{json,md}`
