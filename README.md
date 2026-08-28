@@ -378,6 +378,49 @@ worst individual errors carries reliability 0.91–0.99 and would not be deferre
 Abstention removes the uncertain middle, not the confidently wrong tail. See
 `deliverables/error-analysis-note.md`.
 
+### The organizers' reference benchmark — one run, after freeze
+
+Scored **once**, after the architecture was frozen, on the sealed subset: **8,719 unique
+images** (5,000 COCO val2017 + 3,719 unique DALL-E after deduplication) × 20 conditions =
+**174,380 rows, 0 failures**. Scored through `PredictionService` itself, so what was measured
+is exactly what ships. Nothing was fitted and the threshold was not touched.
+
+| | deduplicated | per-file |
+|---|---|---|
+| clean AUROC | **0.9964** | 0.9964 |
+| all-conditions AUROC | **0.9821** | 0.9813 |
+| clean fake recall | 0.9680 | 0.9653 |
+| clean FPR | **0.0158** | 0.0158 |
+| **worst-family fake recall** | **0.8787** (`resize`) | 0.8686 |
+
+Bootstrap over **unique images** (never files, per the duplication note below): 0.8787,
+CI95 [0.8703, 0.8874].
+
+**Two things went better here than on our own held-out test.** Worst-family recall is 0.8787
+against 0.8258 internally, and clean FPR is 0.0158 — comfortably inside the 0.0756 cap our
+internal test *breached* at 0.0833. That constraint failure did not reproduce.
+
+**Two things did not, and both are reported.**
+
+*Our advantage over a properly-tuned baseline is +0.09 here, not +0.43.* Against the primary at
+its published default the gap is +0.4283 — but that baseline runs at clean FPR 0.0002 against
+our 0.0158. Applying the same control we apply to ourselves elsewhere (§7 above), giving the
+primary our operating point with its threshold fitted **on this very set, in its favour**, it
+reaches 0.7844. So the defensible gain is **+0.0944**, against +0.4916 on our own corpus, and on
+clean images the matched primary slightly beats us (0.9769 vs 0.9680).
+
+That is not a contradiction of our headline; it is the same finding from another angle. **Our
+correction helps most where the base detector is weakest.** On this distribution the primary is
+already strong, so there is less left to correct.
+
+*Abstention does not transfer to this distribution.* The frozen policy defers 26% of images, and
+the deferred set is as accurate as the kept set — 0.9407 against 0.9412. On our internal test the
+identical policy bought +2.27 accuracy points; here it buys 0.0001. The reliability head was
+fitted on SID-Set and does not generalise to COCO + DALL-E. Deferring a quarter of the images for
+no measurable gain is a real cost and we state it as one.
+
+Artifact: `results/sealed/reference-results.json`.
+
 ### Audit mode: the evaluation harness became the best confidence signal
 
 We built the 20-condition transform grid to *evaluate* the system. Running it on
