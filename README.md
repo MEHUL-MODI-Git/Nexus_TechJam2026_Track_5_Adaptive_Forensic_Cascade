@@ -278,8 +278,107 @@ cascade advantage of **+0.4916** [+0.475, +0.508]
 (`results/internal-test/fpr-matched-baseline.json`). Different criteria, different
 thresholds, same conclusion.
 
-Full artifacts: `results/internal-test/results.json` and
-`results/internal-test/fpr-matched-baseline.json`.
+### Full ablation ladder, scored on the untouched test
+
+Every rung was refit with the freeze's seed and split — reproducing its dev
+number exactly — then scored **once** on the internal test at its own dev-fitted
+threshold. Selection had already happened on dev; this is disclosure, not a
+second bite.
+
+| rung | params | threshold | dev worst-family | **test worst-family** | clean FPR | overall acc |
+|---|---:|---:|---:|---:|---:|---:|
+| quality_only | 17 | 0.49680 | 0.5076 | 0.5402 | **0.4393** | 0.6542 |
+| static_average | 0 | 0.12725 | 0.1849 | 0.1827 | 0.0127 | 0.8351 |
+| logistic | 117 | 0.46491 | 0.6860 | 0.6902 | 0.0713 | 0.8943 |
+| mlp | 1,827 | 0.42994 | 0.7587 | 0.7664 | 0.0500 | **0.9213** |
+| **mlp+wg (selected)** | 1,827 | 0.46674 | 0.8144 | **0.8258** | 0.0833 | 0.9090 |
+
+The dev ordering survives on unseen data, so the selection was not a lucky draw.
+Two things in this table cut against us and we are pointing at them rather than
+leaving them to be found:
+
+1. **The quality-descriptors-only baseline is not a real detector.** It reaches
+   0.5402 worst-family recall only by calling **43.9% of clean real photographs
+   AI-generated**. This is the control we added after discovering the JPEG/PNG
+   format shortcut (§8), and it does its job: plain image statistics cannot
+   substitute for the detector at any usable operating point.
+2. **The worst-group objective costs average accuracy, and we chose it anyway.**
+   Plain `mlp` has *higher* overall accuracy (0.9213 vs 0.9090) and a *lower*
+   clean FPR (0.0500 vs 0.0833) than the rung we shipped. `mlp+wg` buys +0.059
+   worst-family recall with 1.2 points of accuracy and 3.3 points of clean FPR.
+   Notably, `mlp` would **not** have breached the clean-FPR cap that `mlp+wg`
+   breaches on unseen data. We are not switching to it: the selection rule was
+   pre-registered on worst-case robustness, which is the brief's concern, and
+   re-picking the rung after seeing the test is precisely the leakage this whole
+   protocol exists to prevent. It is recorded here so a reader can disagree with
+   the objective rather than be misled about its cost.
+
+Artifact: `results/internal-test/ablation.json`.
+
+### Abstention: the system declines to decide on 20% of images
+
+The router carries a reliability head trained to predict *whether its own
+decision is correct* at the frozen operating point. It is fitted in a strict
+second stage, after the threshold is frozen, with every classifier parameter
+frozen — the fitting script asserts that `p_fake` is bit-identical before and
+after (`max |Δ| = 0.0`), so adding self-assessment moved no verdict.
+
+The abstention policy was chosen **on dev, before the test was consulted**, by a
+pre-registered rule: the smallest abstention rate whose accuracy-on-kept beats
+full coverage by ≥2 points. That selected 20% coverage, frozen as a reliability
+value (0.866080) rather than a percentile, so it cannot silently re-tune itself
+on new data.
+
+| | coverage | accuracy | worst-family recall |
+|---|---|---|---|
+| decide on everything | 1.000 | 0.9090 | 0.8258 |
+| **defer the least reliable 20%** | 0.799 | **0.9317** | **0.9136** |
+
+Dev predicted +2.22 accuracy points; the untouched test delivered **+2.27**, at
+coverage 0.799 against the 0.80 it was frozen at. Deferred images score 0.8191
+against 0.9317 for kept ones — the system is declining on the images it would
+have got wrong, which is the only thing that makes abstention more than theatre.
+
+**Where it fails, stated up front:** the abstain rate tracks *noise* almost
+perfectly (7.2% clean → 98.6% at σ=0.10) but is nearly blind to blur — 0.03% at
+blur σ=2.0, where the false-positive rate is 0.1260. Blur makes an image look
+*cleaner*, so the head reads high quality and stays confident. Every one of our
+worst individual errors carries reliability 0.91–0.99 and would not be deferred.
+Abstention removes the uncertain middle, not the confidently wrong tail. See
+`deliverables/error-analysis-note.md`.
+
+### The second expert failed, and we report it as a result
+
+The architecture was designed to escalate hard images to a heavier second
+detector. **Two candidates were integrated and both were rejected on measurement,
+so no second expert ships.**
+
+| candidate | licence | outcome |
+|---|---|---|
+| LOTA (ICCV 2025) | MIT | Reads the least-significant-bit plane; non-deterministic (one image's score moved 0.31 across runs) and AUROC falls 1.000 → **0.592** on JPEG re-encoding |
+| PGC (Apache-2.0, 306.7M) | Apache-2.0 | Loads cleanly and is deterministic, but P(PGC correct \| cascade wrong) = **0.5426** on the test — a coin flip — and correction-minus-harm is **−2451** |
+
+PGC was given a fair hearing before being cut: beyond wholesale replacement we
+tried confident-override at four tail widths, logit-space blending at three
+weights, and family-gated rescue. The best variant nets **+1 across 12,000 dev
+rows**. There is no operating point where it helps.
+
+**Why both failed is the same reason, and it is worth stating.** The rescue only
+ever sees images the reliability head deferred, and that pool is dominated by
+`noise` and `jpeg`. LOTA reads the LSB plane; PGC reads a YCbCr quantization
+residual. Both live in the high-frequency band — exactly what noise and heavy
+JPEG destroy. **You cannot rescue noise-destroyed evidence with a detector that
+reads evidence from the noise band.** PGC is genuinely better than our cascade
+where degradation is photometric (colour 0.9532 vs 0.9159), but those families
+are a sliver of the deferred pool.
+
+So the escalation that ships is to a **human**, not to a second model — and the
+numbers above support it rather than merely asserting it. Evidence:
+`results/pgc/rescue.json`.
+
+Full artifacts: `results/internal-test/results.json`,
+`results/internal-test/fpr-matched-baseline.json`,
+`results/internal-test/abstention.json` and `results/pgc/rescue.json`.
 
 ## 8. Limitations and honest reflection
 

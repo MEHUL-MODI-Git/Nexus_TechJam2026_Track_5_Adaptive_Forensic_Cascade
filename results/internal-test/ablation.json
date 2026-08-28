@@ -1,0 +1,112 @@
+{
+  "schema_version": "ablation-matrix.v1",
+  "note": "every rung refit with the freeze seed/split, then scored ONCE on the untouched internal test at its own dev-fitted threshold; no selection here",
+  "code_revision": "0d29e118ce1e9e0e720659777e7b8b336bdd0ec1",
+  "rungs": {
+    "quality_only": {
+      "threshold": 0.49680385179817677,
+      "n_parameters": 17,
+      "dev_worst_family_fake_recall": 0.5076,
+      "dev_worst_family": "noise",
+      "test": {
+        "worst_family": "noise",
+        "worst_family_fake_recall": 0.5402,
+        "clean_fpr": 0.4393,
+        "clean_fake_recall": 0.7987,
+        "overall_accuracy": 0.6542,
+        "family_fake_recall": {
+          "blur": 0.7933,
+          "color": 0.6893,
+          "crop": 0.804,
+          "jpeg": 0.6558,
+          "noise": 0.5402,
+          "resize": 0.778
+        }
+      }
+    },
+    "static_average": {
+      "threshold": 0.1272509451955557,
+      "n_parameters": 0,
+      "dev_worst_family_fake_recall": 0.1849,
+      "dev_worst_family": "noise",
+      "test": {
+        "worst_family": "noise",
+        "worst_family_fake_recall": 0.1827,
+        "clean_fpr": 0.0127,
+        "clean_fake_recall": 0.8467,
+        "overall_accuracy": 0.8351,
+        "family_fake_recall": {
+          "blur": 0.8633,
+          "color": 0.8517,
+          "crop": 0.8607,
+          "jpeg": 0.5363,
+          "noise": 0.1827,
+          "resize": 0.8587
+        }
+      }
+    },
+    "logistic": {
+      "threshold": 0.46490725642070174,
+      "n_parameters": 117,
+      "dev_worst_family_fake_recall": 0.686,
+      "dev_worst_family": "noise",
+      "test": {
+        "worst_family": "noise",
+        "worst_family_fake_recall": 0.6902,
+        "clean_fpr": 0.0713,
+        "clean_fake_recall": 0.956,
+        "overall_accuracy": 0.8943,
+        "family_fake_recall": {
+          "blur": 0.9591,
+          "color": 0.9507,
+          "crop": 0.9493,
+          "jpeg": 0.8738,
+          "noise": 0.6902,
+          "resize": 0.9643
+        }
+      }
+    },
+    "mlp": {
+      "threshold": 0.4299381768796593,
+      "n_parameters": 1827,
+      "dev_worst_family_fake_recall": 0.7587,
+      "dev_worst_family": "noise",
+      "test": {
+        "worst_family": "noise",
+        "worst_family_fake_recall": 0.7664,
+        "clean_fpr": 0.05,
+        "clean_fake_recall": 0.9633,
+        "overall_accuracy": 0.9213,
+        "family_fake_recall": {
+          "blur": 0.9464,
+          "color": 0.9531,
+          "crop": 0.9633,
+          "jpeg": 0.9072,
+          "noise": 0.7664,
+          "resize": 0.934
+        }
+      }
+    },
+    "mlp+wg": {
+      "threshold": 0.4667367651127279,
+      "n_parameters": 1827,
+      "dev_worst_family_fake_recall": 0.8144,
+      "dev_worst_family": "noise",
+      "test": {
+        "worst_family": "noise",
+        "worst_family_fake_recall": 0.8258,
+        "clean_fpr": 0.0833,
+        "clean_fake_recall": 0.9613,
+        "overall_accuracy": 0.909,
+        "family_fake_recall": {
+          "blur": 0.9471,
+          "color": 0.9438,
+          "crop": 0.962,
+          "jpeg": 0.9047,
+          "noise": 0.8258,
+          "resize": 0.9417
+        }
+      }
+    }
+  }
+}
