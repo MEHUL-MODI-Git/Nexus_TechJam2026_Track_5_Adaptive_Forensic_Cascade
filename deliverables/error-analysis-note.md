@@ -135,8 +135,10 @@ reliability head reads quality descriptors, so it tracks noise and is nearly bli
 blur. Retention measures the verdict itself and inherits no such bias. Artifact:
 `results/robustness/retention-signal.json`.
 
-This ships as **audit mode** — it costs 20 forward passes, so it is an explicit deeper
-check rather than part of the default path.
+This ships as **audit mode**: 20 conditions × (1 expert + 3 probes) = **80 forward passes,
+~3.0 s against 136 ms** for a normal prediction. An explicit deeper check, never the default
+path. (Note: were the self-probes dropped — and §8 shows they buy nothing — the same audit
+would cost 20 passes rather than 80.)
 
 **What still is not fixed.**
 

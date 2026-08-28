@@ -11,8 +11,11 @@ the head passes with high confidence but gets WRONG, mean retention is 14.40/20
 against 19.00/20 for the high-confidence-and-correct ones. That is the
 confidently-wrong tail the error-analysis note documents as our blind spot.
 
-This is AUDIT MODE, not the default path: it costs 20 forward passes. The normal
-decision path is untouched.
+This is AUDIT MODE, not the default path. Measured cost: **~3.0 s against 136 ms
+for a normal prediction, 21.9x**. Each of the 20 conditions goes through the full
+service (1 expert + 3 probes), so the audit is **80 CF-384 forward passes**, not
+20 -- a correction to an earlier undercount in these docs. The normal decision
+path is untouched.
 
 Grade bands are the measured ones, not invented. On the internal test the clean
 verdict was correct for:
@@ -144,7 +147,7 @@ def render_certificate(cert: Certificate) -> str:
         f"<p class='afc-cert-worst'>Worst-case score against this verdict: {worst}</p>"
         f"<div class='afc-cert-unstable'>Verdict changes under:<ul>{unstable}</ul></div>"
         f"{incomplete}"
-        "<p class='afc-caveat'>Audit mode: 20 extra forward passes. The normal "
+        "<p class='afc-caveat'>Audit mode: 80 forward passes, about 3 s. The normal "
         "decision path does not run this.</p>"
         "</section>"
     )

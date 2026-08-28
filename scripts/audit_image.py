@@ -8,9 +8,10 @@ system's self-assessed reliability, what appears to have been done to the image,
 and a robustness certificate measuring whether the verdict survives all 20
 official transformations.
 
-This is AUDIT MODE. It runs the full stress grid, so it costs ~20 extra forward
-passes. `scripts/infer_dir.py` -- the required batch deliverable -- is untouched
-and stays on the fast path.
+This is AUDIT MODE. It runs the full stress grid: 20 conditions x (1 expert + 3
+probes) = **80 CF-384 forward passes, ~3.0 s against 136 ms** for a normal
+prediction. `scripts/infer_dir.py` -- the required batch deliverable -- is
+untouched and stays on the fast path, as does `--no-audit` here.
 """
 from __future__ import annotations
 

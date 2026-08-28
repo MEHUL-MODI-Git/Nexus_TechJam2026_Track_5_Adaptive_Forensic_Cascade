@@ -382,8 +382,11 @@ the measured relationship rather than labels we chose:
 | 15–17 | LOW | 84.9% | 10.4% |
 | ≤14 | VERY LOW | 60.6% | 7.4% |
 
-This is **audit mode** — 20 extra forward passes. The normal decision path does
-not run it, and the certificate says so on its face.
+This is **audit mode**, and its cost is real: each of the 20 conditions runs the full
+service (1 expert + 3 probes), so an audit is **80 CF-384 forward passes — ~3.0 s
+against 136 ms** for a normal prediction, 21.9×. The default decision path never runs
+it, and the certificate states the cost on its face. Dropping the self-probes (§8, they
+buy nothing measurable) would cut this to 20 passes.
 
 ### The system can say *why* it is unsure
 

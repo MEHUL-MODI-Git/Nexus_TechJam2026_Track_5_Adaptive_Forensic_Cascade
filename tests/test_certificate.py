@@ -7,8 +7,11 @@ the data does not support.
 """
 
 from dataclasses import dataclass
+from pathlib import Path
 
 import pytest
+
+ROOT = Path(__file__).resolve().parents[1]
 
 from src.app.certificate import (
     GRADE_BANDS,
@@ -105,3 +108,25 @@ def test_bands_are_monotonic():
     accs = [b[2] for b in GRADE_BANDS]
     assert mins == sorted(mins, reverse=True)
     assert accs == sorted(accs, reverse=True)
+
+
+def test_audit_cost_claim_is_structurally_true():
+    """We publish "80 forward passes" for an audit. That number is
+    20 conditions x (1 expert + 3 probes), so it must follow from the configs
+    rather than from a docstring someone forgot to update -- which is exactly
+    what happened the first time: the docs said 20 for several commits.
+    """
+    from src.pipeline.probes import PROBE_IDS
+    from src.pipeline.transforms import CONDITION_IDS
+
+    passes_per_prediction = 1 + len(PROBE_IDS)
+    audit_passes = len(CONDITION_IDS) * passes_per_prediction
+    assert passes_per_prediction == 4
+    assert len(CONDITION_IDS) == 20
+    assert audit_passes == 80
+
+    for path in ("src/app/certificate.py", "scripts/audit_image.py", "README.md"):
+        text = (ROOT / path).read_text()
+        assert "80" in text, f"{path} no longer states the audit cost"
+
+
