@@ -1,0 +1,177 @@
+{
+  "schema_version": "certificate-condition-budget.v1",
+  "NOT_A_HEADLINE_RESULT": "internal-test diagnostic; the shipped certificate still uses all 20 conditions unless confirmed on the fresh holdout",
+  "n_sources": 3000,
+  "auroc_all_20": 0.865,
+  "single_condition_auroc": {
+    "resize_0.25": 0.7449,
+    "crop_0.8": 0.7377,
+    "contrast_+20": 0.6676,
+    "bright_+20": 0.6645,
+    "blur_s2.0": 0.6548,
+    "blur_s1.0": 0.6283,
+    "resize_0.5": 0.6107,
+    "contrast_-20": 0.5987,
+    "blur_s0.5": 0.5881,
+    "noise_s0.02": 0.5777,
+    "jpeg_q30": 0.5741,
+    "bright_-20": 0.5712,
+    "noise_s0.05": 0.548,
+    "jpeg_q50": 0.5456,
+    "saturation_-20": 0.5399,
+    "jpeg_q90": 0.5318,
+    "jpeg_q70": 0.5173,
+    "saturation_+20": 0.513,
+    "noise_s0.10": 0.4999,
+    "clean": 0.4591
+  },
+  "greedy_forward_selection": [
+    {
+      "n_conditions": 1,
+      "added": "resize_0.25",
+      "auroc": 0.7449,
+      "forward_passes": 4,
+      "fraction_of_full_auroc": 0.8612
+    },
+    {
+      "n_conditions": 2,
+      "added": "crop_0.8",
+      "auroc": 0.8664,
+      "forward_passes": 8,
+      "fraction_of_full_auroc": 1.0016
+    },
+    {
+      "n_conditions": 3,
+      "added": "bright_-20",
+      "auroc": 0.8779,
+      "forward_passes": 12,
+      "fraction_of_full_auroc": 1.015
+    },
+    {
+      "n_conditions": 4,
+      "added": "contrast_+20",
+      "auroc": 0.8891,
+      "forward_passes": 16,
+      "fraction_of_full_auroc": 1.0279
+    },
+    {
+      "n_conditions": 5,
+      "added": "blur_s0.5",
+      "auroc": 0.8982,
+      "forward_passes": 20,
+      "fraction_of_full_auroc": 1.0384
+    },
+    {
+      "n_conditions": 6,
+      "added": "bright_+20",
+      "auroc": 0.9007,
+      "forward_passes": 24,
+      "fraction_of_full_auroc": 1.0413
+    },
+    {
+      "n_conditions": 7,
+      "added": "jpeg_q90",
+      "auroc": 0.9026,
+      "forward_passes": 28,
+      "fraction_of_full_auroc": 1.0435
+    },
+    {
+      "n_conditions": 8,
+      "added": "blur_s1.0",
+      "auroc": 0.9033,
+      "forward_passes": 32,
+      "fraction_of_full_auroc": 1.0444
+    },
+    {
+      "n_conditions": 9,
+      "added": "contrast_-20",
+      "auroc": 0.9037,
+      "forward_passes": 36,
+      "fraction_of_full_auroc": 1.0447
+    },
+    {
+      "n_conditions": 10,
+      "added": "clean",
+      "auroc": 0.9037,
+      "forward_passes": 40,
+      "fraction_of_full_auroc": 1.0447
+    },
+    {
+      "n_conditions": 11,
+      "added": "saturation_+20",
+      "auroc": 0.9036,
+      "forward_passes": 44,
+      "fraction_of_full_auroc": 1.0446
+    },
+    {
+      "n_conditions": 12,
+      "added": "blur_s2.0",
+      "auroc": 0.9033,
+      "forward_passes": 48,
+      "fraction_of_full_auroc": 1.0443
+    },
+    {
+      "n_conditions": 13,
+      "added": "saturation_-20",
+      "auroc": 0.9027,
+      "forward_passes": 52,
+      "fraction_of_full_auroc": 1.0436
+    },
+    {
+      "n_conditions": 14,
+      "added": "jpeg_q50",
+      "auroc": 0.9021,
+      "forward_passes": 56,
+      "fraction_of_full_auroc": 1.0429
+    },
+    {
+      "n_conditions": 15,
+      "added": "resize_0.5",
+      "auroc": 0.9016,
+      "forward_passes": 60,
+      "fraction_of_full_auroc": 1.0424
+    },
+    {
+      "n_conditions": 16,
+      "added": "jpeg_q70",
+      "auroc": 0.8978,
+      "forward_passes": 64,
+      "fraction_of_full_auroc": 1.0379
+    },
+    {
+      "n_conditions": 17,
+      "added": "jpeg_q30",
+      "auroc": 0.8938,
+      "forward_passes": 68,
+      "fraction_of_full_auroc": 1.0333
+    },
+    {
+      "n_conditions": 18,
+      "added": "noise_s0.02",
+      "auroc": 0.8896,
+      "forward_passes": 72,
+      "fraction_of_full_auroc": 1.0285
+    },
+    {
+      "n_conditions": 19,
+      "added": "noise_s0.05",
+      "auroc": 0.8794,
+      "forward_passes": 76,
+      "fraction_of_full_auroc": 1.0167
+    },
+    {
+      "n_conditions": 20,
+      "added": "noise_s0.10",
+      "auroc": 0.865,
+      "forward_passes": 80,
+      "fraction_of_full_auroc": 1.0
+    }
+  ],
+  "cheapest_within_0.005_of_full": {
+    "n_conditions": 2,
+    "added": "crop_0.8",
+    "auroc": 0.8664,
+    "forward_passes": 8,
+    "fraction_of_full_auroc": 1.0016
+  }
+}
