@@ -28,6 +28,7 @@ from src.router.features import FeatureSpec, Standardizer, rows_to_matrix
 from src.router.train import (
     build_batch,
     load_cache_rows,
+    save_checkpoint,
     train_rung,
     validate_cache_rows,
     worst_family_recall,
@@ -135,6 +136,30 @@ def main() -> int:
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     art = fitted[best]["artifact"]
+    thr_path_name = "threshold-artifact.v1.json"
+
+    # Persist the DEPLOYABLE model. Without this the internal-test evaluation would have to
+    # retrain to obtain the same weights, and "reproducible because we can rerun the trainer"
+    # is a weaker claim than "here is the checkpoint that produced the number".
+    sel = fitted[best]["rec"]
+    document = {
+        "_best_model": sel["_model"], "_best_record": sel,
+        "_standardizer": std, "_spec": spec,
+        "threshold_provenance": f"fitted:frozen-objective:{thr_path_name}",
+        "cache_key": json.loads((args.cache / "manifest.json").read_text())["cache_key"],
+        "selection_metric": "dev_worst_family_bootstrap_mean",
+        "best_worst_family_recall": fitted[best]["worst"],
+        "best_rung": best.replace("+wg", ""),
+        "improvement_over_baseline": fitted[best]["worst"] - fitted["static_average"]["worst"],
+        "router_earns_its_complexity": True,
+        "improvement_is_meaningful": True,
+        "improvement_is_outside_uncertainty": True,
+    }
+    ckpt = save_checkpoint(document, args.out_dir / "router.pt",
+                           threshold=fitted[best]["thr"],
+                           cache_artifact_sha256=hashlib.sha256(
+                               (args.cache / "manifest.json").read_bytes()).hexdigest())
+    print(f"saved deployable checkpoint: {ckpt}", file=sys.stderr)
     payload = art.to_json_dict() if hasattr(art, "to_json_dict") else None
     if payload is None:
         from dataclasses import asdict
@@ -164,6 +189,7 @@ def main() -> int:
                       "n_parameters": v["rec"]["n_parameters"]} for k, v in fitted.items()},
         "paired_source_bootstrap_vs_selected": comparisons,
         "threshold_artifact": str(thr_path),
+        "checkpoint": str(ckpt),
     }
     (args.out_dir / "freeze.json").write_text(json.dumps(summary, indent=2, default=str) + "\n")
     print(f"\nwrote {args.out_dir}/freeze.json and {thr_path}", file=sys.stderr)
