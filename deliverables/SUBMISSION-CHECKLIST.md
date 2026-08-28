@@ -6,7 +6,7 @@ items only Mehul can.
 
 | # | Requirement | State | Owner | Evidence / what remains |
 |---|---|---|---|---|
-| 1 | Devpost covers approach, tools, models/APIs, libraries, data | 🟡 drafted | Claude → Codex review | `deliverables/devpost-draft.md`; `[PENDING]` numbers to fill from artifacts |
+| 1 | Devpost covers approach, tools, models/APIs, libraries, data | 🟡 drafted, numbers now available | Claude → Codex review | `deliverables/devpost-draft.md`; its one `[PENDING]` can now be filled from `results/internal-test/results.json` |
 | 2 | Public repo URL works without special access | 🔴 **BLOCKED** | **Mehul** | Remote `main` still holds pre-cleanup history with raw images. Needs explicit MIT approval + verified clean-history force-push. **Do not publish before this.** |
 | 3 | README includes limitations | ✅ | — | README §8 |
 | 3b | README includes what would be improved with more time | ✅ | — | README §8b |
@@ -14,7 +14,7 @@ items only Mehul can.
 | 5 | End-to-end demo on **public** YouTube | 🔴 not recorded | **Mehul** | Script ready: `deliverables/video-script.md` |
 | 6 | Devpost links the video | 🔴 | **Mehul** | After #5 |
 | 7 | Video cleared for trademarks/copyright | 🟡 flagged | Mehul | **FedEx / Polar Air Cargo liveries in `fp_1`,`fp_2` must NOT appear.** Safe substitutes named in the script |
-| 8 | Clean-vs-transformed robustness summary | ✅ preliminary | Claude | `results/robustness/summary.{json,md}`; regenerate on protected data |
+| 8 | Clean-vs-transformed robustness summary | ✅ **on protected data** | Claude | README §7 per-family + per-condition, from the untouched test |
 | 9 | Error analysis with representative FPs and FNs | ✅ preliminary | Claude | `deliverables/error-analysis-note.md` + `results/robustness/cases/` |
 | 10 | Parameter statement showing <2B compliance | ✅ | — | README §9 — 21,811,969 total, ~0.01% trainable |
 | 11 | WildFake non-training safeguard documented | ✅ | — | 13,843-entry denylist; audit: 0 exact hits, 2 perceptual both verified unrelated; guard is fail-closed and aborted a real run |
@@ -23,12 +23,12 @@ items only Mehul can.
 
 | Item | State | Blocker |
 |---|---|---|
-| Feature extraction (12,000 sources) | 🟡 ~91% | finishing ~12:30 |
-| Train the 7-rung ladder | ⏳ | needs the cache |
-| **Does the cascade beat `quality_only`?** | ⏳ | the question that decides whether we have a detection result at all |
-| Fit calibration + freeze one threshold | ⏳ | after the ladder |
-| Untouched internal-test evaluation (3,000 sources) | ⏳ | after freeze |
-| Sealed WildFake reference run (**once only**) | ⏳ | after freeze; dedupe to 3,719 unique before scoring (A-029) |
+| Feature extraction (12,000 sources) | ✅ | 240,000 rows |
+| Train the 7-rung ladder | ✅ | `results/router-fitting-v2/training.json` |
+| **Does the cascade beat `quality_only`?** | ✅ **YES** | dev +0.307 worst-family, CI95 [0.283, 0.331] — excludes zero |
+| Fit calibration + freeze one threshold | ✅ | `mlp+wg` @ **0.4667367651127279**; re-run reproduces byte-identically |
+| Untouched internal-test evaluation (3,000 sources) | ✅ **DONE 17:30** | worst-family **0.8258** vs dev 0.8144 (no overfit); **+0.49** over an FPR-matched primary. README §7 |
+| Sealed WildFake reference run (**once only**) | 🔴 **NOT RUN — needs Mehul** | Architecture is now frozen, so the precondition is met. Requires explicit authorization + dedupe to 3,719 unique (A-029). **Not fired without it.** |
 | Codex re-review of B-024 repair | ⏳ | Codex offline |
 | Codex review of ~19 `[relay]` entries + A-031 breach | ⏳ | Codex offline |
 
