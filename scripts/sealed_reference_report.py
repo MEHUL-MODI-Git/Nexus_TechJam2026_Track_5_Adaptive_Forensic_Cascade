@@ -126,6 +126,29 @@ def main() -> int:
                     block(prim[fam == f], lab[fam == f], w[fam == f], 0.5)["fake_recall"]
                     for f in FAMS if (fam == f).any()),
             }
+        # THE SAME ADVERSARIAL CONTROL WE APPLY TO OURSELVES ELSEWHERE.
+        # The cascade runs at a much higher FPR than the primary at 0.5, so the
+        # naive gap flatters us. Hand the primary our clean FPR with its
+        # threshold fitted ON THIS SET, in its favour, and re-ask.
+        if np.isfinite(prim).any():
+            clean_real = clean & (lab == 0)
+            target = conv["clean"]["fpr"]
+            s_sorted = np.sort(prim[clean_real])
+            k = int(np.floor(target * s_sorted.size))
+            t_match = float(s_sorted[s_sorted.size - k]) if k > 0 else float(
+                np.nextafter(s_sorted[-1], np.inf))
+            fam_rec = [block(prim[fam == f], lab[fam == f], w[fam == f], t_match)["fake_recall"]
+                       for f in FAMS if (fam == f).any()]
+            conv["primary_at_matched_clean_fpr"] = {
+                "threshold": t_match,
+                "threshold_fitted_on": "THIS SEALED SET, in the baseline's favour",
+                "target_clean_fpr": target,
+                "clean": block(prim[clean], lab[clean], w[clean], t_match),
+                "worst_family_fake_recall": min(fam_rec) if fam_rec else float("nan"),
+                "cascade_advantage": (conv["worst_family_fake_recall"] - min(fam_rec))
+                                     if fam_rec else float("nan"),
+            }
+
         # abstention, using the frozen policy
         if np.isfinite(rel).any():
             keep = ~absta

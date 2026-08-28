@@ -1,0 +1,561 @@
+{
+  "schema_version": "sealed-reference-results.v1",
+  "status": "REFERENCE BENCHMARK \u2014 one run, after freeze; never fitted on, never re-tuned",
+  "threshold": 0.4667367651127279,
+  "n_rows": 174380,
+  "n_unique_images": 8719,
+  "duplication_note": "the DALL-E half ships 8,843 files containing 3,719 unique images; deduplicated numbers are primary, per-file reported for reconciliation",
+  "conventions": {
+    "deduplicated": {
+      "clean": {
+        "n_images": 8719,
+        "n_effective": 8719.0,
+        "fake_recall": 0.9680021511158914,
+        "fpr": 0.0158,
+        "accuracy": 0.9772909737355201,
+        "auroc": 0.9964186071524603
+      },
+      "all_conditions": {
+        "n_images": 174380,
+        "n_effective": 174380.0,
+        "fake_recall": 0.9385049744554987,
+        "fpr": 0.05696,
+        "accuracy": 0.9411056313797453,
+        "auroc": 0.9821141793492875
+      },
+      "per_family": {
+        "blur": {
+          "n_images": 26157,
+          "n_effective": 26157.0,
+          "fake_recall": 0.9278479878103433,
+          "fpr": 0.15926666666666667,
+          "accuracy": 0.877891195473487,
+          "auroc": 0.9504163723820621
+        },
+        "color": {
+          "n_images": 52314,
+          "n_effective": 52314.0,
+          "fake_recall": 0.9475217352334857,
+          "fpr": 0.016966666666666668,
+          "accuracy": 0.9678862254845739,
+          "auroc": 0.9936090481312181
+        },
+        "crop": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.9838666308147351,
+          "fpr": 0.019,
+          "accuracy": 0.9822227319646748,
+          "auroc": 0.9978169938155418
+        },
+        "jpeg": {
+          "n_images": 34876,
+          "n_effective": 34876.0,
+          "fake_recall": 0.9263242807206238,
+          "fpr": 0.04355,
+          "accuracy": 0.9436001835072829,
+          "auroc": 0.9840045072600161
+        },
+        "noise": {
+          "n_images": 26157,
+          "n_effective": 26157.0,
+          "fake_recall": 0.9622658420722416,
+          "fpr": 0.0778,
+          "accuracy": 0.9392896738922659,
+          "auroc": 0.9880409488811209
+        },
+        "resize": {
+          "n_images": 17438,
+          "n_effective": 17438.0,
+          "fake_recall": 0.8787308416240925,
+          "fpr": 0.0586,
+          "accuracy": 0.9146691134304392,
+          "auroc": 0.969672237160527
+        }
+      },
+      "per_condition": {
+        "blur_s0.5": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.9596665770368379,
+          "fpr": 0.0198,
+          "accuracy": 0.9714416790916389,
+          "auroc": 0.9947142242538317
+        },
+        "blur_s1.0": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.9247109438020973,
+          "fpr": 0.0358,
+          "accuracy": 0.9473563482050694,
+          "auroc": 0.9875192255982791
+        },
+        "blur_s2.0": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.8991664425920947,
+          "fpr": 0.4222,
+          "accuracy": 0.7148755591237527,
+          "auroc": 0.8482449583221296
+        },
+        "bright_+20": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.8962086582414628,
+          "fpr": 0.0138,
+          "accuracy": 0.9478151164124327,
+          "auroc": 0.9871786501747781
+        },
+        "bright_-20": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.9693465985479968,
+          "fpr": 0.023,
+          "accuracy": 0.9737355201284551,
+          "auroc": 0.9956765259478354
+        },
+        "clean": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.9680021511158914,
+          "fpr": 0.0158,
+          "accuracy": 0.9772909737355201,
+          "auroc": 0.9964186071524603
+        },
+        "contrast_+20": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.9273998386663082,
+          "fpr": 0.0148,
+          "accuracy": 0.9605459341667623,
+          "auroc": 0.9930615756923904
+        },
+        "contrast_-20": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.9653132562516805,
+          "fpr": 0.016,
+          "accuracy": 0.9760293611652713,
+          "auroc": 0.996866792148427
+        },
+        "crop_0.8": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.9838666308147351,
+          "fpr": 0.019,
+          "accuracy": 0.9822227319646748,
+          "auroc": 0.9978169938155418
+        },
+        "jpeg_q30": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.8547996773326163,
+          "fpr": 0.0288,
+          "accuracy": 0.9215506365408878,
+          "auroc": 0.9748754503898898
+        },
+        "jpeg_q50": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.9290131755848346,
+          "fpr": 0.0524,
+          "accuracy": 0.9396719807317353,
+          "auroc": 0.9820051626781393
+        },
+        "jpeg_q70": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.9553643452541005,
+          "fpr": 0.0556,
+          "accuracy": 0.9490767289826815,
+          "auroc": 0.9882367840817424
+        },
+        "jpeg_q90": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.9661199247109438,
+          "fpr": 0.0374,
+          "accuracy": 0.9641013877738273,
+          "auroc": 0.9936943802097338
+        },
+        "noise_s0.02": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.9846732992739984,
+          "fpr": 0.0288,
+          "accuracy": 0.9769468975799978,
+          "auroc": 0.9981231513847808
+        },
+        "noise_s0.05": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.9650443667652595,
+          "fpr": 0.0556,
+          "accuracy": 0.9532056428489506,
+          "auroc": 0.9919528367840817
+        },
+        "noise_s0.10": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.937079860177467,
+          "fpr": 0.149,
+          "accuracy": 0.8877164812478495,
+          "auroc": 0.9633210002688894
+        },
+        "resize_0.25": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.8262973917719817,
+          "fpr": 0.0624,
+          "accuracy": 0.8901250143365065,
+          "auroc": 0.9548302769561711
+        },
+        "resize_0.5": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.9311642914762033,
+          "fpr": 0.0548,
+          "accuracy": 0.9392132125243721,
+          "auroc": 0.9840642108093574
+        },
+        "saturation_+20": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.9712288249529444,
+          "fpr": 0.0226,
+          "accuracy": 0.9747677485950224,
+          "auroc": 0.996081365958591
+        },
+        "saturation_-20": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.9556332347405216,
+          "fpr": 0.0116,
+          "accuracy": 0.9744236724394999,
+          "auroc": 0.9960783006184458
+        }
+      },
+      "worst_family": "resize",
+      "worst_family_fake_recall": 0.8787308416240925,
+      "primary_at_0.5": {
+        "clean": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.7561172358160796,
+          "fpr": 0.0002,
+          "accuracy": 0.8958596169285469,
+          "auroc": 0.998107663350363
+        },
+        "all_conditions": {
+          "n_images": 174380,
+          "n_effective": 174380.0,
+          "fake_recall": 0.6690911535358968,
+          "fpr": 0.01369,
+          "accuracy": 0.8510035554536071,
+          "auroc": 0.9759331456036568
+        },
+        "worst_family_fake_recall": 0.4504795195841176
+      },
+      "primary_at_matched_clean_fpr": {
+        "threshold": 0.002902983920648694,
+        "threshold_fitted_on": "THIS SEALED SET, in the baseline's favour",
+        "target_clean_fpr": 0.0158,
+        "clean": {
+          "n_images": 8719,
+          "n_effective": 8719.0,
+          "fake_recall": 0.976875504167787,
+          "fpr": 0.0158,
+          "accuracy": 0.9810758114462668,
+          "auroc": 0.998107663350363
+        },
+        "worst_family_fake_recall": 0.7843506318902931,
+        "cascade_advantage": 0.09438020973379946
+      },
+      "abstention": {
+        "coverage": 0.7397866727835761,
+        "accuracy_all": 0.9411056313797453,
+        "accuracy_kept": 0.9412343803292921,
+        "accuracy_deferred": 0.9407395980253879
+      }
+    },
+    "per_file": {
+      "clean": {
+        "n_images": 8719,
+        "n_effective": 13843.0,
+        "fake_recall": 0.9652832749067058,
+        "fpr": 0.0158,
+        "accuracy": 0.9721158708372463,
+        "auroc": 0.9963615741264277
+      },
+      "all_conditions": {
+        "n_images": 174380,
+        "n_effective": 276860.0,
+        "fake_recall": 0.9347223792830487,
+        "fpr": 0.05696,
+        "accuracy": 0.9377266488477931,
+        "auroc": 0.9813147840664933
+      },
+      "per_family": {
+        "blur": {
+          "n_images": 26157,
+          "n_effective": 41529.0,
+          "fake_recall": 0.9220098759847714,
+          "fpr": 0.15926666666666667,
+          "accuracy": 0.8926533265910569,
+          "auroc": 0.9476389762147084
+        },
+        "color": {
+          "n_images": 52314,
+          "n_effective": 83058.0,
+          "fake_recall": 0.9436088808473746,
+          "fpr": 0.016966666666666668,
+          "accuracy": 0.9578487322112259,
+          "auroc": 0.9932418868659454
+        },
+        "crop": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.9817935089901617,
+          "fpr": 0.019,
+          "accuracy": 0.9815068987936141,
+          "auroc": 0.997541038109239
+        },
+        "jpeg": {
+          "n_images": 34876,
+          "n_effective": 55372.0,
+          "fake_recall": 0.9242338572882506,
+          "fpr": 0.04355,
+          "accuracy": 0.9358701148594958,
+          "auroc": 0.983851427682913
+        },
+        "noise": {
+          "n_images": 26157,
+          "n_effective": 41529.0,
+          "fake_recall": 0.9618530664555769,
+          "fpr": 0.0778,
+          "accuracy": 0.9475306412386525,
+          "auroc": 0.9881640896126251
+        },
+        "resize": {
+          "n_images": 17438,
+          "n_effective": 27686.0,
+          "fake_recall": 0.8685966301029062,
+          "fpr": 0.0586,
+          "accuracy": 0.8948927255652677,
+          "auroc": 0.9671840042971842
+        }
+      },
+      "per_condition": {
+        "blur_s0.5": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.9574804930453465,
+          "fpr": 0.0198,
+          "accuracy": 0.9656866286209637,
+          "auroc": 0.9945040597082438
+        },
+        "blur_s1.0": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.9181273323532738,
+          "fpr": 0.0358,
+          "accuracy": 0.9347684750415373,
+          "auroc": 0.9865782652945833
+        },
+        "blur_s2.0": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.8904218025556938,
+          "fpr": 0.4222,
+          "accuracy": 0.7775048761106697,
+          "auroc": 0.8401388895171322
+        },
+        "bright_+20": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.8903087187606016,
+          "fpr": 0.0138,
+          "accuracy": 0.9249440150256447,
+          "auroc": 0.9863160692072825
+        },
+        "bright_-20": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.9673187832183648,
+          "fpr": 0.023,
+          "accuracy": 0.9708155746586723,
+          "auroc": 0.995325093294131
+        },
+        "clean": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.9652832749067058,
+          "fpr": 0.0158,
+          "accuracy": 0.9721158708372463,
+          "auroc": 0.9963615741264277
+        },
+        "contrast_+20": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.9195974216894719,
+          "fpr": 0.0148,
+          "accuracy": 0.9432926388788557,
+          "auroc": 0.99277672735497
+        },
+        "contrast_-20": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.9622300124392175,
+          "fpr": 0.016,
+          "accuracy": 0.9700931878927979,
+          "auroc": 0.9965847110709035
+        },
+        "crop_0.8": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.9817935089901617,
+          "fpr": 0.019,
+          "accuracy": 0.9815068987936141,
+          "auroc": 0.997541038109239
+        },
+        "jpeg_q30": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.8523125636096347,
+          "fpr": 0.0288,
+          "accuracy": 0.8952539189482048,
+          "auroc": 0.9749500621960873
+        },
+        "jpeg_q50": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.9258170304195409,
+          "fpr": 0.0524,
+          "accuracy": 0.9336848948927255,
+          "auroc": 0.9816497794865996
+        },
+        "jpeg_q70": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.953635644012213,
+          "fpr": 0.0556,
+          "accuracy": 0.9502997905078379,
+          "auroc": 0.9879386633495421
+        },
+        "jpeg_q90": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.9651701911116137,
+          "fpr": 0.0374,
+          "accuracy": 0.9642418550892148,
+          "auroc": 0.9936171208865769
+        },
+        "noise_s0.02": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.9845075200723736,
+          "fpr": 0.0288,
+          "accuracy": 0.9797009318789279,
+          "auroc": 0.9982450073504466
+        },
+        "noise_s0.05": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.9653963587017981,
+          "fpr": 0.0556,
+          "accuracy": 0.9578126128729322,
+          "auroc": 0.9922507067737193
+        },
+        "noise_s0.10": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.9356553205925591,
+          "fpr": 0.149,
+          "accuracy": 0.9050783789640974,
+          "auroc": 0.9630416148365939
+        },
+        "resize_0.25": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.8130724867126541,
+          "fpr": 0.0624,
+          "accuracy": 0.8580510005056707,
+          "auroc": 0.9512077349315843
+        },
+        "resize_0.5": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.9241207734931585,
+          "fpr": 0.0548,
+          "accuracy": 0.9317344506248646,
+          "auroc": 0.9827138527648988
+        },
+        "saturation_+20": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.9691281239398394,
+          "fpr": 0.0226,
+          "accuracy": 0.9721158708372463,
+          "auroc": 0.9959669342983151
+        },
+        "saturation_-20": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.9530702250367522,
+          "fpr": 0.0116,
+          "accuracy": 0.9658311059741386,
+          "auroc": 0.9959962456180029
+        }
+      },
+      "worst_family": "resize",
+      "worst_family_fake_recall": 0.8685966301029062,
+      "primary_at_0.5": {
+        "clean": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.7444306230917109,
+          "fpr": 0.0002,
+          "accuracy": 0.8366683522357871,
+          "auroc": 0.9979614610426326
+        },
+        "all_conditions": {
+          "n_images": 174380,
+          "n_effective": 276860.0,
+          "fake_recall": 0.6600870745222209,
+          "fpr": 0.01369,
+          "accuracy": 0.7779166365672181,
+          "auroc": 0.9752650343774737
+        },
+        "worst_family_fake_recall": 0.4533906291228467
+      },
+      "primary_at_matched_clean_fpr": {
+        "threshold": 0.002902983920648694,
+        "threshold_fitted_on": "THIS SEALED SET, in the baseline's favour",
+        "target_clean_fpr": 0.0158,
+        "clean": {
+          "n_images": 8719,
+          "n_effective": 13843.0,
+          "fake_recall": 0.975121565079724,
+          "fpr": 0.0158,
+          "accuracy": 0.978400635700354,
+          "auroc": 0.9979614610426326
+        },
+        "worst_family_fake_recall": 0.7861208488823551,
+        "cascade_advantage": 0.0824757812205511
+      },
+      "abstention": {
+        "coverage": 0.7991873148883912,
+        "accuracy_all": 0.9377266488477931,
+        "accuracy_kept": 0.9403650858932583,
+        "accuracy_deferred": 0.9272262891882656
+      }
+    }
+  },
+  "worst_family_bootstrap_dedup": {
+    "mean": 0.8787110844923985,
+    "ci95_low": 0.8702692387043532,
+    "ci95_high": 0.8873865700655916,
+    "n_resamples": 2000,
+    "unit": "unique image (never file), per A-029"
+  }
+}
