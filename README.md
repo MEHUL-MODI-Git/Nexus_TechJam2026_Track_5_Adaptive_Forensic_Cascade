@@ -495,19 +495,48 @@ inference we do not know which transform was applied. A better system would esti
 first and select a calibration conditioned on it — which is the natural extension of the reliability
 router we already built, and the obvious next architectural step.
 
-## 9. Parameter inventory
+## 9. Parameter inventory and operating cost
 
-The brief caps total model size at 2B parameters.
+The brief caps total model size at 2B parameters. Measured, not estimated:
 
 | Component | Parameters | Trained by us? |
 |---|---:|---|
 | Community Forensics 384 (ViT-S/16) | 21,811,969 | No — frozen |
-| Reliability/fusion router (MLP implementation) | 1,987 one-expert / 2,548 planned two-expert | Not yet accepted/trained for release |
-| **Current accepted model total** | **21,811,969** | — |
+| Reliability/fusion router (MLP + worst-group loss) | 1,827 | **Yes** — the contribution |
+| ├─ of which the reliability/abstention head | 17 | Yes — fitted in a frozen second stage |
+| **Shipped total** | **21,813,796** | — |
 
-Comfortably within the limit. If the router clears its gate, its trainable
-parameters would be roughly 0.01% of the system — the intended contribution is
-the decision layer, not scale.
+**0.0000109 of the 2B cap**, and our own trainable parameters are **0.008%** of
+the shipped system. The contribution is the decision layer, not scale.
+
+Parked, not shipped, but measured and kept in the repo as evidence: PGC
+(306,704,641 params). Had it been adopted the total would still have been
+~328.5M — well inside the cap. It failed on complementarity, not on size (§7).
+
+### Latency and memory
+
+Apple M4 Pro, 24 GB, PyTorch MPS, 50 clean 1024×1024 images after warm-up:
+
+| path | p50 | p95 |
+|---|---:|---:|
+| CF-384 alone (baseline) | 18.8 ms | 20.0 ms |
+| **Full cascade (shipped)** | **127.9 ms** | **145.3 ms** |
+| PGC alone (parked candidate) | 54.3 ms | 55.3 ms |
+
+Peak RSS ≈ 1.24 GB for the shipped path.
+
+The cascade costs **~6.8× the baseline**, and we are not going to pretend that is
+free. Almost all of it is the three probe forward passes that produce the
+router's stability features — the router head itself is 1,827 parameters and its
+arithmetic is negligible. At ~7.8 images/second on a laptop this is comfortable
+for interactive use and for the batch sizes in this project, but it is a real
+cost that an at-scale deployment would have to weigh against the robustness it
+buys (§7).
+
+This is also the strongest argument for the adaptive escalation the architecture
+was designed around: pay the expensive path only where it is needed. We built
+that path and it failed its evidence gate (§7), so what ships pays the cost on
+every image. That is the honest state of the system.
 
 ## 10. Licenses
 
