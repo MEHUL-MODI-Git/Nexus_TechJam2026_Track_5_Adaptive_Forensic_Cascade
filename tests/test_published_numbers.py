@@ -164,3 +164,22 @@ def test_lota_rejection_evidence_still_holds():
     assert per["png"]["auroc"] > 0.99
     # the whole argument: same pixels, lossy container, signal gone
     assert per["png"]["auroc"] - per["jpeg_q95"]["auroc"] > 0.35
+
+
+def test_ops_numbers_match_their_artifact_and_were_measured_idle():
+    """README section 9. The earlier figures were quoted with no artifact at all,
+    and its peak-RSS number turned out not to reproduce."""
+    d = _load("ops/ops-evidence.json")
+    assert d["contended"] is False, (
+        "these latencies were measured while another GPU job was running and must "
+        "not be published"
+    )
+    assert d["parameters"]["shipped_total"] == 21_813_796
+    assert d["parameters"]["shipped_total"] < d["parameters"]["limit"]
+    assert d["forward_passes"]["per_prediction"] == 4
+    assert d["forward_passes"]["per_audit"] == 80
+    lat = d["latency_ms"]
+    assert lat["baseline_cf_only"]["p50"] == pytest.approx(18.4, abs=1.5)
+    assert lat["cascade_shipped"]["p50"] == pytest.approx(128.6, abs=8.0)
+    assert lat["cascade_over_baseline"] == pytest.approx(7.0, abs=0.6)
+    assert d["peak_rss_mb"] == pytest.approx(749, rel=0.25)

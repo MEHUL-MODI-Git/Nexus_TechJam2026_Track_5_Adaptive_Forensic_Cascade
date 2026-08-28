@@ -664,28 +664,30 @@ Parked, not shipped, but measured and kept in the repo as evidence: PGC
 
 ### Latency and memory
 
-Apple M4 Pro, 24 GB, PyTorch MPS, 50 clean 1024×1024 images after warm-up:
+Apple M4 Pro, 24 GB, PyTorch MPS, 50 clean 1024×1024 images after warm-up, measured on an
+**otherwise idle machine** (the generator stamps `contended: true` and warns if a long-running
+GPU job is live, because latency measured against a busy GPU is not a number worth publishing):
 
-| path | p50 | p95 |
-|---|---:|---:|
-| CF-384 alone (baseline) | 18.8 ms | 20.0 ms |
-| **Full cascade (shipped)** | **127.9 ms** | **145.3 ms** |
-| PGC alone (parked candidate) | 54.3 ms | 55.3 ms |
+| path | p50 | p95 | forward passes |
+|---|---:|---:|---:|
+| CF-384 alone (baseline) | 18.4 ms | 19.9 ms | 1 |
+| **Full cascade (shipped)** | **128.6 ms** | **142.9 ms** | 4 |
+| Audit mode (20-condition certificate) | ~3.0 s | — | 80 |
+| PGC alone (parked candidate) | 54.3 ms | 55.3 ms | 1 |
 
-Peak RSS ≈ 1.24 GB for the shipped path.
+Peak RSS **749 MB** for the shipped path.
 
-The cascade costs **~6.8× the baseline**, and we are not going to pretend that is
-free. Almost all of it is the three probe forward passes that produce the
-router's stability features — the router head itself is 1,827 parameters and its
-arithmetic is negligible. At ~7.8 images/second on a laptop this is comfortable
-for interactive use and for the batch sizes in this project, but it is a real
-cost that an at-scale deployment would have to weigh against the robustness it
-buys (§7).
+The cascade costs **7.0× the baseline**, and we are not going to pretend that is free. Almost
+all of it is the three probe forward passes that produce the router's stability features — the
+router head itself is 1,827 parameters and its arithmetic is negligible. At ~7.8 images/second
+on a laptop this is comfortable for interactive use and for this project's batch sizes, but it
+is a real cost to weigh against the robustness it buys (§7).
 
-This is also the strongest argument for the adaptive escalation the architecture
-was designed around: pay the expensive path only where it is needed. We built
-that path and it failed its evidence gate (§7), so what ships pays the cost on
-every image. That is the honest state of the system.
+**And §8 shows those probes buy nothing measurable.** Dropping them would take the normal path
+to ~19 ms and an audit from 80 forward passes to 20. We have not shipped that change because it
+alters the frozen architecture and would need validating on genuinely untouched data first.
+
+Artifact: `results/ops/ops-evidence.json`.
 
 ## 10. Licenses
 

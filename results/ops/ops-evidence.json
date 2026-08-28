@@ -1,0 +1,34 @@
+{
+  "schema_version": "ops-evidence.v1",
+  "contended": false,
+  "contended_note": "measured on an otherwise idle machine",
+  "host": "macOS-26.5.2-arm64-arm-64bit",
+  "device": "mps",
+  "n_images": 50,
+  "parameters": {
+    "cf_384": 21811969,
+    "router_head": 1827,
+    "shipped_total": 21813796,
+    "limit": 2000000000,
+    "fraction_of_limit": 0.010906898
+  },
+  "forward_passes": {
+    "per_prediction": 4,
+    "per_audit": 80,
+    "n_conditions": 20,
+    "n_probes": 3
+  },
+  "latency_ms": {
+    "baseline_cf_only": {
+      "p50": 18.42097897315398,
+      "p95": 19.858470506733283
+    },
+    "cascade_shipped": {
+      "p50": 128.6451039777603,
+      "p95": 142.86560246546287
+    },
+    "cascade_over_baseline": 6.983619283494254
+  },
+  "peak_rss_mb": 749.48608,
+  "torch": "2.13.0"
+}
