@@ -1,5 +1,46 @@
 # core — CHANGELOG (newest first)
 
+## 2026-08-28 (late) — AUDIT MODE: two new capabilities, two more ideas killed
+
+**1. Forensic Robustness Certificate** (`f486599`). The 20-condition grid was built to
+EVALUATE the system; run per-image it is the best confidence signal we have. Predicting a
+wrong clean verdict on the internal test: reliability head **0.7206**, verdict retention
+**0.8650**, combined **0.8863**. It works where the head fails — on the 157 sources the head
+passes confidently but gets wrong, mean retention is **14.40/20** against **19.00/20** for
+confident-and-correct; flagging `retention < 18` catches **72.6%** of those errors while
+deferring 17.3%. The two fail differently: the head reads quality descriptors so it tracks
+noise and is blind to blur; retention measures the verdict itself. Grade bands are the
+MEASURED retention→accuracy relationship (20/20→99.1%, ≤14→60.6%), and a test asserts the UI
+cannot quote an accuracy the data stopped supporting. Audit mode only: 20 extra forward
+passes, stated on the certificate's face. `src/app/certificate.py`, 8 tests.
+
+**2. Degradation reporter** (`f5b23c6`). 775 params, dev balanced accuracy **0.7332** against
+0.143 chance (noise 0.99, resize 0.96, jpeg 0.78, crop 0.76, blur 0.65, clean 0.54, colour
+0.47). Answers "why is it unsure" from descriptors already computed. **Geometry excluded on
+purpose** — width/height would make crop and resize easy, but a real upload has no known
+original size, so that accuracy would not survive deployment. **Class-weighted**: unweighted
+it reported 0.00 recall on `clean` and I nearly published "clean is inseparable"; it was
+outnumbered six to one by `colour`. Weighted, clean recall 0.54, and the confusion that
+survives is real and physical (±20 brightness barely moves blur/blockiness/noise). It is an
+explanation, never an input — a test asserts the router's feature builder does not mention it.
+
+**3. Evidence Survival Audit — VOID** (`a751229`). Killed by a guard written before the
+experiment ran: two occlusion operators (mean-fill, blur) produce maps correlating at only
+**0.261**, so patch attribution measures the artefacts its own masks create. Predicted from
+first principles — this detector reads high-frequency traces, which is why LOTA and PGC died,
+and masks manufacture high-frequency content. Five minutes spent instead of hours on a
+heatmap over noise.
+
+**4. Self-caught discipline breach** (`209f51d` → the retention artifact commit). The
+retention numbers went into README §7 from a shell one-liner with **no committed artifact**,
+which is exactly the rule `tests/test_published_numbers.py` exists to enforce.
+`scripts/diagnostics/retention_signal.py` now produces
+`results/robustness/retention-signal.json`, reproducing every published figure, with four new
+assertions — including one that fails if retention ever stops beating the reliability head.
+
+**Suite 718 passed, 1 honest skip.** The frozen decision path is untouched by all of this:
+the certificate and the reporter are additive surfaces, and checkpoint Nims still ships.
+
 ## 2026-08-28 — SERVING THE FROZEN CASCADE: the router is wired into the decision path
 
 **The defect this closes.** `router.pt` was loaded by `evaluate_internal_test.py` and by nothing
