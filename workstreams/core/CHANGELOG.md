@@ -1,5 +1,50 @@
 # core — CHANGELOG (newest first)
 
+## 2026-08-28 — SERVING THE FROZEN CASCADE: the router is wired into the decision path
+
+**The defect this closes.** `router.pt` was loaded by `evaluate_internal_test.py` and by nothing
+else. `PredictionService` still fused by naive mean at the PLACEHOLDER 0.5 threshold, so the Gradio
+demo, `scripts/infer_dir.py` (a REQUIRED deliverable) and every ad-hoc prediction served the raw
+primary — the arm measured at **0.1227** worst-family recall — while README §7 reported the cascade
+at **0.8258**. A judge running our demo could not reproduce our headline; the two artifacts
+contradicted each other.
+
+**Parity is now structural.** The feature-bearing half of `build_row` became
+`feature_cache.extract_feature_blocks`, called by BOTH the offline cache builder and the live
+service. The router scores production images through the same function that produced every row it
+was fitted on, so the two cannot drift the way two copies silently do. An optional `precomputed`
+map lets the service hand over the expert output it already computed rather than pay a second
+forward pass.
+
+**New `src/router/head.py`** — loads a frozen checkpoint through the trainer's fail-closed loader and
+scores one image. It has no path that fits, tunes or calibrates anything.
+
+| verification | result |
+|---|---|
+| 60,000 cache rows: head vs evaluator batch path | max abs delta **7.7e-07**, **0 verdict disagreements** |
+| closest cached score to the threshold | **2.1e-05** — 27x the largest numerical difference |
+| 25 images end-to-end FROM PIXELS vs evaluated scores | max abs delta **1.2e-07**, **0 disagreements** |
+| `infer_dir.py` output | routed **0.2376**, not the raw **0.0014** |
+
+**Fail-closed against the realistic regression, which is config drift.** `fusion: router` with no
+head raises; a threshold that is not the checkpoint's frozen one raises rather than quietly deciding
+at a boundary the router was never fitted against. The live threshold is read from the **validated
+artifact**, never from `configs/predict.yaml` — a YAML file carries no provenance and is trivially
+edited, the artifact is schema-checked and hashed.
+
+**Cost, measured rather than hidden.** p50 **18.8 ms → 130.3 ms**, p95 20.1 → 138.9. The head itself
+is 1,827 parameters; the added 110 ms is three probe forward passes. This is the quantitative case
+for Phase 3 adaptive escalation: pay that cost only on images that need it.
+
+**Three tests changed because behaviour intentionally changed** — frozen provenance replaces
+PLACEHOLDER, and the UI shows a real verdict instead of demoting it. The placeholder-demotion branch
+keeps its own test. Added: both fail-closed guards, a test that the router is not a no-op, and a
+permanent live-vs-evaluated parity test. **Suite 693 passed.** Commit `be655dc`.
+
+**Model economy:** implemented heavy-direct. The work is train/serve parity and threshold
+provenance — delegating would have required transferring exactly the judgment that makes it correct.
+
+
 ## 2026-08-27 — Phase 1 task 1.3: full-grid baseline (8,000 rows) + B-013 hardening
 - `scripts/run_grid.py` + `tests/test_run_grid.py` (**15 tests**): 20-condition grid over the smoke manifest → `prediction-row.v1` JSONL for Codex's harness. Decodes each source once then transforms 20×; `content_sha256` is the VIEW hash (per B-009 [F3]) so conditions are distinguishable while `source_id` stays shared for the bootstrap unit; `decision`/`reliability` emitted null so the harness recomputes at the frozen threshold; resumable; expert failures emit a typed `prediction-failure.v1` row rather than a fabricated score.
 - **Run:** 400 sources × 20 conditions = **8,000 rows, 0 decode failures, 0 expert failures, 167 s (~21 ms/row)**. Artifacts in `results/grid-smoke-v1/`.

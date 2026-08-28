@@ -1,5 +1,5 @@
 # core — decode, transforms, expert adapters, predict path
-**Owner: Claude · Status: 🟢 Phase 0 core COMPLETE (0.2–0.6 all green) + infer_dir + 1.4 + probes · ⏸ candidate-expert work GATED behind 2R.1**
+**Owner: Claude · Status: 🟢 SERVING THE FROZEN CASCADE — router wired into `PredictionService`; demo/CLI/UI and README §7 now describe the same system (parity verified on 60k rows + 25 images from pixels, 0 verdict disagreements) · ▶ Phase 3 rescue work STARTED**
 
 ## ✅ Built (detail in `workstreams/core/CHANGELOG.md` — do not re-derive here)
 - **0.2 decode · 0.3 transform grid (20 conditions) · 0.4 golden tests · 0.5 CF-384 adapter · 0.6 sanity** — all
