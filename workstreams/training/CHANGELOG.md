@@ -1,5 +1,56 @@
 # CHANGELOG — training (newest first, append-only; corrections are new entries)
 
+## 2026-08-28 — PHASE 3 COMPLETE: abstention SHIPS, the second expert DOES NOT
+
+Four things landed after the one-shot test. Two worked, two did not, and the two that did not
+are reported as results rather than dropped.
+
+**1. The cascade is now actually served** (`be655dc`). `router.pt` had been loaded by the
+evaluator and nothing else; the demo, `infer_dir.py` and the UI all ran the raw primary at the
+PLACEHOLDER 0.5 threshold — the 0.1227 worst-family arm — while README §7 reported 0.8258. Parity
+is now structural: `feature_cache.extract_feature_blocks` is called by both the offline builder
+and the live service. Verified 0 verdict disagreements on 60,000 cache rows AND on 25 images
+end-to-end from pixels. Detail in the core CHANGELOG.
+
+**2. Reliability head fitted, abstention adopted** (`7705a60`). Stage 2 of the R22 ordering, with
+every classifier parameter frozen and `max |Δ p_fake| = 0.0` asserted in the script. Policy
+pre-registered on dev — smallest abstention rate beating full coverage by ≥2 points — selecting
+coverage 0.80, frozen as a reliability VALUE (0.866080), not a percentile.
+
+| internal test | coverage | accuracy | worst-family |
+|---|---|---|---|
+| decide everything | 1.000 | 0.9090 | 0.8258 |
+| defer least-reliable 20% | 0.799 | **0.9317** | **0.9136** |
+
+Dev predicted +2.22 accuracy points; the test gave +2.27. Deferred rows score 0.8191 vs 0.9317
+kept, so it declines on what it would have failed. **A near-miss:** the first fit reported dev
+AUROC 0.3659 and looked like a clean negative. It was underfitting (40 steps, loss 0.384 against
+a 0.303 constant predictor). At 3,000 steps: train 0.6883, dev 0.6842. The script now always
+prints train AUROC and the constant-predictor loss so "no signal" cannot be confused with "not
+converged" again.
+
+**3. PGC integrated and then killed on evidence** (`d766106`, `e75def8`). Apache-2.0, 306.7M,
+loads with 0 missing/unexpected keys, **deterministic** (spread 0.0 — the exact failure that
+disqualified LOTA). But P(PGC correct | cascade wrong) = 0.5287 dev / 0.5426 test, and
+correction-minus-harm is −2428 dev / −2451 test. Beyond wholesale replacement I tried
+confident-override at four tail widths, logit blending at three weights, and family-gated rescue:
+**best variant nets +1 across 12,000 dev rows.** Killed on dev; the test run corroborated it.
+
+The reason generalises: the deferred pool is dominated by `noise` and `jpeg`; LOTA reads the LSB
+plane and PGC reads a YCbCr quantization residual; both live in the band those degradations
+destroy. **You cannot rescue noise-destroyed evidence with a detector that reads the noise band.**
+
+**4. Full ablation ladder on the untouched test** (`4a783a2`). Every rung refit with the freeze
+seed/split — each reproduces its dev number exactly — then scored once on test at its own
+dev-fitted threshold. Dev ordering survives, so `mlp+wg` was not a lucky pick. Two rows cut
+against us and are published: `quality_only` reaches 0.5402 worst-family only by calling **43.9%
+of clean reals AI**; and plain `mlp` has higher accuracy (0.9213 vs 0.9090) and lower clean FPR
+(0.0500 vs 0.0833) than the shipped rung, and would NOT have breached the clean-FPR cap. We did
+not switch — re-picking after seeing the test is the leakage the protocol exists to prevent.
+
+Suite **695 passed**. Ops evidence (`3a421c5`): 21,813,796 shipped params, cascade p50 127.9 ms
+vs 18.8 ms baseline (~6.8x), peak RSS ~1.24 GB.
+
 ## 2026-08-28 — ONE-SHOT INTERNAL TEST RUN; the result exists and survives an FPR-matched control
 
 Internal-test cache completed 17:25 (`internal-test-v2`): **3,000 untouched sources x 20 conditions

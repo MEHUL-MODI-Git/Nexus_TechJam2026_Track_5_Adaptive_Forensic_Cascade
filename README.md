@@ -58,12 +58,14 @@ trained router, calibrated verdict, abstention decision, or rescue path.
 | Quality descriptors | ✅ built, tested |
 | Mild self-probes | ✅ built, tested |
 | Calibration + threshold-selection code under a frozen objective | ✅ built, tested; threshold fitted on dev and frozen |
+| Reliability head + abstention (defer to human) | ✅ fitted in a frozen second stage; policy pre-registered on dev, verified on the test |
+| Adaptive rescue to a heavier second model | ❌ built and measured; **failed its gate**, reported as a negative result (§7) |
 | Router (7-rung ladder: quality-only → static avg → prob mean → fixed weights → logistic → MLP → +worst-group) | ✅ implemented, repaired; fitted, frozen and shipped as `results/router-fitting-v2/router.pt` (1,827 params, 17 KB); Codex re-review of the B-024 repair still pending |
 | Full-grid baseline run (8,000 predictions) | ✅ complete |
-| Evaluation harness | ✅ diagnostic and headline paths both exercised; one-shot internal test run |
-| Second expert | ❌ evaluated and rejected on measured evidence (see Limitations) |
+| Evaluation harness | ✅ diagnostic and headline paths exercised; one-shot internal test + full ablation ladder |
+| Second expert | ❌ **two** candidates integrated and both rejected on measured evidence (LOTA, PGC) — see §7 |
 | Protected 15,000-source corpus, format-canonicalized, contamination-audited, split 12k fitting / 3k untouched test | ✅ built and verified |
-| Router trained on that corpus | ✅ trained, frozen, and evaluated once on the untouched 3k test (see Results) |
+| Router trained on that corpus | ✅ trained, frozen, evaluated once on the untouched 3k test, **and served on the live path** (§7) |
 
 ## 3. Setup
 

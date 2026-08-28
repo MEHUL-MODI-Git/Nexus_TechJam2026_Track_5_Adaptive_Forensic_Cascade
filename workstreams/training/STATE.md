@@ -1,5 +1,5 @@
 # training — router corpus, feature cache, router/fusion, calibration
-**Owner: Claude · Status: 🟢 ONE-SHOT INTERNAL TEST RUN AND WRITTEN UP · cascade worst-family recall 0.8258 (dev 0.8144), +0.4916 [+0.475, +0.508] over an FPR-matched, test-tuned primary · threshold NOT re-tuned · training workstream has no open technical task**
+**Owner: Claude · Status: 🟢 PHASE 3 COMPLETE · cascade SERVED on the live path (parity 0 verdict disagreements) · abstention SHIPS (defer 20% → accuracy 0.9090→0.9317, worst-family 0.8258→0.9136) · second-expert rescue KILLED on evidence (P(correct|wrong)=0.5426, net −2451) · full ablation + ops evidence published**
 
 ## ✅ Built (detail in `workstreams/training/CHANGELOG.md` — do not re-derive here)
 - **`build_router_corpus.py`** — corpus exactly 15,000 / 7,500 per class, split into a **12,000-source

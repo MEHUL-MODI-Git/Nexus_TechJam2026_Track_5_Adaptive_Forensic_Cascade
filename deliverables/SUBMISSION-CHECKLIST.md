@@ -14,9 +14,9 @@ items only Mehul can.
 | 5 | End-to-end demo on **public** YouTube | 🔴 not recorded | **Mehul** | Script ready: `deliverables/video-script.md` |
 | 6 | Devpost links the video | 🔴 | **Mehul** | After #5 |
 | 7 | Video cleared for trademarks/copyright | 🟡 flagged | Mehul | **FedEx / Polar Air Cargo liveries in `fp_1`,`fp_2` must NOT appear.** Safe substitutes named in the script |
-| 8 | Clean-vs-transformed robustness summary | ✅ **on protected data** | Claude | README §7 per-family + per-condition, from the untouched test |
-| 9 | Error analysis with representative FPs and FNs | ✅ preliminary | Claude | `deliverables/error-analysis-note.md` + `results/robustness/cases/` |
-| 10 | Parameter statement showing <2B compliance | ✅ | — | README §9 — 21,811,969 total, ~0.01% trainable |
+| 8 | Clean-vs-transformed robustness summary | ✅ **on protected data** | Claude | README §7 — per-family, per-condition, FPR-matched baselines, full ablation ladder |
+| 9 | Error analysis with representative FPs and FNs | ✅ **regenerated on protected data** | Claude | `deliverables/error-analysis-note.md` — named files, images actually inspected |
+| 10 | Parameter statement showing <2B compliance | ✅ | — | README §9 — **21,813,796** shipped total, 0.008% trainable, plus measured latency/memory |
 | 11 | WildFake non-training safeguard documented | ✅ | — | 13,843-entry denylist; audit: 0 exact hits, 2 perceptual both verified unrelated; guard is fail-closed and aborted a real run |
 
 ## Technical work still open
