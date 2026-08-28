@@ -1,5 +1,53 @@
 # CHANGELOG — training (newest first, append-only; corrections are new entries)
 
+## 2026-08-28 — ONE-SHOT INTERNAL TEST RUN; the result exists and survives an FPR-matched control
+
+Internal-test cache completed 17:25 (`internal-test-v2`): **3,000 untouched sources x 20 conditions
+= 60,000 rows, 0 decode failures**, stamped `role=evaluation`, `may_not_be_used_for_fitting=true`,
+denylist + perceptual protection both on. `scripts/evaluate_internal_test.py` loaded the frozen
+`router.pt` and the validated threshold artifact and fitted nothing.
+
+**Headline (worst transformation-family fake recall, family `noise` for every arm):**
+
+| arm | thr | worst-fam | clean FPR |
+|---|---|---|---|
+| cascade (frozen) | 0.466737 | **0.8258** | 0.0833 |
+| primary @0.5 (published default) | 0.5 | 0.1227 | 0.0027 |
+| primary @ dev-fitted threshold | 0.1273 | 0.1827 | 0.0127 |
+| primary @ our clean FPR, thr fitted on the test | 0.0058 | 0.3342 | 0.0833 |
+
+**Selection did not overfit dev: 0.8258 on the untouched test vs 0.8144 on dev.** It went up.
+
+**The operating-point objection was raised and answered rather than left for a reviewer.** The naive
++0.7034 [+0.687, +0.720] against `primary @0.5` spans a ~30x clean-FPR gap. Handing the primary a
+threshold fitted **on the test set itself** to reproduce our operating point — leakage granted to the
+baseline and denied to us — closes about a third of it. The cascade still leads by **+0.4916
+[+0.4753, +0.5083]**, and that is the number the README reports. An independent second implementation
+matching on *overall* rather than clean FPR agrees at +0.5045 [+0.487, +0.520]
+(`scripts/diagnostics/fpr_matched_baseline.py`).
+
+**What the control also takes away from us, published in the same table.** At matched FPR the primary
+BEATS the cascade on blur (0.9709 vs 0.9471), colour (0.9647 vs 0.9438) and resize (0.9763 vs 0.9417),
+and ties on crop. The cascade's entire advantage is `noise` (+0.49) and `jpeg` (+0.09) — the families
+where the primary collapses. Because the metric is the minimum over families, raising that floor is
+what moves it, but there is no across-the-board superiority claim. On clean images the cascade buys
+nothing: 0.9613 against the matched primary's 0.9620 — which is also what rules the §8 JPEG/PNG format
+shortcut out as a source of the gain, since that confound lives in clean-image separability.
+
+**Pre-registered watch item resolved against us, and honoured.** Clean FPR is **0.0833** on unseen
+sources against 0.0736 on dev and the **0.0756 cap the threshold was selected under** — it exceeds the
+cap by 0.77 pt. The 300-source pre-flight had flagged it and the response was fixed in advance: report
+it, do not re-tune. **The threshold is unchanged.** README §7/§8 carry it as a stated limitation.
+
+**Correction to an earlier claim of mine:** I wrote that the evaluator "ran once and has not been
+re-run". It was re-run, to add the FPR-matched control. The precise and defensible claim is that the
+**model and threshold were never refit** — the router's numbers are byte-identical across both runs
+because nothing about it is fitted on this cache.
+
+**Process note.** Two Claude sessions were live in this one working tree and independently built the
+same FPR-matched control within two minutes of each other. Nothing was lost and the duplicate work
+corroborated itself, but it was a near miss: see STATUS. Suite **689 passed**, Ruff clean.
+
 ## 2026-08-28 — [relay] ARCHITECTURE FROZEN: mlp+worst-group, threshold 0.466737, artifact validates
 
 `scripts/freeze_router.py`. Selection rule was pre-registered, not chosen after seeing the table:

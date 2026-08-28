@@ -1,5 +1,5 @@
 # training — router corpus, feature cache, router/fusion, calibration
-**Owner: Claude · Status: 🟢 ARCHITECTURE FROZEN (mlp+worst-group, threshold 0.4667367651127279) · protected 12k fitting cache BUILT · internal-test cache extracting · one-shot test NOT YET RUN**
+**Owner: Claude · Status: 🟢 ONE-SHOT INTERNAL TEST RUN AND WRITTEN UP · cascade worst-family recall 0.8258 (dev 0.8144), +0.4916 [+0.475, +0.508] over an FPR-matched, test-tuned primary · threshold NOT re-tuned · training workstream has no open technical task**
 
 ## ✅ Built (detail in `workstreams/training/CHANGELOG.md` — do not re-derive here)
 - **`build_router_corpus.py`** — corpus exactly 15,000 / 7,500 per class, split into a **12,000-source
@@ -12,47 +12,39 @@
 - **`evaluate_internal_test.py`** — one-shot evaluator; loads frozen weights + threshold, fits nothing,
   refuses any cache not stamped `role=evaluation`.
 
-## 📌 THE FROZEN DECISION (28 Aug 14:59, `16d2e3b`; re-run at 16:32 reproduced it byte-identically)
-Selected on **dev** worst-transformation-family fake recall, pre-registered rule, clean-FPR/BAcc constrained:
+## 📌 THE FROZEN DECISION (`16d2e3b`; re-run reproduced it byte-identically)
+Pre-registered rule on **dev**: highest worst-family fake recall among rungs meeting the clean
+FPR/BAcc constraints. Selected **mlp+wg @ 0.4667367651127279** — dev worst-family 0.8144, against
+mlp 0.7587, logistic 0.6860, quality_only 0.5076, static_average 0.1849. 1,827 params, dim 38,
+geometry excluded, expert `commfor_384` only. Dev clean FPR 0.0736 ≤ 0.0756 cap. Full table and
+bootstraps in the CHANGELOG. **Dev selection is not a reportable result** — see the test result above.
 
-| rung | thr | dev worst-family recall |
-|---|---|---|
-| static_average | 0.12725 | 0.1849 |
-| quality_only | 0.49680 | 0.5076 |
-| logistic | 0.46491 | 0.6860 |
-| mlp | 0.42994 | 0.7587 |
-| **mlp+wg (SELECTED)** | **0.46674** | **0.8144** |
+## ✅ RESOLVED — the watch item went against us and we published it
+Clean FPR is **0.0833** on the untouched test against 0.0736 fitted on dev and the **0.0756 cap the
+threshold was selected under** — over by 0.77 pt, as the 300-source pre-flight warned. The
+pre-registered response was honoured: reported as a limitation, **threshold unchanged**. Also
+published: at matched FPR the primary beats the cascade on blur/colour/resize and ties on crop, so
+the cascade's advantage is `noise` + `jpeg` only, and it buys nothing on clean images
+(0.9613 vs 0.9620). Artifacts: `results/internal-test/{results,fpr-matched-baseline}.json`.
 
-Worst family is `noise` for every rung; worst exact condition `noise_s0.10`. Paired source bootstrap vs
-floors: **+0.630** over static average (CI95 0.613–0.645), **+0.307** over quality-only (0.283–0.331).
-Constraint satisfied on dev: clean FPR 0.0736 ≤ 0.0756 cap; clean BAcc 0.9445 ≥ 0.9358 floor.
-Model is 1,827 parameters, feature dim 38, geometry features excluded, expert `commfor_384` only.
-**This is dev selection, NOT a reportable result** — `freeze.json` stamps itself `NOT_A_HEADLINE_RESULT`.
+## ▶ NEXT ACTION — nothing technical is open here; the remaining gates are Mehul's
+1. **Training/core work is complete for submission.** Do not refit, re-threshold, or re-run the
+   one-shot evaluator to improve a number — the result is frozen and written up.
+2. Remaining blockers are release-side and belong to product + Mehul: repo public, MIT approval,
+   verified clean-history force-push, CF revision pin, final truthfulness audit.
+3. Codex still owes a B-024 round-2 re-review (A-032) and a review of the `[relay]` work.
+4. The sealed WildFake reference run is Phase 4 and **has not been touched** — one run, only when
+   Mehul authorises it, scored with the A-029 deduplication protocol (8,843 files, 3,719 unique).
 
-## ⚠️ OPEN QUESTION the internal test must answer — watch clean FPR
-A pre-flight of the evaluator on the **first 300 of 3,000** internal-test sources (partial cache, balanced:
-152 clean real rows) gave router worst-family **0.777** vs primary@0.5 **0.101**, paired delta **+0.678** —
-consistent with dev, no collapse. **But clean FPR came out 0.1250 against the dev-fitted 0.0736**, which is
-**2.4σ high** on that denominator and above the 0.0756 constraint the freeze was selected under. On a
-partial, manifest-ordered subset this is a warning, not a finding. If the full 3,000 sources confirm it, the
-honest report is that the threshold's clean-FPR constraint **holds on dev but not on unseen sources**, and
-that must be published as a limitation — the threshold must NOT be re-tuned on the internal test to hide it.
-
-## ▶ NEXT ACTION — in order
-1. **Wait for the internal-test cache** (`build_feature_cache.py`, PID under `caffeinate`, `--evaluation-cache`).
-   ETA ~17:30. It must finish stamping `role=evaluation` and `status=complete` or the evaluator refuses.
-2. **Run the one-shot evaluation ONCE** (command below). No refitting, no threshold nudge, no rerun-for-a-nicer-number.
-3. Fill README §7 Results from the emitted artifact only; resolve the clean-FPR question above explicitly.
-4. Then hand to product for the release gate (repo public, MIT, clean-history push) — all still Mehul's calls.
+## ⚠️ Two sessions, one working tree
+Two Claude sessions were live here simultaneously and both built the same FPR-matched control.
+Nothing was lost, but before starting work confirm no other session is active: `git log --oneline -3`
+then `ps aux | grep -c "[c]laude"`.
 
 ## Literal next command
 ```
-cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && \
-  .venv/bin/python scripts/evaluate_internal_test.py \
-    --cache data/feature_cache/internal-test-v2 \
-    --checkpoint results/router-fitting-v2/router.pt \
-    --threshold-artifact results/router-fitting-v2/threshold-artifact.v1.json \
-    --out results/internal-test/results.json
+cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && git log --oneline -5 && \
+  sed -n '/## 7. Results/,/## 8./p' README.md
 ```
 
 ## Hard constraints
