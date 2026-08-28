@@ -13,7 +13,8 @@ everything at once.
 | Model | Role | Parameters | License | Source | Redistributed here? |
 |---|---|---:|---|---|---|
 | Community Forensics 384 (ViT-S/16) | Primary expert | 21,811,969 | **MIT** (code + weights) | [`OwensLab/commfor-model-384`](https://huggingface.co/OwensLab/commfor-model-384), revision `6076002bf0d9dd37537f965ee2f06f826c333b61` | No — downloaded at runtime from the Hugging Face Hub |
-| Reliability/fusion router (MLP implementation) | Proposed contribution; no accepted deployable weights yet | 1,987 (one expert) / 2,548 (two experts) | Same as this repository, pending owner approval | Local prototype only | **No accepted weights redistributed** |
+| Reliability/fusion router (MLP implementation) | **Shipped contribution** — frozen, deployed on the serving path | 1,827 (one expert) | Same as this repository, pending owner approval | `results/router-fitting-v2/router_reliability.pt`, 17 KB | Yes — our own weights |
+| PGC — Peak-Guided Calibration (DINOv2-Large + LoRA) | Candidate **second expert / selective rescue** | 306,704,641 | **Apache-2.0** (code + weights) | code [`xiaoyu6868/PGC`](https://github.com/xiaoyu6868/PGC), weights [`xiaoyuzhou68/PGC_ckpt`](https://huggingface.co/xiaoyuzhou68/PGC_ckpt) (`PGC_train_progan_sdv1_4_ckpt.pth`) | No — code cloned to git-ignored `third_party/PGC`, weights downloaded at runtime |
 
 **Total: ~21.8M parameters**, against the brief's `<2B` limit.
 
@@ -35,6 +36,17 @@ Notes:
 | LOTA (ICCV 2025) | Pretrained weights are published only through a login-walled cloud drive with no public mirror. Excluded on reproducibility grounds: a dependency reviewers cannot download is one we should not ship. | MIT (code) |
 | NPR DeepfakeDetection | Downloaded only for a bounded local diagnostic; no adapter or submission dependency. Official repository has no license, so code/weights cannot be adopted or redistributed without permission. | **No license published** |
 | OmniAID | Considered only. MIT model card, but ~3.2 GB checkpoints and no measured runtime/parameter pilot in this project. | MIT |
+
+### Obtaining the vendored PGC source
+
+`third_party/` is git-ignored: PGC is someone else's Apache-2.0 repository and we
+reference it rather than redistribute it. The adapter needs it present:
+
+```
+git clone --depth 1 https://github.com/xiaoyu6868/PGC.git third_party/PGC
+```
+
+The checkpoint is fetched automatically from the Hugging Face Hub on first use.
 
 ## 2. Datasets
 
@@ -72,6 +84,7 @@ they can be re-derived on any machine.
 | safetensors | Apache Software License |
 | Gradio | Apache-2.0 |
 | PyYAML | MIT |
+| transformers | Apache-2.0 |
 | imagehash | 2-clause BSD License |
 | pyarrow | Apache-2.0 |
 | pytest | MIT |
