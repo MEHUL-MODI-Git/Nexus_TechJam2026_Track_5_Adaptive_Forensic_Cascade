@@ -1,0 +1,70 @@
+{
+  "schema_version": "probe-signal-analysis.v1",
+  "NOT_A_HEADLINE_RESULT": "dev split only, descriptive; the model-based ablation decides",
+  "n_dev_rows": 60000,
+  "mean_abs_delta_by_family": {
+    "clean": {
+      "jpeg": 0.03733922647418277,
+      "crop": 0.06499051353069137,
+      "resize": 0.013766557025381994
+    },
+    "jpeg": {
+      "jpeg": 0.009987662440237669,
+      "crop": 0.06045517043869638,
+      "resize": 0.009961638742208088
+    },
+    "noise": {
+      "jpeg": 0.012875630761010637,
+      "crop": 0.029829006484513115,
+      "resize": 0.007148099976951144
+    },
+    "blur": {
+      "jpeg": 0.05419917956306033,
+      "crop": 0.07250290859032908,
+      "resize": 0.010864936020635083
+    },
+    "color": {
+      "jpeg": 0.05943029573287466,
+      "crop": 0.06362160065278294,
+      "resize": 0.016300722422375003
+    },
+    "crop": {
+      "jpeg": 0.03212314973090728,
+      "crop": 0.0544620669385122,
+      "resize": 0.017771882985760084
+    },
+    "resize": {
+      "jpeg": 0.06740299187319773,
+      "crop": 0.07609650325593403,
+      "resize": 0.009910564340027152
+    }
+  },
+  "probe_delta_correlation": {
+    "jpeg": {
+      "jpeg": 1.0,
+      "crop": 0.18170995220275726,
+      "resize": -0.02638580045032905
+    },
+    "crop": {
+      "jpeg": 0.18170995220275726,
+      "crop": 1.0,
+      "resize": 0.05923846691367381
+    },
+    "resize": {
+      "jpeg": -0.02638580045032905,
+      "crop": 0.059238466913673814,
+      "resize": 1.0
+    }
+  },
+  "auroc_delta_predicts_primary_wrong": {
+    "jpeg": 0.6754440344799449,
+    "crop": 0.7289929253028292,
+    "resize": 0.7069987780184253
+  },
+  "auroc_max_of_all_three": 0.7099049661598943,
+  "auroc_leave_one_out": {
+    "without_jpeg": 0.7277308179548052,
+    "without_crop": 0.6815104311528961,
+    "without_resize": 0.7114480606909713
+  }
+}
