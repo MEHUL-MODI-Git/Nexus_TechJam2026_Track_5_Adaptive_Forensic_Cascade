@@ -198,7 +198,12 @@ def stress_test_image(image_path: str | Path | None, service: Any):
         message = _render_error(exc)
         html_message = message[0] if isinstance(message, tuple) else str(message)
         return (html_message, "", "")
-    return (render_stress_summary(result), render_stress_svg(result),
+    # The certificate leads: it is the sentence a moderator can act on, and its
+    # grade is a measured retention->accuracy relationship, not a label we chose.
+    from .certificate import build_certificate, render_certificate
+
+    certificate = render_certificate(build_certificate(result))
+    return (certificate + render_stress_summary(result), render_stress_svg(result),
             render_stress_table(result))
 
 

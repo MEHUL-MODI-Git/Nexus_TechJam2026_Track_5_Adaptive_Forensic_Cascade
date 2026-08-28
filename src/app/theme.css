@@ -86,3 +86,33 @@ button.primary { background: var(--signal) !important; color: var(--ink) !import
   font-size: .8rem;
   font-variant-numeric: tabular-nums;
 }
+
+/* --- Forensic robustness certificate (audit mode) -------------------------
+   Appended as a self-contained revertible block. Grade colours reuse existing
+   palette tokens and keep >= 4.5:1 on the forced dark surface. */
+.afc-cert {
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--afc-grid, rgba(255,255,255,.14));
+  border-radius: 8px;
+  background: rgba(255,255,255,.03);
+}
+.afc-cert-head {
+  font-size: .74rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  opacity: .7;
+  margin-bottom: 8px;
+}
+.afc-cert-verdict, .afc-cert-retention, .afc-cert-worst {
+  margin: 4px 0;
+  font-size: .9rem;
+}
+.afc-cert-retention strong { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.afc-cert-high    { margin: 8px 0; font-size: .9rem; color: #7ee0a5; }
+.afc-cert-medium  { margin: 8px 0; font-size: .9rem; color: #f6c453; }
+.afc-cert-low     { margin: 8px 0; font-size: .9rem; color: #ffb4a0; }
+.afc-cert-verylow { margin: 8px 0; font-size: .9rem; color: #ff7b72; font-weight: 600; }
+.afc-cert-unstable { margin: 8px 0 0; font-size: .84rem; opacity: .9; }
+.afc-cert-unstable ul { margin: 4px 0 0 18px; padding: 0; }
+.afc-cert-unstable li { margin: 1px 0; font-variant-numeric: tabular-nums; }
