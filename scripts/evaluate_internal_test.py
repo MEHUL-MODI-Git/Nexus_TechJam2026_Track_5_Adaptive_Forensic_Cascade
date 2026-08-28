@@ -102,6 +102,23 @@ def paired_bootstrap(a, b, labels, fams, srcs, ta, tb, n=2000, seed=11):
             "ci95_high": float(np.quantile(d, 0.975)), "n_resamples": n}
 
 
+def match_threshold_to_fpr(scores, labels, fams, target_fpr):
+    """Lowest threshold whose CLEAN FPR does not exceed `target_fpr`.
+
+    Used to hand the primary detector our own operating point. Note this tunes the
+    BASELINE on the internal test itself -- a concession we deliberately do not take
+    for our own model. It can only shrink our reported gain, never inflate it, which
+    is why it is legitimate to add after seeing the headline.
+    """
+    clean_real = (fams == "clean") & (labels == 0)
+    s = np.sort(scores[clean_real])
+    if s.size == 0:
+        return float("nan")
+    # FPR at threshold t is the fraction of clean reals scoring >= t.
+    k = int(np.floor(target_fpr * s.size))
+    return float(s[s.size - k]) if k > 0 else float(np.nextafter(s[-1], np.inf))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--cache", type=Path, required=True)
@@ -140,6 +157,12 @@ def main() -> int:
     # The primary is judged at ITS OWN best-case operating point, not ours: giving the baseline
     # our threshold would be a straw man. 0.5 is its published default.
     primary_m = metrics(primary, labels, fams, conds, 0.5)
+    # CONTROL: the router operates at a much higher clean FPR than the primary at 0.5, so the
+    # obvious objection is that the gain is bought purely by moving the operating point. Give
+    # the primary OUR clean FPR -- fitted on this very test set, in the baseline's favour -- and
+    # ask whether it can buy the same worst-family recall that way. If it can, we have no result.
+    t_match = match_threshold_to_fpr(primary, labels, fams, router_m["clean_fpr"])
+    primary_matched_m = metrics(primary, labels, fams, conds, t_match)
     doc = {
         "schema_version": "internal-test-results.v1",
         "one_shot": "the untouched internal test; nothing was fitted on these sources",
@@ -155,18 +178,29 @@ def main() -> int:
         "primary_flips": flip_rates(primary, labels, fams, conds, srcs, 0.5),
         "paired_bootstrap_router_vs_primary": paired_bootstrap(
             router, primary, labels, fams, srcs, thr, 0.5, n=args.bootstrap),
+        "primary_at_matched_clean_fpr": {
+            "threshold": t_match,
+            "threshold_fitted_on": "THIS TEST SET, in the baseline's favour (see docstring)",
+            "target_clean_fpr": router_m["clean_fpr"],
+            **primary_matched_m,
+        },
+        "paired_bootstrap_router_vs_primary_matched": paired_bootstrap(
+            router, primary, labels, fams, srcs, thr, t_match, n=args.bootstrap),
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(doc, indent=2) + "\n")
 
     print(f"\n{'':<22}{'worst-fam':>10}{'clean-rec':>11}{'clean-FPR':>11}{'overall-acc':>13}",
           file=sys.stderr)
-    for tag, m in (("router (frozen)", router_m), ("primary @0.5", primary_m)):
+    for tag, m in (("router (frozen)", router_m), ("primary @0.5", primary_m),
+                   (f"primary @{t_match:.4f} (FPR-matched)", primary_matched_m)):
         print(f"{tag:<22}{m['worst_family_fake_recall']:>10.4f}{m['clean_fake_recall']:>11.4f}"
               f"{m['clean_fpr']:>11.4f}{m['overall_accuracy']:>13.4f}", file=sys.stderr)
-    b = doc["paired_bootstrap_router_vs_primary"]
-    print(f"\npaired source bootstrap, worst-family recall: {b['mean_delta']:+.4f} "
-          f"CI95 [{b['ci95_low']:+.4f}, {b['ci95_high']:+.4f}]", file=sys.stderr)
+    for tag, key in (("vs primary @0.5", "paired_bootstrap_router_vs_primary"),
+                     ("vs primary FPR-matched", "paired_bootstrap_router_vs_primary_matched")):
+        b = doc[key]
+        print(f"\npaired source bootstrap, worst-family recall {tag}: {b['mean_delta']:+.4f} "
+              f"CI95 [{b['ci95_low']:+.4f}, {b['ci95_high']:+.4f}]", file=sys.stderr)
     print(f"wrote {args.out}", file=sys.stderr)
     return 0
 
