@@ -3,7 +3,7 @@
   "NOT_A_HEADLINE_RESULT": "dev-split selection; the untouched internal test is the reportable surface and has not been consulted",
   "cache": "data/feature_cache/fitting-v2",
   "cache_manifest_sha256": "a7cc9148572226a407017b278304f1a418342f44360d72be01999ce9513269f1",
-  "code_revision": "3c516c38f6f363b814a8689c60d49dab724bef8e",
+  "code_revision": "16d2e3bca2c2f9e4f292dc7bb60e76ab9a2321a9",
   "feature_dim": 38,
   "geometry_features_excluded": true,
   "selection_rule": "highest dev worst-family fake recall among rungs whose fitted threshold satisfies the clean FPR/BAcc constraints; pre-registered, not chosen after inspecting the table",
@@ -72,5 +72,6 @@
       "n_resamples": 1000
     }
   },
-  "threshold_artifact": "results/router-fitting-v2/threshold-artifact.v1.json"
+  "threshold_artifact": "results/router-fitting-v2/threshold-artifact.v1.json",
+  "checkpoint": "results/router-fitting-v2/router.pt"
 }

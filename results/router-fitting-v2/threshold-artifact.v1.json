@@ -31,8 +31,8 @@
   "dev_manifest_sha256": "62f7f203c51b45dc172250964d811dd7844f2907ae669db2630856b12b3227b5",
   "config_sha256": "78c93bec8f51a2c294c0991d4135e824af22b8e7178a1a8920422bfb74966648",
   "pipeline_version": "0.1.0",
-  "fitting_code_version": "router-freeze@3c516c38f6f3",
-  "created_at": "2026-08-28T06:58:49.775245+00:00",
+  "fitting_code_version": "router-freeze@16d2e3bca2c2",
+  "created_at": "2026-08-28T08:32:02.070713+00:00",
   "tie_break": "objective > clean_bacc > -clean_fpr > threshold",
   "warnings": [
     "dev has >=500 fake sources per exact condition; the frozen protocol PERMITS upgrading selection to exact-condition granularity -- this run still selected at family level"

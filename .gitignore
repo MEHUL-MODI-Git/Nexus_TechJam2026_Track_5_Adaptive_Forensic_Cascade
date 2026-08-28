@@ -24,6 +24,10 @@ checkpoints/
 models/
 *.pth
 *.pt
+# ...but OUR OWN router head is a submission deliverable, not bulk weights: 17 KB
+# against the 21.8M-parameter expert checkpoints this rule exists to exclude.
+# Judges must be able to load the model that produced the reported number.
+!results/router-fitting-v2/router.pt
 *.ckpt
 .cache/
 **/huggingface/
