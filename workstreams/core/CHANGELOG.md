@@ -1,5 +1,46 @@
 # core — CHANGELOG (newest first)
 
+## 2026-08-29 — CHEAPER AUDIT, A SELF-CAUGHT WRONG NUMBER, AND A CLAIMS SWEEP
+
+**`scripts/audit_image.py`** — the whole system in one command for the demo and video:
+verdict, what the RAW detector alone would have said, reliability, detected image history, and
+the robustness certificate. On a real corpus image the raw detector misses at **0.0012**, the
+router rescues it to **0.5739**, and the certificate then grades that rescue **11/20 VERY LOW**
+rather than overselling it. 5 tests; the load-bearing one asserts auditing OBSERVES and never
+moves the decision (p_fake, decision and certificate verdict identical audited vs not).
+
+**CORRECTION — the audit costs 80 forward passes, not 20.** I wrote "20 extra forward passes"
+into the certificate module, its UI text, the CLI, README §7 and the error note — five places,
+asserted repeatedly, never measured. Each of the 20 conditions runs the FULL service (1 expert
++ 3 probes), so it is 20×4 = **80 passes, 2,988 ms against 136 ms — 21.9×**. Corrected
+everywhere and now guarded by a STRUCTURAL test deriving the figure from the configs, because
+a docstring nobody re-derives is exactly how it happened.
+
+**The certificate does not need 20 conditions.** Free offline test on the internal-test cache:
+
+| subset | AUROC | passes |
+|---|---|---|
+| all 20 | 0.8650 | 80 |
+| `resize_0.25` + `crop_0.8` | **0.8664** | **8** |
+| + 3 more | 0.8982 | 20 |
+
+Two conditions match the full grid at a tenth of the cost; the geometric perturbations carry
+the signal, the photometric ones do not. **The same lesson as the probe ablation, twice:
+aggregating more signals dilutes.** Caveat: the subset was chosen greedily on the data it is
+scored on, so anything above the unselected 0.8650 baseline is partly selection bias. Shipped
+certificate still runs all 20 until the fresh holdout confirms it.
+
+**Claims sweep.** After two wrong published numbers in one day, I swept every artifact against
+`tests/test_published_numbers.py` and found four sets of claims with nothing asserting them:
+the degradation reporter's figures (plus a guard that geometry stays EXCLUDED), the rung-gating
+oracle ceiling (fails if an oracle ever clears 2 points), the two independently-implemented
+FPR-matched controls (plus a cross-check they stay within 0.02), and the LOTA rejection
+evidence. All bound now. `scripts/measure_ops.py` written for the last gap — README §9's
+latency has no artifact — and it stamps `contended: true` and refuses to be quietly wrong if a
+GPU job is live.
+
+**Suite 728 passed.** Frozen decision path untouched throughout.
+
 ## 2026-08-28 (late) — AUDIT MODE: two new capabilities, two more ideas killed
 
 **1. Forensic Robustness Certificate** (`f486599`). The 20-condition grid was built to
