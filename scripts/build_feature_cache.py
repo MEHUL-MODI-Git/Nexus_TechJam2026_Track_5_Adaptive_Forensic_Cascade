@@ -33,6 +33,10 @@ def main() -> int:
     parser.add_argument("--denylist", type=Path, default=None)
     parser.add_argument("--acknowledge-no-denylist", action="store_true",
                         help="build without contamination protection (smoke only)")
+    parser.add_argument("--evaluation-cache", action="store_true",
+                        help="build a cache of `test` rows to EVALUATE on. The trainer's "
+                             "VALID_SPLITS stays (train, dev), so it structurally cannot fit "
+                             "on the result; the manifest is stamped role=evaluation.")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--conditions", nargs="*", default=None)
     args = parser.parse_args()
@@ -57,6 +61,7 @@ def main() -> int:
             conditions=conditions,
             denylist=load_denylist(args.denylist),
             denylist_acknowledged_absent=args.acknowledge_no_denylist,
+            evaluation_cache=args.evaluation_cache,
         )
     except DenylistViolation as exc:
         print(f"REFUSED: {exc}", file=sys.stderr)
@@ -68,7 +73,7 @@ def main() -> int:
     # artifact contains. That KeyError fired AFTER extraction finished, so it
     # would have crashed the summary at the end of an 8.5-hour job while leaving
     # a perfectly good cache on disk looking like a failed run.
-    summary_keys = ("cache_key", "status", "n_sources", "rows_total",
+    summary_keys = ("cache_key", "status", "role", "n_sources", "rows_total",
                     "rows_written_this_invocation", "decode_failures_this_invocation",
                     "denylist_protected", "denylist_perceptual_protected",
                     "UNPROTECTED_SMOKE_ONLY")

@@ -154,7 +154,7 @@ def _hamming(a: str, b: str) -> int:
 
 def validate_manifest_rows(
     rows: list[dict], denylist: "Denylist", *, verify_bytes: bool = True,
-    phash_threshold: int = 6,
+    phash_threshold: int = 6, evaluation_cache: bool = False,
 ) -> None:
     """Every hard constraint, enforced BEFORE a single forward pass runs.
 
@@ -220,11 +220,23 @@ def validate_manifest_rows(
             )
 
         split = row.get("dataset_split", "")
-        if split not in ALLOWED_SPLITS:
+        # `test` rows are barred from a FITTING cache by default -- that guard is
+        # what keeps the untouched internal test untouched, and it fired exactly
+        # as intended the first time we pointed extraction at that manifest.
+        # Evaluating on the test set still needs its features, so the escape
+        # hatch is explicit, single-purpose and recorded in the manifest rather
+        # than achieved by relabelling rows, which would defeat the guard
+        # silently. `train.VALID_SPLITS` remains ("train", "dev"), so the trainer
+        # structurally cannot fit on the cache this produces.
+        allowed = set(ALLOWED_SPLITS) | ({"test"} if evaluation_cache else set())
+        if split not in allowed:
             raise ValueError(
                 f"dataset_split {split!r} may not enter a fitting cache; "
-                f"allowed: {sorted(ALLOWED_SPLITS)}"
+                f"allowed: {sorted(allowed)}. Pass evaluation_cache=True only to build a "
+                "cache that will be EVALUATED on, never fitted on."
             )
+        if split == "test" and not evaluation_cache:
+            raise ValueError("refusing to place test rows in a fitting cache")
         blob = json.dumps(row).lower()
         if "val2017" in blob:
             raise ValueError(f"val2017 reference in manifest row {row.get('sample_id')!r}")
@@ -426,6 +438,7 @@ def build_cache(
     denylist: set[str] | None = None,
     denylist_acknowledged_absent: bool = False,
     progress_every: int = 25,
+    evaluation_cache: bool = False,
 ) -> dict:
     """Extract features for every (source, condition). Returns the manifest."""
     started = datetime.now(timezone.utc)
@@ -439,7 +452,7 @@ def build_cache(
             "--acknowledge-no-denylist to stamp this cache as UNPROTECTED (smoke only)."
         )
 
-    validate_manifest_rows(manifest_rows, denylist)
+    validate_manifest_rows(manifest_rows, denylist, evaluation_cache=evaluation_cache)
 
     fingerprints = [f"{e.expert_id}@{e.model_version}" for e in experts]
     cache_key, key_object = compute_cache_key(fingerprints, config_paths)
@@ -493,6 +506,8 @@ def build_cache(
         "rows_written_this_invocation": written,
         "decode_failures_this_invocation": decode_failures,
         "experts": fingerprints,
+        "role": "evaluation" if evaluation_cache else "fitting",
+        "may_not_be_used_for_fitting": bool(evaluation_cache),
         "denylist_size": len(denylist.sha256),
         "denylist_protected": bool(denylist),
         "denylist_perceptual_protected": denylist.perceptual_protected,

@@ -1,0 +1,76 @@
+{
+  "schema_version": "router-freeze.v1",
+  "NOT_A_HEADLINE_RESULT": "dev-split selection; the untouched internal test is the reportable surface and has not been consulted",
+  "cache": "data/feature_cache/fitting-v2",
+  "cache_manifest_sha256": "a7cc9148572226a407017b278304f1a418342f44360d72be01999ce9513269f1",
+  "code_revision": "3c516c38f6f363b814a8689c60d49dab724bef8e",
+  "feature_dim": 38,
+  "geometry_features_excluded": true,
+  "selection_rule": "highest dev worst-family fake recall among rungs whose fitted threshold satisfies the clean FPR/BAcc constraints; pre-registered, not chosen after inspecting the table",
+  "selected_rung": "mlp+wg",
+  "selected_threshold": 0.4667367651127279,
+  "rungs": {
+    "quality_only": {
+      "threshold": 0.49680385179817677,
+      "worst_family_fake_recall": 0.5075555555555555,
+      "worst_family": "noise",
+      "feasible": true,
+      "n_parameters": 17
+    },
+    "static_average": {
+      "threshold": 0.1272509451955557,
+      "worst_family_fake_recall": 0.18488888888888888,
+      "worst_family": "noise",
+      "feasible": true,
+      "n_parameters": 0
+    },
+    "logistic": {
+      "threshold": 0.46490725642070174,
+      "worst_family_fake_recall": 0.686,
+      "worst_family": "noise",
+      "feasible": true,
+      "n_parameters": 117
+    },
+    "mlp": {
+      "threshold": 0.4299381768796593,
+      "worst_family_fake_recall": 0.7586666666666667,
+      "worst_family": "noise",
+      "feasible": true,
+      "n_parameters": 1827
+    },
+    "mlp+wg": {
+      "threshold": 0.4667367651127279,
+      "worst_family_fake_recall": 0.8144444444444444,
+      "worst_family": "noise",
+      "feasible": true,
+      "n_parameters": 1827
+    }
+  },
+  "paired_source_bootstrap_vs_selected": {
+    "mlp+wg_vs_quality_only": {
+      "mean_delta": 0.3072448184131968,
+      "ci95_low": 0.2833727954144621,
+      "ci95_high": 0.33095525814599436,
+      "n_resamples": 1000
+    },
+    "mlp+wg_vs_static_average": {
+      "mean_delta": 0.6297021844216851,
+      "ci95_low": 0.6129370229404547,
+      "ci95_high": 0.6450974110916041,
+      "n_resamples": 1000
+    },
+    "mlp+wg_vs_logistic": {
+      "mean_delta": 0.12822297282103556,
+      "ci95_low": 0.11544217664200854,
+      "ci95_high": 0.1403761149527453,
+      "n_resamples": 1000
+    },
+    "mlp+wg_vs_mlp": {
+      "mean_delta": 0.05561676342870865,
+      "ci95_low": 0.04809784146149394,
+      "ci95_high": 0.06415429551634734,
+      "n_resamples": 1000
+    }
+  },
+  "threshold_artifact": "results/router-fitting-v2/threshold-artifact.v1.json"
+}

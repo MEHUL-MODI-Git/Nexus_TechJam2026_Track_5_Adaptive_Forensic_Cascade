@@ -1,0 +1,40 @@
+{
+  "schema_version": "threshold-artifact.v1",
+  "threshold": 0.4667367651127279,
+  "objective": "maximize bootstrap-mean worst-transformation-FAMILY fake recall (6 families, clean excluded, severities pooled) subject to clean FPR <= baseline+1pt and clean BAcc >= baseline-1pt",
+  "feasible": true,
+  "selection_granularity": "family",
+  "objective_value": 0.8164714814814815,
+  "objective_ci95": [
+    0.8074,
+    0.8253333333333334
+  ],
+  "worst_family": "noise",
+  "worst_exact_condition": "noise_s0.10",
+  "worst_exact_condition_recall": 0.7757777777777778,
+  "clean_fpr": 0.07358826144953312,
+  "clean_bacc": 0.9445392026085668,
+  "baseline_clean_fpr": 0.06558470431302801,
+  "baseline_clean_bacc": 0.9457632033990415,
+  "constraint_max_clean_fpr": 0.07558470431302801,
+  "constraint_min_clean_bacc": 0.9357632033990415,
+  "n_dev_sources": 8998,
+  "n_dev_rows": 179960,
+  "n_fake_sources_per_exact_condition_min": 4500,
+  "bootstrap": {
+    "n_replicates": 200,
+    "seed": 20260827,
+    "unit": "source_id",
+    "stratified_by": "label",
+    "interval": "percentile_95"
+  },
+  "dev_manifest_sha256": "62f7f203c51b45dc172250964d811dd7844f2907ae669db2630856b12b3227b5",
+  "config_sha256": "78c93bec8f51a2c294c0991d4135e824af22b8e7178a1a8920422bfb74966648",
+  "pipeline_version": "0.1.0",
+  "fitting_code_version": "router-freeze@3c516c38f6f3",
+  "created_at": "2026-08-28T06:58:49.775245+00:00",
+  "tie_break": "objective > clean_bacc > -clean_fpr > threshold",
+  "warnings": [
+    "dev has >=500 fake sources per exact condition; the frozen protocol PERMITS upgrading selection to exact-condition granularity -- this run still selected at family level"
+  ]
+}

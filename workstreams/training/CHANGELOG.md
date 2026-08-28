@@ -1,5 +1,47 @@
 # CHANGELOG — training (newest first, append-only; corrections are new entries)
 
+## 2026-08-28 — [relay] ARCHITECTURE FROZEN: mlp+worst-group, threshold 0.466737, artifact validates
+
+`scripts/freeze_router.py`. Selection rule was pre-registered, not chosen after seeing the table:
+**highest dev worst-family fake recall among rungs whose fitted threshold satisfies the clean
+constraints.** Near-ties are broken by paired SOURCE bootstrap — a source and all 20 of its views
+resample as one block — never by comparing point estimates.
+
+**Selected: `mlp + worst-group loss`, 1,827 parameters, threshold 0.466737.**
+
+Paired source bootstrap on dev, 1,000 resamples, each rung at its OWN fitted threshold:
+
+| selected vs | delta worst-family recall | 95% CI |
+|---|---:|---|
+| static_average (parameter-free) | **+0.6297** | [+0.6129, +0.6451] |
+| quality_only (no detector at all) | **+0.3072** | [+0.2834, +0.3310] |
+| logistic | +0.1282 | [+0.1154, +0.1404] |
+| mlp (no worst-group loss) | +0.0556 | [+0.0481, +0.0642] |
+
+**Every interval excludes zero and every delta clears the 2-point bar.** Both of B-028's control-2
+floors are cleared with separation, and the worst-group loss earns its own place rather than being
+assumed: +5.6 points over plain MLP with a CI of [+4.8, +6.4].
+
+**The threshold artifact was REJECTED on the first attempt, correctly.** `load_frozen_threshold`
+refused it because `pipeline_version`, `dev_manifest_sha256`, `config_sha256` and
+`fitting_code_version` were empty — an artifact that cannot say which pipeline, data and code
+produced it is not a frozen threshold, it is a number in a file. Re-run with real provenance bound
+(pipeline `0.1.0`, code `3c516c38f6f3`, config digest over transforms/probes/predict, fitting
+manifest digest) and it now validates. That guard is the same one that makes a headline impossible
+without a loaded artifact, so it mattered that it fired.
+
+Consequence for stage 2: `threshold_is_frozen()` now returns True for this provenance, so the
+reliability head becomes fittable — deliberately still NOT fitted, because R22's ordering says
+reliability comes after the class threshold is frozen, and freezing only just happened.
+
+**Internal-test extraction running in parallel.** The cache builder REFUSED the internal-test
+manifest at first with `dataset_split 'test' may not enter a fitting cache` — the guard that keeps
+the untouched test untouched, working exactly as designed. Evaluating still needs those features, so
+the escape hatch is explicit and recorded (`--evaluation-cache`, manifest stamped
+`role=evaluation`, `may_not_be_used_for_fitting=true`) rather than achieved by relabelling rows,
+which would have defeated the guard silently. `train.VALID_SPLITS` remains `("train", "dev")`, so
+the trainer structurally cannot fit on the resulting cache.
+
 ## 2026-08-28 — [relay] FIRST PROTECTED RESULT: the cascade beats both floors at fitted thresholds
 
 Extraction completed 12:26: **239,960 rows**, 11,998 sources x 20 conditions, **every condition
