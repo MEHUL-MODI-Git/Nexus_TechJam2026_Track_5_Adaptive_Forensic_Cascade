@@ -1,0 +1,21 @@
+{
+  "schema_version": "rung-complementarity.v1",
+  "NOT_A_HEADLINE_RESULT": "dev split only; a pre-check, not a result",
+  "n_dev_rows": 60000,
+  "accuracy": {
+    "mlp": 0.9226333333333333,
+    "mlp+wg": 0.9115166666666666,
+    "oracle": 0.9324166666666667
+  },
+  "worst_family_fake_recall": {
+    "mlp": 0.7586666666666667,
+    "mlp+wg": 0.8144444444444444,
+    "oracle": 0.8191111111111111
+  },
+  "P(mlp correct | wg wrong)": 0.23620267470333395,
+  "P(wg correct | mlp wrong)": 0.12645411460577338,
+  "joint_failure_rate": 0.06758333333333333,
+  "disagreement_rate": 0.030683333333333333,
+  "oracle_upside_worst_family": 0.004666666666666708,
+  "verdict": "KILL \u2014 a perfect oracle adds less than 2 points, so no learnable gate can be worth its complexity"
+}
