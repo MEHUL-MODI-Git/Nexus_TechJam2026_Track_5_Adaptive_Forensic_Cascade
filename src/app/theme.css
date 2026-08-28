@@ -116,3 +116,6 @@ button.primary { background: var(--signal) !important; color: var(--ink) !import
 .afc-cert-unstable { margin: 8px 0 0; font-size: .84rem; opacity: .9; }
 .afc-cert-unstable ul { margin: 4px 0 0 18px; padding: 0; }
 .afc-cert-unstable li { margin: 1px 0; font-variant-numeric: tabular-nums; }
+.degr-line { margin-top: 8px; }
+.degr-weak { color: #f6c453; font-size: .82rem; }
+.degr-caveat { color: var(--afc-ink, #d0cec4); opacity: .7; font-size: .78rem; }

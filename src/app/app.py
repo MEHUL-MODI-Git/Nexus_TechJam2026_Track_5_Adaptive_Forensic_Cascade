@@ -19,6 +19,24 @@ except ModuleNotFoundError as _service_import_error:  # pragma: no cover - envir
 
 THEME_PATH = Path(__file__).with_name("theme.css")
 
+_DEGRADATION_REPORTER = None
+_DEGRADATION_TRIED = False
+
+
+def _degradation_reporter():
+    """Lazy, fail-soft. An explanation is a nice-to-have: if the model is not
+    present the UI simply omits the line rather than breaking a verdict."""
+    global _DEGRADATION_REPORTER, _DEGRADATION_TRIED
+    if not _DEGRADATION_TRIED:
+        _DEGRADATION_TRIED = True
+        try:
+            from ..pipeline.degradation import DegradationReporter
+
+            _DEGRADATION_REPORTER = DegradationReporter.load()
+        except Exception:                     # noqa: BLE001 - explanation is optional
+            _DEGRADATION_REPORTER = None
+    return _DEGRADATION_REPORTER
+
 
 class _UnavailableService:
     """Keeps the default UI launchable when local model setup is incomplete."""
@@ -131,6 +149,26 @@ def analyze_image(image_path: str | Path | None, service: Any):
         )
     except (TypeError, ValueError):
         pass
+    # Why is it unsure? Read the degradation the image already carries. This is
+    # an EXPLANATION and never touches the verdict.
+    quality = _field(router_block, "quality", None) if router_block is not None else None
+    reporter = _degradation_reporter()
+    if quality and reporter is not None:
+        try:
+            rep = reporter.report(quality)
+            weak = ("  <span class='degr-weak'>&#9888; our detector is measurably "
+                    "weakest under this condition</span>" if rep.detector_is_weak_here else "")
+            caveat = (f"<br><span class='degr-caveat'>{_escape(rep.caveat)}</span>"
+                      if rep.caveat else "")
+            extra += (f"<p class='router-line degr-line'>Detected image history: "
+                      f"<strong>{_escape(rep.label)}</strong> "
+                      f"({rep.confidence:.0%} confidence){weak}{caveat}</p>")
+        except Exception as exc:              # noqa: BLE001 - explanation is optional
+            # A failed EXPLANATION must never cost the user their verdict, so it
+            # degrades to a visible note rather than an exception or a silence.
+            extra += ("<p class='router-line degr-caveat'>Image-history analysis "
+                      f"unavailable ({_escape(type(exc).__name__)}).</p>")
+
     if abstain:
         reason = _escape(str(_field(record, "abstain_reason", "") or ""))
         extra += (

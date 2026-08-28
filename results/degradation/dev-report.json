@@ -1,0 +1,106 @@
+{
+  "schema_version": "degradation-report.v1",
+  "NOT_A_HEADLINE_RESULT": "dev split only; explains the verdict, never sets it",
+  "geometry_excluded": true,
+  "geometry_note": "width/height/megapixels would make crop and resize easy, but a real upload has no known original dimensions, so that accuracy would not survive deployment",
+  "dev_accuracy": 0.6998166666666666,
+  "dev_balanced_accuracy": 0.7332261904761904,
+  "chance": 0.14285714285714285,
+  "n_parameters": 775,
+  "class_weighted": true,
+  "per_class": {
+    "clean": {
+      "n": 3000,
+      "recall": 0.5407
+    },
+    "jpeg": {
+      "n": 12000,
+      "recall": 0.7522
+    },
+    "noise": {
+      "n": 9000,
+      "recall": 0.995
+    },
+    "blur": {
+      "n": 9000,
+      "recall": 0.6406
+    },
+    "color": {
+      "n": 18000,
+      "recall": 0.4804
+    },
+    "crop": {
+      "n": 3000,
+      "recall": 0.79
+    },
+    "resize": {
+      "n": 6000,
+      "recall": 0.9337
+    }
+  },
+  "confusion": {
+    "clean": {
+      "clean": 1622,
+      "jpeg": 280,
+      "noise": 14,
+      "blur": 65,
+      "color": 593,
+      "crop": 360,
+      "resize": 66
+    },
+    "jpeg": {
+      "clean": 1786,
+      "jpeg": 9027,
+      "noise": 25,
+      "blur": 14,
+      "color": 650,
+      "crop": 466,
+      "resize": 32
+    },
+    "noise": {
+      "clean": 6,
+      "jpeg": 10,
+      "noise": 8955,
+      "blur": 0,
+      "color": 9,
+      "crop": 20,
+      "resize": 0
+    },
+    "blur": {
+      "clean": 832,
+      "jpeg": 55,
+      "noise": 2,
+      "blur": 5765,
+      "color": 513,
+      "crop": 926,
+      "resize": 907
+    },
+    "color": {
+      "clean": 5494,
+      "jpeg": 1317,
+      "noise": 71,
+      "blur": 335,
+      "color": 8648,
+      "crop": 1596,
+      "resize": 539
+    },
+    "crop": {
+      "clean": 230,
+      "jpeg": 4,
+      "noise": 24,
+      "blur": 241,
+      "color": 99,
+      "crop": 2370,
+      "resize": 32
+    },
+    "resize": {
+      "clean": 51,
+      "jpeg": 0,
+      "noise": 0,
+      "blur": 294,
+      "color": 52,
+      "crop": 1,
+      "resize": 5602
+    }
+  }
+}
