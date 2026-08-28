@@ -60,20 +60,26 @@ with their scores under blur.
 
 ## 1:25–2:10 — The solution, running
 
-**On screen:** live Gradio stress panel. Drop an image, run the 20-condition grid, watch the
-score-vs-condition chart draw with verdict flips marked. Then a single analysis showing the
-primary → corrected line and the reliability readout.
+**On screen:** `scripts/audit_image.py` on one image, full report filling the terminal.
+Then the same command on a confident image for contrast.
 
 > "So we don't build a detector that never breaks. We build one that knows when it's breaking.
-> Before judging the image we measure what's been done to it — blur, blockiness, noise. We also probe
-> the detector against itself: re-score under small perturbations. A confident model barely moves; a
-> guessing one swings.
-> A router of **one thousand eight hundred and twenty-seven parameters** turns those signals into a
-> correction and a reliability score.
+> Before judging the image we measure what's been done to it — blur, blockiness, noise. A router
+> of **one thousand eight hundred and twenty-seven parameters** turns those into a correction.
 > Worst-case recall goes from twelve percent to **eighty-three**.
-> And where it still can't be trusted, it abstains. Deferring the least reliable twenty percent lifts
-> accuracy from ninety-one to ninety-three — and it's declining on the images it would have got
-> wrong. For a moderation queue, 'route this to a human' beats a confident coin flip."
+> Here's one image. The raw detector says zero point zero zero one two — it misses this
+> completely, calls it a real photograph. Our router corrects it to fifty-seven percent:
+> caught.
+> But look at the bottom. The system then audits its own answer by re-running that verdict
+> through all twenty transformations, and only eleven survive. So it grades its own call
+> **very low** and tells you verdicts this fragile are right about sixty percent of the time.
+> It caught the image *and* refused to oversell it."
+
+**On screen:** the second image — retention 20/20, grade HIGH.
+
+> "Same command, a confident image: twenty out of twenty, grade high, correct ninety-nine
+> percent of the time. That number isn't a label we picked — it's what we measured on three
+> thousand held-out images."
 
 **On screen:** `scripts/infer_dir.py` running over a folder.
 
@@ -93,7 +99,9 @@ primary → corrected line and the reliability readout.
 > rescue noise-destroyed evidence with a detector that reads the noise band. So we escalate to a
 > human instead, and we publish the negative result.
 > Three — our headline is measured against a baseline we deliberately handicapped in its own favour,
-> with its threshold fitted on the test set. We still win by forty-nine points."
+> with its threshold fitted on the test set. We still win by forty-nine points.
+> And we killed five of our own ideas this way, including our own self-probing, which cost
+> eighty-six percent of our runtime and bought nothing measurable. We report all of it."
 
 ## 2:40–3:00 — Close
 
@@ -121,6 +129,11 @@ primary → corrected line and the reliability readout.
 | router parameters | 1,827 | `results/router-fitting-v2/router_reliability.pt` |
 | abstention accuracy lift | 0.9090 → 0.9317 | `results/internal-test/abstention.json` |
 | format shortcut | 100.00% of 15,000 | README §8 |
+| retention beats reliability head | 0.8650 vs 0.7206 | `results/robustness/retention-signal.json` |
+| certificate grade HIGH accuracy | 99.1% | same |
+| certificate grade VERY LOW accuracy | 60.6% | same |
+| audit cost | 80 forward passes, ~3.0 s | `results/ops/ops-evidence.json` |
+| probes buy nothing | no arm distinguishable | `results/probe-ablation/dev-results.json` |
 
 ## Shot list / recording checklist
 
@@ -129,5 +142,8 @@ primary → corrected line and the reliability readout.
 - [ ] README §7 tables open for the table shots
 - [ ] `scripts/infer_dir.py` run prepared on a small folder
 - [ ] An abstention case ready to show live (a noise-degraded image reliably triggers it)
+- [ ] TWO images staged for `audit_image.py`: one the raw detector MISSES (low retention,
+      shows both the rescue and the honest downgrade) and one confident (20/20 HIGH).
+      The contrast between those two frames is the strongest 20 seconds in the video.
 - [ ] Terminal font ≥ 16pt; no personal paths, tokens or filenames in frame
 - [ ] All spoken numbers cross-checked against the table above
