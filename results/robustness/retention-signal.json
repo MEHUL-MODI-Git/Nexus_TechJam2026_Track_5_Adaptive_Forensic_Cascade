@@ -1,0 +1,74 @@
+{
+  "schema_version": "retention-signal.v1",
+  "NOT_A_HEADLINE_RESULT": "measured on the internal test, whose per-family results already informed this analysis; needs the fresh holdout to become a headline claim",
+  "n_sources": 3000,
+  "decision_threshold": 0.4667367651127279,
+  "abstention_threshold": 0.866079568862915,
+  "auroc_predicting_wrong_clean_verdict": {
+    "reliability_head": 0.7206,
+    "verdict_retention": 0.865,
+    "combined": 0.8863
+  },
+  "blind_spot": {
+    "definition": "high reliability (would not abstain) but the clean verdict is wrong",
+    "n": 157,
+    "mean_retention": 14.4013,
+    "mean_retention_high_reliability_and_correct": 19.0
+  },
+  "grade_bands_measured": {
+    "HIGH": {
+      "n": 1841,
+      "share": 0.6137,
+      "clean_verdict_accuracy": 0.9908
+    },
+    "MEDIUM": {
+      "n": 626,
+      "share": 0.2087,
+      "clean_verdict_accuracy": 0.9489
+    },
+    "LOW": {
+      "n": 312,
+      "share": 0.104,
+      "clean_verdict_accuracy": 0.8494
+    },
+    "VERY LOW": {
+      "n": 221,
+      "share": 0.0737,
+      "clean_verdict_accuracy": 0.6063
+    }
+  },
+  "flagging_rules_among_high_reliability": {
+    "retention_lt_20": {
+      "catches_share_of_blindspot_errors": 0.8981,
+      "precision": 0.1334,
+      "defers_share_of_high_reliability": 0.3795
+    },
+    "retention_lt_19": {
+      "catches_share_of_blindspot_errors": 0.8408,
+      "precision": 0.1886,
+      "defers_share_of_high_reliability": 0.2513
+    },
+    "retention_lt_18": {
+      "catches_share_of_blindspot_errors": 0.7261,
+      "precision": 0.2365,
+      "defers_share_of_high_reliability": 0.1731
+    },
+    "retention_lt_17": {
+      "catches_share_of_blindspot_errors": 0.6369,
+      "precision": 0.2933,
+      "defers_share_of_high_reliability": 0.1224
+    },
+    "retention_lt_16": {
+      "catches_share_of_blindspot_errors": 0.5414,
+      "precision": 0.336,
+      "defers_share_of_high_reliability": 0.0908
+    }
+  },
+  "retention_quantiles": {
+    "p1": 8,
+    "p5": 13,
+    "p10": 16,
+    "p25": 18,
+    "p50": 20
+  }
+}

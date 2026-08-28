@@ -67,3 +67,51 @@ def test_rescue_negative_result_still_negative():
     assert round(resc["test"]["P(pgc correct | router wrong)"], 4) == 0.5426
     assert resc["test"]["net"] == -2451
     assert resc["gate_passed"] is False, "if this ever passes, the README must change"
+
+
+def test_retention_signal_numbers_match_their_artifact():
+    """README section 7's audit-mode claims. These were computed ad-hoc before an
+    artifact existed, which is precisely the drift this file guards against."""
+    d = _load("robustness/retention-signal.json")
+    a = d["auroc_predicting_wrong_clean_verdict"]
+    assert a["reliability_head"] == 0.7206
+    assert a["verdict_retention"] == 0.8650
+    assert a["combined"] == 0.8863
+    # retention must BEAT the head we trained for the job — that is the claim
+    assert a["verdict_retention"] > a["reliability_head"]
+    bs = d["blind_spot"]
+    assert bs["n"] == 157
+    # README quotes these to 2dp; the artifact keeps 4. Assert the published
+    # precision, not more than we claim.
+    assert bs["mean_retention"] == pytest.approx(14.40, abs=0.005)
+    assert bs["mean_retention_high_reliability_and_correct"] == pytest.approx(19.00, abs=0.005)
+    # the separation is the point, not the exact value
+    assert bs["mean_retention_high_reliability_and_correct"] - bs["mean_retention"] > 4.0
+
+
+def test_certificate_grade_bands_match_the_measured_accuracies():
+    """The UI quotes an accuracy per grade. It must be the observed one."""
+    from src.app.certificate import GRADE_BANDS
+
+    d = _load("robustness/retention-signal.json")["grade_bands_measured"]
+    for _minimum, grade, quoted in GRADE_BANDS:
+        if grade in d:
+            assert abs(d[grade]["clean_verdict_accuracy"] - quoted) < 0.001, (
+                f"{grade}: UI quotes {quoted}, data says "
+                f"{d[grade]['clean_verdict_accuracy']}"
+            )
+
+
+def test_probe_ablation_still_says_probes_buy_nothing():
+    d = _load("probe-ablation/dev-results.json")["arms"]
+    none, all3 = d["none"], d["jpeg+crop+resize"]
+    assert none["n_forward_passes"] == 1
+    assert all3["n_forward_passes"] == 4
+    # the pre-registered rule: CI95 upper bound on the loss below 2 points
+    assert none["paired_loss_vs_all3"]["ci95_high"] < 0.02
+
+
+def test_evidence_audit_is_still_void():
+    d = _load("evidence-audit/validation.json")
+    assert d["guard_passed"] is False
+    assert d["median_operator_agreement"] < 0.5
