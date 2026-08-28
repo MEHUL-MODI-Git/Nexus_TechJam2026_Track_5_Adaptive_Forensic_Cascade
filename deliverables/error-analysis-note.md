@@ -107,10 +107,45 @@ automate" would be wrong in precisely the cases that matter most.
 5. **Abstention costs coverage.** One image in five is deferred to a human. That is a real
    operational cost and it is the price of the accuracy gain above.
 
-## What we would fix first
+## What we fixed after writing this — and what remains
 
-The blur blind spot is the clearest actionable gap: the reliability head needs a feature
-that rises when an image is *too smooth*, not only when it is noisy. `blur_varlap` is
-already computed and cached; it is in the feature vector but is evidently not being used in
-a way that separates "blurred real photograph" from "clean high-quality photograph". That is
-a fixable modelling problem, not a data-collection problem.
+**The confidently-wrong tail now has a detector, and it is not the reliability head.**
+
+The limitation above says abstention removes the uncertain middle but not the
+confidently wrong tail. We went looking for a second signal that fails *differently*,
+and found one already sitting in the project: the 20-condition stress grid we built to
+evaluate the system. Run on a single image, **verdict retention** — how many of the 20
+conditions preserve the clean verdict — predicts a wrong verdict better than the
+reliability head trained for that purpose:
+
+| signal | AUROC predicting a wrong clean verdict |
+|---|---|
+| reliability head | 0.7206 |
+| **verdict retention** | **0.8650** |
+| both combined | 0.8863 |
+
+It works precisely where the reliability head fails. Of the **157** sources the head
+passes with high confidence but gets wrong, mean retention is **14.40 / 20** against
+**19.00 / 20** for the confident-and-correct ones. Flagging `retention < 18` among
+high-confidence images catches **72.6%** of those blind-spot errors while deferring only
+17.3% of them.
+
+The reason the two are complementary is the reason the blind spot existed: the
+reliability head reads quality descriptors, so it tracks noise and is nearly blind to
+blur. Retention measures the verdict itself and inherits no such bias. Artifact:
+`results/robustness/retention-signal.json`.
+
+This ships as **audit mode** — it costs 20 forward passes, so it is an explicit deeper
+check rather than part of the default path.
+
+**What still is not fixed.**
+
+- Retention reduces the confidently-wrong tail; it does not eliminate it. At
+  `retention ≥ 18` the clean verdict is still wrong for about 5% of sources.
+- The reliability head's blur blindness is unchanged. `blur_varlap` is in its feature
+  vector and is evidently not being used in a way that separates "blurred real
+  photograph" from "clean high-quality photograph". Retention routes around that
+  weakness rather than repairing it.
+- Both signals were measured on the internal test, whose per-family results informed
+  this analysis. A fresh untouched holdout has been acquired to confirm the
+  retention→accuracy relationship before it is treated as a headline claim.
