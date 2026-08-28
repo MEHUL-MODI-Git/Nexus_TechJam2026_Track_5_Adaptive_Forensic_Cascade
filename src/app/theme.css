@@ -55,3 +55,34 @@ button.primary { background: var(--signal) !important; color: var(--ink) !import
 .afc-table th, .afc-table td { text-align: left; padding: 3px 8px;
   border-bottom: 1px solid var(--afc-grid, rgba(0,0,0,.1)); }
 .afc-table th { font-weight: 600; opacity: .8; }
+
+/* --- [relay] Phase 3: cascade reasoning + abstention -----------------------
+   Appended as a self-contained, revertible block. Colours reuse the existing
+   palette tokens so the dark surface keeps >= 4.5:1 contrast, matching the
+   contrast discipline already applied to the stress panel. */
+.router-line {
+  margin: 6px 0 0;
+  font-size: .86rem;
+  color: var(--afc-ink, #d0cec4);
+  opacity: .92;
+}
+.router-line .delta {
+  color: var(--afc-accent, #ff6b35);
+  font-variant-numeric: tabular-nums;
+}
+.abstain-banner {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border-left: 4px solid #f6c453;
+  background: rgba(246, 196, 83, .12);
+  color: #f6c453;
+  font-size: .9rem;
+  line-height: 1.45;
+}
+.abstain-banner .abstain-reason {
+  color: var(--afc-ink, #d0cec4);
+  opacity: .85;
+  font-size: .8rem;
+  font-variant-numeric: tabular-nums;
+}

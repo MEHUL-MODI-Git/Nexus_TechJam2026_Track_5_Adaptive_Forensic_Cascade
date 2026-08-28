@@ -103,6 +103,46 @@ def analyze_image(image_path: str | Path | None, service: Any):
             "</section>"
         )
 
+    # --- [relay] Phase 3: show the cascade's own reasoning, not just a score ---
+    # Three things a viewer needs and could not previously see: what the raw
+    # primary would have said, how reliable the system judges its own answer,
+    # and whether it is declining to decide at all.
+    router_block = _field(record, "router", None)
+    reliability = _field(record, "reliability", None)
+    abstain = bool(_field(record, "abstain", False))
+    extra = ""
+    if router_block is not None:
+        primary_p = _field(router_block, "primary_p_fake", None)
+        try:
+            primary_f = float(primary_p)
+            moved = numeric_score - primary_f
+            extra += (
+                "<p class='router-line'>Primary CF-384 alone: "
+                f"<strong>{primary_f:.4f}</strong> &rarr; after router correction: "
+                f"<strong>{numeric_score:.4f}</strong> "
+                f"<span class='delta'>({moved:+.4f})</span></p>"
+            )
+        except (TypeError, ValueError):
+            pass
+    try:
+        rel_f = float(reliability)
+        extra += (
+            f"<p class='router-line'>Self-assessed reliability: <strong>{rel_f:.3f}</strong></p>"
+        )
+    except (TypeError, ValueError):
+        pass
+    if abstain:
+        reason = _escape(str(_field(record, "abstain_reason", "") or ""))
+        extra += (
+            "<p class='abstain-banner'><strong>&#9888; DEFERRED — evidence unstable "
+            "under probes.</strong> The system declines to decide this image and "
+            "recommends human review."
+            + (f"<br><span class='abstain-reason'>{reason}</span>" if reason else "")
+            + "</p>"
+        )
+    if extra:
+        html = html.replace("</section>", extra + "</section>", 1)
+
     experts = _field(record, "experts", []) or []
     cf_score = None
     for expert in experts:
@@ -128,7 +168,11 @@ def analyze_image(image_path: str | Path | None, service: Any):
                  f"Format: {_field(image, 'format', '—') or 'unknown'}\n"
                  f"Content hash: {str(_field(image, 'sha256', '—'))[:12]}…\n"
                  f"Pipeline version: {_field(record, 'pipeline_version', '—')}\n"
-                 f"Config/threshold provenance: {threshold_provenance or '—'}")
+                 f"Config/threshold provenance: {threshold_provenance or '—'}\n"
+                 f"Fusion: {_field(record, 'fusion', '—')}"
+                 + (f" (rung {_field(router_block, 'rung', '—')}, "
+                    f"{_field(router_block, 'n_parameters', '—')} params)"
+                    if router_block is not None else ""))
     return html, cf_text, latency_text, warning_text, technical
 
 
