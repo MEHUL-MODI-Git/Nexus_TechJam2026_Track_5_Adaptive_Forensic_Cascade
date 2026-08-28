@@ -1,8 +1,10 @@
 # Devpost description — DRAFT v1
 
-> **Status:** Claude draft, Codex reviews and integrates (Phase 5R). Every number below is either
-> measured and cited, or marked `[PENDING]` where the protected evaluation has not finished. **No
-> `[PENDING]` may ship as a number without an artifact behind it.**
+> **Status:** Claude draft, Codex reviews and integrates (Phase 5R). **Every number below is measured
+> on the untouched internal test (3,000 sources x 20 conditions) and backed by a committed artifact.**
+> The smoke-set figures that opened the previous draft are gone: they came from a 400-source
+> diagnostic pitting COCO reals against SID-Set fakes, a comparison we disowned once the JPEG/PNG
+> format confound was found.
 
 ---
 
@@ -10,27 +12,25 @@
 
 ### The problem, stated precisely
 
-AI-image detectors report extraordinary accuracy. Ours does too: **AUROC 0.992 on clean images**.
+AI-image detectors report extraordinary accuracy on clean data. Ours does too.
 
 Then somebody uploads the image.
 
 Every platform recompresses, resizes and re-encodes what it receives. That is not an attack — it is
-the normal path from camera roll to feed. And it is where published accuracy goes to die. On our
-20-condition stress grid the same detector that scores 0.992 clean drops to **AUROC 0.647 under
-Gaussian blur at sigma 2.0**.
+the normal path from camera roll to feed. And it is where published accuracy goes to die.
 
-The interesting part is not that it degrades. It is *how*.
+We measured it on 3,000 held-back images across all 20 official transformations — 60,000 scored
+views, on data no part of our system had ever seen. The off-the-shelf detector at its published
+operating point catches **71.1% of AI images on clean inputs**. Add Gaussian noise at sigma 0.10 —
+imperceptible, one slider in any photo app — and it catches **0.7%**.
 
-**At one fixed operating point, the false-positive rate goes from 1.0% on clean images to 64.0% under
-blur.** Same model, same threshold, same day — a 64x increase in wrongly accusing real photographs.
-The model does not become uncertain; it becomes confidently wrong in one specific direction, pushing
-**real photographs** toward "AI-generated". A moderation system built on that does not fail quietly.
-It fails by accusing real users, at scale, on exactly the images that platform processing has touched
-most.
+Not degraded. **Erased.** Of the AI images it correctly identifies when clean, **26.6% flip to
+"real"** the moment any transformation touches them.
 
-(Measured on 400 sources at threshold 0.016, the operating point that yields 1% false positives on
-clean images. At the naive 0.5 default the same condition gives 31.5% — the effect is not an artifact
-of a badly chosen cut. Both numbers come from the same committed 8,000-row grid.)
+It fails in the other direction too. At the operating point our own system runs, noise at sigma 0.10
+makes it call **29.7% of genuine photographs AI-generated**. A moderation system built on that does
+not fail quietly — it accuses real users, at scale, on exactly the images platform processing has
+touched most.
 
 That asymmetry is the problem we set out to address. Not "detect AI images" — that is largely solved
 on pristine data. **Know when the detector's answer can no longer be trusted, and say so.**
@@ -49,13 +49,35 @@ on this specific image*.
 that is guessing swings. That instability is a reliability signal that needs no second model and no
 ground truth.
 
-**3. Abstain instead of guessing.** The output is not a binary verdict. It is a verdict plus a
-reliability readout, and an explicit "uncertain" band. For a moderation workflow, an honest
-"I cannot tell, route this to a human" is worth more than a confident coin flip.
+**3. Abstain instead of guessing.** The output is a verdict plus a reliability readout and an
+explicit "uncertain" band. This is not a design intention — it is measured. Deferring the least
+reliable 20% of images lifts accuracy from **0.9090 to 0.9317** and worst-case recall from **0.8258
+to 0.9136** on the held-back test. The deferred images score 0.8191 against 0.9317 for the kept ones:
+the system declines on the images it would have got wrong. For a moderation workflow, an honest
+"route this to a human" is worth more than a confident coin flip.
+
+### What it does
+
+Worst-transformation-family fake recall, on 3,000 untouched sources:
+
+| | worst-family recall | clean FPR |
+|---|---|---|
+| Off-the-shelf detector, published default | 0.1227 | 0.0027 |
+| **Our cascade** | **0.8258** | 0.0833 |
+
+The naive comparison is +0.70. We do not report that number, because the two sit ~30x apart in
+false-positive rate and some of the gain is simply a looser cut. So we handed the baseline a
+threshold **fitted on the test set itself** to reproduce our exact operating point — leakage we grant
+it and deny ourselves. The cascade still leads by **+0.49** (CI95 [+0.475, +0.508]). That is what we
+report.
+
+We publish what the same control takes away: at matched FPR the baseline **beats** us on blur, colour
+and resize. Our entire advantage is `noise` and `jpeg`, the families where it collapses. We raise the
+floor, not the ceiling — and on clean images we buy nothing at all (0.9613 vs 0.9620).
 
 ### What we actually found
 
-Three findings we did not expect, all of which changed the build:
+Four findings we did not expect, all of which changed the build:
 
 **Our own training data was broken, and we found it ourselves.** We deliberately drew both real and
 fake images from a single dataset, specifically to avoid the classic trap of learning "this looks like
@@ -76,6 +98,18 @@ published evaluation is a lossless PNG. On identical pixels re-encoded as JPEG q
 **0.592 and its fake recall to 0.000** — it calls every AI image real. A detector that only works on
 uncompressed images cannot help on a platform where every upload is recompressed. We report that as a
 finding rather than shipping it as a dependency.
+
+**The second expert failed twice, for the same structural reason — the most interesting thing we
+learned.** After LOTA we integrated PGC (Apache-2.0, 306.7M parameters), which loads cleanly and,
+unlike LOTA, is perfectly deterministic. It failed too: P(PGC correct | our cascade wrong) =
+**0.5426**, a coin flip, with correction-minus-harm **-2451**. We tried confident-only override,
+logit blending and per-family gating; the best variant nets **+1 across 12,000 images**.
+
+Why both failed is the finding. A rescue only ever sees images the system already distrusts, and
+those are dominated by noise and heavy JPEG. LOTA reads the least-significant-bit plane; PGC reads a
+quantization residual. Both live in the high-frequency band — exactly what those degradations
+destroy. **You cannot rescue noise-destroyed evidence with a detector that reads evidence from the
+noise band.** So the escalation we ship goes to a human, not to a second model.
 
 **The reference benchmark has substantial duplication.** Of the 8,843 AI images supplied for
 demonstration, only **3,719 are unique** — 5,124 are byte-identical copies, some repeated five times.
@@ -104,18 +138,33 @@ The parts we consider load-bearing:
 
 ### Honest status
 
-`[PENDING]` The protected evaluation is running at submission time. The robustness table, the trained
-router result, and the sealed reference-set run are reported from committed artifacts or not at all.
+Everything above comes from committed artifacts, and the failures are published beside the wins:
 
-What we will not claim: that we solved JPEG at quality 30. We did not. Heavy compression and heavy
-noise remain hard, and we report the conditions where the system fails alongside those where it works.
+- **A constraint we set ourselves did not hold.** The threshold was selected under a clean
+  false-positive cap of 0.0756; on unseen data it measured **0.0833**. We had pre-registered what to
+  do if that happened and did it: report it, do not re-tune.
+- **A rung we did not ship looks better on average.** Plain MLP has higher overall accuracy (0.9213
+  vs 0.9090) and a lower clean FPR than the version we shipped. We selected on worst-case robustness
+  by a rule fixed in advance; re-picking after seeing the test would be the exact leakage this
+  protocol exists to prevent. The full table is published so a reader can disagree with our
+  objective rather than be misled about its price.
+- **Abstention has a blind spot.** It tracks noise almost perfectly (7% of clean images deferred,
+  99% at sigma 0.10) but is nearly blind to blur — 0.03% deferred, where the error rate is elevated.
+  Blur makes an image look *cleaner*, so the reliability head stays confident. Our worst individual
+  errors all carry high reliability and would not be deferred.
+- **The cascade costs ~6.8x the baseline** in latency (127.9 ms vs 18.8 ms p50), almost all of it the
+  probe passes. Adaptive escalation would have fixed that; it failed its gate, so we pay it always.
+
+What we will not claim: that we solved heavy compression or heavy noise. We did not. They remain the
+worst conditions and we report them.
 
 ### Built with
 
-- **Models:** Community Forensics 384 (MIT, 21.8M parameters) as the primary detector. LOTA (MIT)
-  evaluated and rejected on measured evidence. Total pipeline well under the 2B parameter limit.
+- **Models:** Community Forensics 384 (MIT, 21.8M parameters) as the primary detector, plus our own
+  1,827-parameter reliability router — **21,813,796 parameters shipped**, roughly 0.001% of the 2B
+  limit. LOTA (MIT) and PGC (Apache-2.0, 306.7M) were both integrated, measured and rejected.
 - **Libraries:** PyTorch (Apple Silicon MPS), timm, Hugging Face Hub, Pillow, NumPy, PyArrow,
-  imagehash, Gradio, pytest, Ruff.
+  imagehash, transformers, Gradio, pytest, Ruff.
 - **Data:** SID-Set (CC BY 4.0) for the training corpus; COCO train2017 for real smoke images; the
   organizers' WildFake reference subset used exactly once, for reference only, never for fitting.
 - **Tools:** VS Code, git, `uv`, and two AI coding agents working as reviewing peers — every gate in
