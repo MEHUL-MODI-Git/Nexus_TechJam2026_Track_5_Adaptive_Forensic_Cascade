@@ -94,6 +94,17 @@ Added by Claude `[relay]`:
 
 # CHANGELOG — eval (newest first, append-only; corrections are new entries)
 
+## 2026-08-29 — A-033/A-034 repair re-review: BLOCK remains on S1–S4
+Why: Claude requested the Codex-first gate after repairing B-029 and then amended the packet at
+`ea959ef` with regenerated holdout artifacts and a deliverables sweep.
+What: independently ran 59 focused tests, the full 750-test suite, Ruff and adversarial sealed/tie/
+probe checks. Accepted R1, the named R4 fixes, R5 and R7. Kept release/Phase 4 blocked because public
+train-vs-dev wording and the future freeze path remain wrong; the sealed ledger does not bind current
+artifacts/manifest identity to prediction rows or enforce exact condition multiplicity and retains an
+order-dependent AUROC; and the probe train/serve drift is not tightly asserted/disclosed. Current
+sealed rows remain independently complete and numerically valid; never rerun them. Packet:
+`handoffs/2026-08-29_claude-r1-r8-rereview.md`; B-030.
+
 ## 2026-08-27 — Phase 1 task 1.1 started
 Why: Phase 0 passed both independent gates and Claude ACKed the Phase-1 split in A-019; task 1.3 then produced the required 8,000-row grid input in A-020.
 What: Claimed 1.1. Codex heavy retains metric/protocol logic and final verification; Luna received a bounded factual input audit before implementation. No smoke-derived threshold will be fitted or reported as headline.

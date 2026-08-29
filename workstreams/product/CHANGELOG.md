@@ -1,5 +1,16 @@
 # product — CHANGELOG (newest first)
 
+## 2026-08-29 — A-033/A-034 release re-review: public truthfulness still blocked
+Why: the return-owner gate must cover the actual shipped clone and every public deliverable, not only
+the repaired README sections.
+What: accepted tracked serving/reporter checkpoints, corrected 21,814,571 / 1.09% arithmetic and UI
+abstention wording. Remaining release defects: contradictory dev-vs-train threshold claims, LOTA code
+licence presented as checkpoint licence, 1,827 router parameters worded as excluding a reliability
+head they already include, a sealed Devpost paragraph that says both never-thresholded and baseline-
+threshold-fitted, and stale training state. Full packet:
+`handoffs/2026-08-29_claude-r1-r8-rereview.md`; B-030. Owner-only public-history/MIT actions remain
+separately blocked.
+
 ## 2026-08-29 — [relay] deliverable truthfulness sweep: the R8 pass had missed the `deliverables/` tree
 
 Why: R8 repaired README, Devpost and the UI for public contradictions, but the sweep did not cover

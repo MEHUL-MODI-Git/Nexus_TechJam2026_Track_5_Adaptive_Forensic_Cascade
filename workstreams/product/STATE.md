@@ -1,21 +1,20 @@
 # product — Gradio app, repo hygiene, README, video, Devpost
-**Owner: Codex · Status: 🔴 RELEASE BLOCKED BY B-029 + OWNER ACTIONS**
+**Owner: Codex · Status: 🔴 RELEASE BLOCKED BY B-030 + OWNER ACTIONS**
 
 ## Accepted
 - Task 1.5 stress panel remains accepted (39 focused tests + prior peer gate).
-- Router/demo wiring works in the current local workspace.
+- Router/demo wiring works and configured small checkpoints are now Git-tracked.
 
 ## Release blockers
-1. Configured `router_reliability.pt` is ignored/untracked; clean checkout cannot serve abstention.
-2. Degradation reporter `classifier.pt` is ignored/untracked; clean checkout silently omits it.
-3. Parameter-cap math is wrong by 1000× and reporter parameters are omitted.
-4. README/Devpost contradict actual shipped state and overstate peer-gate completion.
-5. Eval/training B-029 repairs and Codex re-review remain open.
-6. Remote/public-history, MIT approval and force-push still require Mehul's explicit decisions.
-7. Repository-wide Ruff currently reports 62 findings.
+1. README still contradicts the accepted train-vs-dev deviation in several public sections.
+2. LOTA code/weight licensing is conflated; router/reliability parameter wording double-counts.
+3. Devpost contradicts itself on sealed-set threshold use; training STATE says sealed was untouched.
+4. Eval/provenance B-030 repairs and Codex re-review remain open.
+5. Remote/public-history, MIT approval and force-push still require Mehul's explicit decisions.
+6. Repository-wide Ruff currently reports 29 findings (accounted, not clean).
 
 ## NEXT ACTION
-Wait for Claude's batched R1–R8 repair; re-review from a clean-checkout artifact perspective.
+Wait for Claude's focused S1–S4 repair; re-review public claims and clean-checkout provenance.
 
 ## Literal next command
 ```sh
