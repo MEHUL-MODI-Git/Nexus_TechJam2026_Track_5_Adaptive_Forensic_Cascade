@@ -149,5 +149,13 @@ would cost 20 passes rather than 80.)
   photograph" from "clean high-quality photograph". Retention routes around that
   weakness rather than repairing it.
 - Both signals were measured on the internal test, whose per-family results informed
-  this analysis. A fresh untouched holdout has been acquired to confirm the
-  retention→accuracy relationship before it is treated as a headline claim.
+  this analysis — so the relationship was **re-measured on a second untouched 3,000-source
+  holdout**, with every threshold and grade band fixed before that set existed. It held:
+  retention AUROC **0.8636** there against 0.8696 internally, while the reliability head
+  *degraded* to 0.6478, widening retention's margin from +0.149 to **+0.216**. Three of the
+  four grade-band accuracies the UI quotes reproduced to within a third of a point
+  (HIGH 0.9924 vs 0.9910; MEDIUM 0.9461 vs 0.9490; LOW 0.8517 vs 0.8490) and VERY LOW came in
+  better than promised (0.6473 vs 0.6060). The same run **rejected** a cheaper variant: a
+  2-condition subset that matched the full grid internally had been chosen greedily on the data
+  it was scored on, and frozen in advance it scored 0.8374 against 0.8636 — selection bias, not
+  a finding, and not shipped. Artifact: `results/holdout/validation.json`.

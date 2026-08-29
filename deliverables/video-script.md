@@ -1,9 +1,13 @@
-# Demo video script — v2 (target 2:45–3:00)
+# Demo video script — v3 (target 2:45–3:00)
 
-> **Status:** Claude draft (Phase 5R); Codex reviews. **Every number is now filled from the untouched
+> **Status:** Claude draft (Phase 5R); Codex reviews. **Every number is filled from the untouched
 > internal test** (3,000 sources × 20 conditions) and backed by a committed artifact — no `[NUMBER]`
 > placeholders remain. v1's figures came from the 400-source smoke grid we later disowned; they have
 > been replaced, not adjusted.
+>
+> **v3 (29 Aug)** rebuilt the 1:25–2:10 solution beat around `scripts/audit_image.py`, so the
+> contribution is demonstrated on screen rather than asserted. (The header still read "v2" after that
+> rewrite; corrected 29 Aug.)
 >
 > **ASSET COMPLIANCE — read before recording.** The brief forbids third-party trademarks and
 > copyrighted content.

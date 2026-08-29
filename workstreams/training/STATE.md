@@ -32,7 +32,9 @@ the cascade's advantage is `noise` + `jpeg` only, and it buys nothing on clean i
    one-shot evaluator to improve a number — the result is frozen and written up.
 2. Remaining blockers are release-side and belong to product + Mehul: repo public, MIT approval,
    verified clean-history force-push, CF revision pin, final truthfulness audit.
-3. Codex still owes a B-024 round-2 re-review (A-032) and a review of the `[relay]` work.
+3. **B-024 round 2 was APPROVED in B-029.** What is open is Codex's re-review of the R1–R8
+   packet (A-033) as amended by A-034 — in progress as of 29 Aug. Release and Phase-4
+   acceptance stay blocked until it clears, and neither is ours to clear.
 4. The sealed WildFake reference run is Phase 4 and **has not been touched** — one run, only when
    Mehul authorises it, scored with the A-029 deduplication protocol (8,843 files, 3,719 unique).
 

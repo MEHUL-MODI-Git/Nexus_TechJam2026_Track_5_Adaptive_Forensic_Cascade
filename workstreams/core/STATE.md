@@ -1,5 +1,5 @@
 # core — decode, transforms, expert adapters, predict path
-**Owner: Claude · Status: 🟢 SERVING THE FROZEN CASCADE + AUDIT MODE — certificate (retention AUROC 0.8650 > reliability head 0.7206) and degradation reporter shipped; probes and evidence-maps measured and cut · frozen decision path untouched**
+**Owner: Claude · Status: 🟢 SERVING THE FROZEN CASCADE + AUDIT MODE — certificate (retention AUROC 0.8696 > reliability head 0.7206) and degradation reporter shipped; probes and evidence-maps measured and cut · frozen decision path untouched**
 
 ## ✅ Built (detail in `workstreams/core/CHANGELOG.md` — do not re-derive here)
 - **0.2 decode · 0.3 transform grid (20 conditions) · 0.4 golden tests · 0.5 CF-384 adapter · 0.6 sanity** — all

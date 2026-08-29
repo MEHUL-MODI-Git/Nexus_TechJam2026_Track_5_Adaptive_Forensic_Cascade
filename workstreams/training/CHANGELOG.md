@@ -1,5 +1,25 @@
 # CHANGELOG — training (newest first, append-only; corrections are new entries)
 
+## 2026-08-29 — R4 was repaired in the script but not in the artifact it wrote
+
+Found while re-reading the R1–R8 packet before Codex's re-review, and it is the same class of
+defect Codex blocked on. R4 corrected the tie-unaware AUROC everywhere it was *computed* —
+including `scripts/validate_on_holdout.py`, whose two hard-coded internal-test reference constants
+were updated to 0.8696 / 0.8690. `results/holdout/validation.json` was hand-patched for its two
+*computed* values and the three *reference* values were missed, so the committed artifact still
+said 0.865 and 0.8664 while README §7, which cites that artifact, said 0.8696 and 0.8690.
+
+Repaired by **regenerating the artifact from the corrected script** rather than editing it again.
+The re-run is a clean reproduction: every computed value came back byte-identical — worst-family
+0.8289, clean FPR 0.0753, retention AUROC 0.8636, reliability head 0.6478, all four grade bands,
+subset 0.8374, probe-free 0.8373 — and the diff against the committed file is exactly the three
+stale constants and nothing else. Nothing was refitted, reselected or re-thresholded; the holdout
+remains a set on which every threshold was fixed beforehand.
+
+The lesson, recorded because it generalises: a correction applied to a generator is not applied to
+the artifacts that generator already wrote. Regenerating is the check; hand-patching is what let
+this survive a repair that was specifically about this number.
+
 ## 2026-08-28 — PHASE 3 COMPLETE: abstention SHIPS, the second expert DOES NOT
 
 Four things landed after the one-shot test. Two worked, two did not, and the two that did not

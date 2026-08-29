@@ -28,7 +28,7 @@
     "auroc_verdict_retention": 0.8636,
     "internal_test_auroc": {
       "reliability_head": 0.7206,
-      "verdict_retention": 0.865
+      "verdict_retention": 0.8696
     },
     "grade_bands": {
       "HIGH": {
@@ -72,8 +72,8 @@
     "auroc_subset": 0.8374,
     "auroc_all_20": 0.8636,
     "internal_test": {
-      "subset": 0.8664,
-      "all_20": 0.865
+      "subset": 0.869,
+      "all_20": 0.8696
     },
     "forward_passes": {
       "subset": 8,

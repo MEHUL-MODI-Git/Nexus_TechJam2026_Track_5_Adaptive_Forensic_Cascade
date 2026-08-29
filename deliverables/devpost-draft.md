@@ -1,10 +1,16 @@
-# Devpost description — DRAFT v1
+# Devpost description — draft v2
 
-> **Status:** Claude draft, Codex reviews and integrates (Phase 5R). **Every number below is measured
-> on the untouched internal test (3,000 sources x 20 conditions) and backed by a committed artifact.**
+> **Status:** Claude draft, Codex reviews and integrates (Phase 5R). **Every number below is backed by
+> a committed artifact and measured on data that fitted nothing** — the untouched internal test
+> (3,000 sources x 20 conditions), the second holdout, the one-shot run on the organizers' sealed
+> reference subset, or the ops measurement artifact. Each section says which.
 > The smoke-set figures that opened the previous draft are gone: they came from a 400-source
 > diagnostic pitting COCO reals against SID-Set fakes, a comparison we disowned once the JPEG/PNG
 > format confound was found.
+>
+> **v2 (29 Aug):** adds the sealed reference benchmark, which the draft had omitted entirely;
+> corrects the latency figures to the committed ops artifact (they had drifted a run behind) and
+> the parameter enumeration to include the degradation reporter.
 
 ---
 
@@ -93,6 +99,33 @@ We publish what the same control takes away: at matched FPR the baseline **beats
 and resize. Our entire advantage is `noise` and `jpeg`, the families where it collapses. We raise the
 floor, not the ceiling — and on clean images we buy nothing at all (0.9613 vs 0.9620).
 
+### And on the organizers' own reference data, scored exactly once
+
+The reference subset was sealed from the first day: never trained on, never thresholded on, never
+looked at while anything was being chosen. After the architecture was frozen we ran it **once** —
+8,719 unique images × 20 conditions = **174,380 rows, 0 failures**, through the same prediction
+service the demo calls.
+
+| | clean | all 20 conditions |
+|---|---|---|
+| AUROC | **0.9964** | **0.9821** |
+| fake recall | 0.9680 | 0.9385 |
+| false-positive rate | **0.0158** | 0.0570 |
+
+Worst-family recall **0.8787** (`resize`), CI95 [0.8703, 0.8874] — *better* than the 0.8258 we
+measured on our own held-out test, and the clean FPR constraint our internal test breached
+(0.0833 against a 0.0756 cap) did not reproduce here at 0.0158.
+
+**Two things did not transfer, and we report them as plainly as the wins.** Against a primary
+baseline given our operating point — its threshold fitted on this very set, in its favour — our
+advantage is **+0.09 here, not +0.49**. On this distribution the base detector is already strong,
+so there is less left for a correction layer to do; our gain concentrates where the baseline is
+weakest, which is the same finding seen from the other side. And **abstention does not generalise
+to it at all**: the frozen policy defers 26% of images, and the deferred set is as accurate as the
+kept set (0.9407 vs 0.9412). The reliability head was fitted on SID-Set. Deferring a quarter of the
+images for no measurable gain is a real cost on this distribution, and we state it as one rather
+than quietly reporting the run without it.
+
 ### What we actually found
 
 Four findings we did not expect, all of which changed the build:
@@ -178,7 +211,7 @@ Everything above comes from committed artifacts, and the failures are published 
   99% at sigma 0.10) but is nearly blind to blur — 0.03% deferred, where the error rate is elevated.
   Blur makes an image look *cleaner*, so the reliability head stays confident. Our worst individual
   errors all carry high reliability and would not be deferred.
-- **The cascade costs ~6.8x the baseline** in latency (127.9 ms vs 18.8 ms p50), almost all of it the
+- **The cascade costs 6.9x the baseline** in latency (134.6 ms vs 19.5 ms p50), almost all of it the
   probe passes. Adaptive escalation would have fixed that; it failed its gate, so we pay it always.
 
 What we will not claim: that we solved heavy compression or heavy noise. We did not. They remain the
@@ -186,9 +219,10 @@ worst conditions and we report them.
 
 ### Built with
 
-- **Models:** Community Forensics 384 (MIT, 21.8M parameters) as the primary detector, plus our own
-  1,827-parameter reliability router — **21,814,571 parameters shipped**, about 1.1% of the 2B
-  limit. LOTA (MIT) and PGC (Apache-2.0, 306.7M) were both integrated, measured and rejected.
+- **Models:** Community Forensics 384 (MIT, 21,811,969 parameters) as the primary detector, plus
+  our own 1,827-parameter reliability router and 775-parameter degradation reporter —
+  **21,814,571 parameters shipped, 1.09% of the 2B limit**, of which 0.012% are ours to train.
+  LOTA (MIT) and PGC (Apache-2.0, 306.7M) were both integrated, measured and rejected.
 - **Libraries:** PyTorch (Apple Silicon MPS), timm, Hugging Face Hub, Pillow, NumPy, PyArrow,
   imagehash, transformers, Gradio, pytest, Ruff.
 - **Data:** SID-Set (CC BY 4.0) for the training corpus; COCO train2017 for real smoke images; the

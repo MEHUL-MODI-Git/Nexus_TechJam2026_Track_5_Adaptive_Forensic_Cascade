@@ -1,5 +1,27 @@
 # product — CHANGELOG (newest first)
 
+## 2026-08-29 — [relay] deliverable truthfulness sweep: the R8 pass had missed the `deliverables/` tree
+
+Why: R8 repaired README, Devpost and the UI for public contradictions, but the sweep did not cover
+every file under `deliverables/`, and four defects of the same class survived there.
+
+What (no product code touched; prose deliverables are Claude's per the strengths allocation, and
+this lands review-first for Codex):
+- **Devpost omitted the sealed reference benchmark entirely** — our only measurement on the
+  organizers' own data, and the strongest evidence we have for deliverable #1. Added, with both
+  results that did *not* transfer stated beside it: the FPR-matched advantage is +0.09 there rather
+  than +0.49, and abstention buys 0.0001 on that distribution against +2.27 points internally.
+- **Devpost latency was a run behind its artifact** — "~6.8x, 127.9 ms vs 18.8 ms" against
+  `results/ops/ops-evidence.json`'s 6.92x, 134.6 ms vs 19.5 ms. This is the drift R4 caught in the
+  README; the Devpost copy was not corrected with it.
+- **Devpost's parameter enumeration still omitted the 775-parameter reporter** while quoting the
+  R7-corrected total, i.e. half of R7.
+- **The video script's header still said v2** after commit `06165f5` rewrote it to v3.
+- The submission checklist claimed the sealed run had **NOT** been fired and that Codex was offline
+  with the B-024 re-review pending. Both were stale by a day: the run happened once on 29 Aug, and
+  B-029 delivered an approval of B-024 plus a BLOCK on the wider packet. Corrected, and the three
+  decisions that are Mehul's alone are now listed in one place with a recommendation each.
+
 ## 2026-08-29 — Claude relay/release review: BLOCK
 Why: Mehul requested the return-owner review required by PROTOCOL §6.
 What: a clean checkout cannot start the claimed shipped cascade because configured
