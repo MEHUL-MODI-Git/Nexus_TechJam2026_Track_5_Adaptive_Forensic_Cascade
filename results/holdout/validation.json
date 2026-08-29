@@ -1,0 +1,96 @@
+{
+  "schema_version": "holdout-validation.v1",
+  "holdout_manifest_sha256": "f5b1fa463f98727aa7b960ad425d84af0e4df9db3943b0cf9ff9d4b18b8ef47d",
+  "n_rows": 60000,
+  "n_sources": 3000,
+  "note": "second untouched set; every subset/threshold fixed before it existed",
+  "shipped_model": {
+    "worst_family": "noise",
+    "worst_family_fake_recall": 0.8289,
+    "family_fake_recall": {
+      "blur": 0.9464,
+      "color": 0.9498,
+      "crop": 0.958,
+      "jpeg": 0.9077,
+      "noise": 0.8289,
+      "resize": 0.947
+    },
+    "clean_fpr": 0.0753,
+    "clean_fake_recall": 0.9653,
+    "overall_accuracy": 0.9124,
+    "internal_test_reference": {
+      "worst_family_fake_recall": 0.8258,
+      "clean_fpr": 0.0833
+    }
+  },
+  "v1_certificate": {
+    "auroc_reliability_head": 0.6478,
+    "auroc_verdict_retention": 0.8625,
+    "internal_test_auroc": {
+      "reliability_head": 0.7206,
+      "verdict_retention": 0.865
+    },
+    "grade_bands": {
+      "HIGH": {
+        "n": 1854,
+        "share": 0.618,
+        "holdout_accuracy": 0.9924,
+        "internal_test_accuracy": 0.991,
+        "delta": 0.0014
+      },
+      "MEDIUM": {
+        "n": 649,
+        "share": 0.2163,
+        "holdout_accuracy": 0.9461,
+        "internal_test_accuracy": 0.949,
+        "delta": -0.0029
+      },
+      "LOW": {
+        "n": 290,
+        "share": 0.0967,
+        "holdout_accuracy": 0.8517,
+        "internal_test_accuracy": 0.849,
+        "delta": 0.0027
+      },
+      "VERY LOW": {
+        "n": 207,
+        "share": 0.069,
+        "holdout_accuracy": 0.6473,
+        "internal_test_accuracy": 0.606,
+        "delta": 0.0413
+      }
+    },
+    "blind_spot_n": 140,
+    "blind_spot_mean_retention": 14.55,
+    "confident_correct_mean_retention": 18.994
+  },
+  "v2_condition_subset": {
+    "subset": [
+      "resize_0.25",
+      "crop_0.8"
+    ],
+    "auroc_subset": 0.8335,
+    "auroc_all_20": 0.8625,
+    "internal_test": {
+      "subset": 0.8664,
+      "all_20": 0.865
+    },
+    "forward_passes": {
+      "subset": 8,
+      "all_20": 80
+    }
+  },
+  "v3_probe_free": {
+    "threshold": 0.4545142825227231,
+    "worst_family_fake_recall": 0.8373,
+    "worst_family": "noise",
+    "clean_fpr": 0.072,
+    "overall_accuracy": 0.9139,
+    "shipped_worst_family": 0.8289,
+    "delta_vs_shipped": 0.0084,
+    "forward_passes": {
+      "probe_free": 1,
+      "shipped": 4
+    }
+  }
+}
