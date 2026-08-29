@@ -16,7 +16,7 @@ items only Mehul can.
 | 7 | Video cleared for trademarks/copyright | 🟡 **needs Mehul's call** | Mehul | FedEx / Polar Air liveries in `fp_1`,`fp_2` must NOT appear. The best protected FP case shows a legible **public-agency** fire livery — Mehul decides or substitutes; both flagged in the script |
 | 8 | Clean-vs-transformed robustness summary | ✅ **on protected data** | Claude | README §7 — per-family, per-condition, FPR-matched baselines, full ablation ladder |
 | 9 | Error analysis with representative FPs and FNs | ✅ **regenerated on protected data** | Claude | `deliverables/error-analysis-note.md` — named files, images actually inspected |
-| 10 | Parameter statement showing <2B compliance | ✅ | — | README §9 — **21,813,796** shipped total, 0.008% trainable, plus measured latency/memory |
+| 10 | Parameter statement showing <2B compliance | ✅ | — | README §9 — **21,814,571** shipped total (1.09% of the 2B cap), 0.012% trainable, plus measured latency/memory |
 | 11 | WildFake non-training safeguard documented | ✅ | — | 13,843-entry denylist; audit: 0 exact hits, 2 perceptual both verified unrelated; guard is fail-closed and aborted a real run |
 
 ## Technical work still open

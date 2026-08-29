@@ -6,7 +6,7 @@
   "abstention_threshold": 0.866079568862915,
   "auroc_predicting_wrong_clean_verdict": {
     "reliability_head": 0.7206,
-    "verdict_retention": 0.865,
+    "verdict_retention": 0.8696,
     "combined": 0.8863
   },
   "blind_spot": {

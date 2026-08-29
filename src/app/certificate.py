@@ -4,7 +4,7 @@ The stress grid was built to EVALUATE the system. Running it per-image turns out
 to be the best confidence signal we have: how many of the 20 official conditions
 preserve the clean verdict predicts whether that verdict is correct better than
 the reliability head does (measured on the untouched internal test, 3,000
-sources: retention AUROC 0.8650 against the reliability head's 0.7206).
+sources: retention AUROC 0.8696 against the reliability head's 0.7206).
 
 It matters most where the reliability head is known to fail. Of the 157 sources
 the head passes with high confidence but gets WRONG, mean retention is 14.40/20

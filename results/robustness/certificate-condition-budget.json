@@ -2,176 +2,176 @@
   "schema_version": "certificate-condition-budget.v1",
   "NOT_A_HEADLINE_RESULT": "internal-test diagnostic; the shipped certificate still uses all 20 conditions unless confirmed on the fresh holdout",
   "n_sources": 3000,
-  "auroc_all_20": 0.865,
+  "auroc_all_20": 0.8696,
   "single_condition_auroc": {
-    "resize_0.25": 0.7449,
-    "crop_0.8": 0.7377,
-    "contrast_+20": 0.6676,
-    "bright_+20": 0.6645,
-    "blur_s2.0": 0.6548,
-    "blur_s1.0": 0.6283,
-    "resize_0.5": 0.6107,
-    "contrast_-20": 0.5987,
-    "blur_s0.5": 0.5881,
-    "noise_s0.02": 0.5777,
-    "jpeg_q30": 0.5741,
-    "bright_-20": 0.5712,
-    "noise_s0.05": 0.548,
-    "jpeg_q50": 0.5456,
-    "saturation_-20": 0.5399,
-    "jpeg_q90": 0.5318,
-    "jpeg_q70": 0.5173,
-    "saturation_+20": 0.513,
-    "noise_s0.10": 0.4999,
-    "clean": 0.4591
+    "crop_0.8": 0.7581,
+    "resize_0.25": 0.7569,
+    "bright_+20": 0.7011,
+    "contrast_+20": 0.6954,
+    "blur_s2.0": 0.6807,
+    "blur_s1.0": 0.6542,
+    "resize_0.5": 0.6371,
+    "contrast_-20": 0.6251,
+    "blur_s0.5": 0.6198,
+    "noise_s0.02": 0.6125,
+    "jpeg_q30": 0.6052,
+    "bright_-20": 0.6,
+    "noise_s0.05": 0.5847,
+    "jpeg_q50": 0.5801,
+    "saturation_-20": 0.5661,
+    "jpeg_q90": 0.562,
+    "jpeg_q70": 0.5504,
+    "saturation_+20": 0.5488,
+    "noise_s0.10": 0.533,
+    "clean": 0.5
   },
   "greedy_forward_selection": [
     {
       "n_conditions": 1,
-      "added": "resize_0.25",
-      "auroc": 0.7449,
+      "added": "crop_0.8",
+      "auroc": 0.7581,
       "forward_passes": 4,
-      "fraction_of_full_auroc": 0.8612
+      "fraction_of_full_auroc": 0.8718
     },
     {
       "n_conditions": 2,
-      "added": "crop_0.8",
-      "auroc": 0.8664,
+      "added": "resize_0.25",
+      "auroc": 0.869,
       "forward_passes": 8,
-      "fraction_of_full_auroc": 1.0016
+      "fraction_of_full_auroc": 0.9993
     },
     {
       "n_conditions": 3,
       "added": "bright_-20",
-      "auroc": 0.8779,
+      "auroc": 0.8846,
       "forward_passes": 12,
-      "fraction_of_full_auroc": 1.015
+      "fraction_of_full_auroc": 1.0172
     },
     {
       "n_conditions": 4,
-      "added": "contrast_+20",
-      "auroc": 0.8891,
+      "added": "bright_+20",
+      "auroc": 0.8949,
       "forward_passes": 16,
-      "fraction_of_full_auroc": 1.0279
+      "fraction_of_full_auroc": 1.0291
     },
     {
       "n_conditions": 5,
-      "added": "blur_s0.5",
-      "auroc": 0.8982,
+      "added": "contrast_+20",
+      "auroc": 0.8999,
       "forward_passes": 20,
-      "fraction_of_full_auroc": 1.0384
+      "fraction_of_full_auroc": 1.0348
     },
     {
       "n_conditions": 6,
-      "added": "bright_+20",
-      "auroc": 0.9007,
+      "added": "blur_s0.5",
+      "auroc": 0.9031,
       "forward_passes": 24,
-      "fraction_of_full_auroc": 1.0413
+      "fraction_of_full_auroc": 1.0385
     },
     {
       "n_conditions": 7,
-      "added": "jpeg_q90",
-      "auroc": 0.9026,
+      "added": "contrast_-20",
+      "auroc": 0.9045,
       "forward_passes": 28,
-      "fraction_of_full_auroc": 1.0435
+      "fraction_of_full_auroc": 1.0401
     },
     {
       "n_conditions": 8,
-      "added": "blur_s1.0",
-      "auroc": 0.9033,
+      "added": "jpeg_q90",
+      "auroc": 0.9057,
       "forward_passes": 32,
-      "fraction_of_full_auroc": 1.0444
+      "fraction_of_full_auroc": 1.0415
     },
     {
       "n_conditions": 9,
-      "added": "contrast_-20",
-      "auroc": 0.9037,
+      "added": "blur_s2.0",
+      "auroc": 0.906,
       "forward_passes": 36,
-      "fraction_of_full_auroc": 1.0447
+      "fraction_of_full_auroc": 1.0419
     },
     {
       "n_conditions": 10,
       "added": "clean",
-      "auroc": 0.9037,
+      "auroc": 0.906,
       "forward_passes": 40,
-      "fraction_of_full_auroc": 1.0447
+      "fraction_of_full_auroc": 1.0419
     },
     {
       "n_conditions": 11,
       "added": "saturation_+20",
-      "auroc": 0.9036,
+      "auroc": 0.9059,
       "forward_passes": 44,
-      "fraction_of_full_auroc": 1.0446
+      "fraction_of_full_auroc": 1.0418
     },
     {
       "n_conditions": 12,
-      "added": "blur_s2.0",
-      "auroc": 0.9033,
+      "added": "blur_s1.0",
+      "auroc": 0.9059,
       "forward_passes": 48,
-      "fraction_of_full_auroc": 1.0443
+      "fraction_of_full_auroc": 1.0417
     },
     {
       "n_conditions": 13,
-      "added": "saturation_-20",
-      "auroc": 0.9027,
+      "added": "jpeg_q30",
+      "auroc": 0.9057,
       "forward_passes": 52,
-      "fraction_of_full_auroc": 1.0436
+      "fraction_of_full_auroc": 1.0415
     },
     {
       "n_conditions": 14,
-      "added": "jpeg_q50",
-      "auroc": 0.9021,
+      "added": "resize_0.5",
+      "auroc": 0.9051,
       "forward_passes": 56,
-      "fraction_of_full_auroc": 1.0429
+      "fraction_of_full_auroc": 1.0408
     },
     {
       "n_conditions": 15,
-      "added": "resize_0.5",
-      "auroc": 0.9016,
+      "added": "saturation_-20",
+      "auroc": 0.9046,
       "forward_passes": 60,
-      "fraction_of_full_auroc": 1.0424
+      "fraction_of_full_auroc": 1.0403
     },
     {
       "n_conditions": 16,
-      "added": "jpeg_q70",
-      "auroc": 0.8978,
+      "added": "jpeg_q50",
+      "auroc": 0.9023,
       "forward_passes": 64,
-      "fraction_of_full_auroc": 1.0379
+      "fraction_of_full_auroc": 1.0376
     },
     {
       "n_conditions": 17,
-      "added": "jpeg_q30",
-      "auroc": 0.8938,
+      "added": "jpeg_q70",
+      "auroc": 0.8986,
       "forward_passes": 68,
-      "fraction_of_full_auroc": 1.0333
+      "fraction_of_full_auroc": 1.0334
     },
     {
       "n_conditions": 18,
       "added": "noise_s0.02",
-      "auroc": 0.8896,
+      "auroc": 0.8946,
       "forward_passes": 72,
-      "fraction_of_full_auroc": 1.0285
+      "fraction_of_full_auroc": 1.0287
     },
     {
       "n_conditions": 19,
       "added": "noise_s0.05",
-      "auroc": 0.8794,
+      "auroc": 0.8842,
       "forward_passes": 76,
       "fraction_of_full_auroc": 1.0167
     },
     {
       "n_conditions": 20,
       "added": "noise_s0.10",
-      "auroc": 0.865,
+      "auroc": 0.8696,
       "forward_passes": 80,
       "fraction_of_full_auroc": 1.0
     }
   ],
   "cheapest_within_0.005_of_full": {
     "n_conditions": 2,
-    "added": "crop_0.8",
-    "auroc": 0.8664,
+    "added": "resize_0.25",
+    "auroc": 0.869,
     "forward_passes": 8,
-    "fraction_of_full_auroc": 1.0016
+    "fraction_of_full_auroc": 0.9993
   }
 }

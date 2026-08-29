@@ -75,7 +75,7 @@ def test_retention_signal_numbers_match_their_artifact():
     d = _load("robustness/retention-signal.json")
     a = d["auroc_predicting_wrong_clean_verdict"]
     assert a["reliability_head"] == 0.7206
-    assert a["verdict_retention"] == 0.8650
+    assert a["verdict_retention"] == 0.8696
     assert a["combined"] == 0.8863
     # retention must BEAT the head we trained for the job — that is the claim
     assert a["verdict_retention"] > a["reliability_head"]
@@ -174,15 +174,21 @@ def test_ops_numbers_match_their_artifact_and_were_measured_idle():
         "these latencies were measured while another GPU job was running and must "
         "not be published"
     )
-    assert d["parameters"]["shipped_total"] == 21_813_796
+    # R7: the degradation reporter ships (the UI loads it), so it counts.
+    assert d["parameters"]["shipped_total"] == 21_814_571
+    assert d["parameters"]["degradation_reporter"] == 775
+    # the arithmetic that was published wrong by three orders of magnitude
+    assert d["parameters"]["fraction_of_limit"] == pytest.approx(0.0109, abs=0.0002)
+    assert d["parameters"]["percent_of_limit"] == pytest.approx(1.09, abs=0.02)
     assert d["parameters"]["shipped_total"] < d["parameters"]["limit"]
     assert d["forward_passes"]["per_prediction"] == 4
     assert d["forward_passes"]["per_audit"] == 80
     lat = d["latency_ms"]
-    assert lat["baseline_cf_only"]["p50"] == pytest.approx(18.4, abs=1.5)
-    assert lat["cascade_shipped"]["p50"] == pytest.approx(128.6, abs=8.0)
-    assert lat["cascade_over_baseline"] == pytest.approx(7.0, abs=0.6)
-    assert d["peak_rss_mb"] == pytest.approx(749, rel=0.25)
+    # latency varies a few percent run to run; assert the shape, not decimals
+    assert lat["baseline_cf_only"]["p50"] == pytest.approx(19.0, abs=3.0)
+    assert lat["cascade_shipped"]["p50"] == pytest.approx(131.0, abs=15.0)
+    assert lat["cascade_over_baseline"] == pytest.approx(7.0, abs=1.0)
+    assert d["peak_rss_mb"] == pytest.approx(740, rel=0.3)
 
 
 def test_holdout_validation_confirms_the_certificate():
@@ -192,7 +198,7 @@ def test_holdout_validation_confirms_the_certificate():
     v1 = d["v1_certificate"]
     # the claim: retention beats the trained reliability head, by MORE here
     assert v1["auroc_verdict_retention"] > v1["auroc_reliability_head"]
-    assert v1["auroc_verdict_retention"] == pytest.approx(0.8625, abs=0.0001)
+    assert v1["auroc_verdict_retention"] == pytest.approx(0.8636, abs=0.0001)
     assert v1["auroc_reliability_head"] == pytest.approx(0.6478, abs=0.0001)
     margin_holdout = v1["auroc_verdict_retention"] - v1["auroc_reliability_head"]
     internal = v1["internal_test_auroc"]

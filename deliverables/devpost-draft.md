@@ -60,7 +60,7 @@ the system declines on the images it would have got wrong. For a moderation work
 *evaluate* the system turned out to be its best confidence signal. Run on a single image it
 asks: how many of these 20 real-world transformations preserve this verdict? That number
 predicts whether the verdict is wrong **better than the reliability head we trained for the
-job** — AUROC 0.8650 against 0.7206 — and it catches 72.6% of the errors that head passes
+job** — AUROC 0.8696 against 0.7206 — and it catches 72.6% of the errors that head passes
 with high confidence. So the product returns a **Forensic Robustness Certificate**:
 
 ```
@@ -187,7 +187,7 @@ worst conditions and we report them.
 ### Built with
 
 - **Models:** Community Forensics 384 (MIT, 21.8M parameters) as the primary detector, plus our own
-  1,827-parameter reliability router — **21,813,796 parameters shipped**, roughly 0.001% of the 2B
+  1,827-parameter reliability router — **21,814,571 parameters shipped**, about 1.1% of the 2B
   limit. LOTA (MIT) and PGC (Apache-2.0, 306.7M) were both integrated, measured and rejected.
 - **Libraries:** PyTorch (Apple Silicon MPS), timm, Hugging Face Hub, Pillow, NumPy, PyArrow,
   imagehash, transformers, Gradio, pytest, Ruff.

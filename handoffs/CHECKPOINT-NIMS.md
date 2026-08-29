@@ -15,7 +15,7 @@
 Single-stage cascade: CF-384 primary → quality descriptors + 3 self-probes → 1,827-param MLP
 (worst-group loss) correction head → 17-param reliability head → verdict + reliability + DEFER.
 
-- **21,813,796 parameters** shipped (0.001% of the 2B cap)
+- **21,814,571 parameters** shipped (**1.09%** of the 2B cap)
 - Single frozen threshold **0.4667367651127279** across all 20 conditions
 - Frozen abstention threshold **0.866080** (reliability value, chosen on dev)
 - Served on the live path: Gradio, `scripts/infer_dir.py`, eval harness all share one

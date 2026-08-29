@@ -433,7 +433,7 @@ clean verdict:
 | signal | AUROC |
 |---|---|
 | reliability head (trained for this) | 0.7206 |
-| **verdict retention across 20 conditions** | **0.8650** |
+| **verdict retention across 20 conditions** | **0.8696** |
 | both combined | 0.8863 |
 
 And it lands on the exact weakness §8 documents. Of the 157 sources the
@@ -457,17 +457,17 @@ the measured relationship rather than labels we chose:
 **Confirmed on a second untouched set.** Because the internal test's own results generated
 this idea, we acquired a **fresh 3,000-source holdout** (shards never previously consumed,
 canonicalized identically, verified disjoint from everything we fit on) and re-measured with
-every threshold fixed beforehand. Retention AUROC **0.8625** there against 0.8650 internally —
-and the reliability head *degraded* to 0.6478, so retention's margin widened from +0.144 to
-**+0.215**. The grade-band accuracies the UI quotes hold to within a third of a point on three
+every threshold fixed beforehand. Retention AUROC **0.8636** there against 0.8696 internally —
+and the reliability head *degraded* to 0.6478, so retention's margin widened from +0.149 to
+**+0.216**. The grade-band accuracies the UI quotes hold to within a third of a point on three
 of four bands (HIGH 0.9924 vs 0.9910; MEDIUM 0.9461 vs 0.9490; LOW 0.8517 vs 0.8490), and
 VERY LOW came in *better* than promised (0.6473 vs 0.6060). Artifact:
 `results/holdout/validation.json`.
 
 We also tested, and **rejected**, a cheaper version: on the internal test a 2-condition subset
 matched the full grid at a tenth of the cost, but the subset had been chosen greedily on the
-data it was scored on. Frozen in advance and re-measured on the holdout it scored **0.8335
-against 0.8625** — selection bias, not a finding. It is not shipped.
+data it was scored on. Frozen in advance and re-measured on the holdout it scored **0.8374
+against 0.8636** — selection bias, not a finding. It is not shipped.
 
 This is **audit mode**, and its cost is real: each of the 20 conditions runs the full
 service (1 expert + 3 probes), so an audit is **80 CF-384 forward passes — ~3.0 s
@@ -683,10 +683,17 @@ The brief caps total model size at 2B parameters. Measured, not estimated:
 | Community Forensics 384 (ViT-S/16) | 21,811,969 | No — frozen |
 | Reliability/fusion router (MLP + worst-group loss) | 1,827 | **Yes** — the contribution |
 | ├─ of which the reliability/abstention head | 17 | Yes — fitted in a frozen second stage |
-| **Shipped total** | **21,813,796** | — |
+| Degradation reporter (loaded by the UI and audit CLI) | 775 | **Yes** |
+| **Shipped total** | **21,814,571** | — |
 
-**0.0000109 of the 2B cap**, and our own trainable parameters are **0.008%** of
-the shipped system. The contribution is the decision layer, not scale.
+**1.09% of the 2B cap** (21,814,571 / 2,000,000,000 = 0.0109), and our own trainable
+parameters — the 1,827-parameter router plus the 775-parameter degradation reporter — are
+**0.012%** of the shipped system. The contribution is the decision layer, not scale.
+
+*(Corrected 2026-08-29 after Codex review R7: this previously read "0.0000109 of the cap"
+and "0.001%", which mistook the dimensionless fraction 0.0109 for a percentage and was wrong
+by three orders of magnitude. The degradation reporter's 775 parameters were also omitted
+while the UI loads and calls it.)*
 
 Parked, not shipped, but measured and kept in the repo as evidence: PGC
 (306,704,641 params). Had it been adopted the total would still have been
@@ -700,22 +707,24 @@ GPU job is live, because latency measured against a busy GPU is not a number wor
 
 | path | p50 | p95 | forward passes |
 |---|---:|---:|---:|
-| CF-384 alone (baseline) | 18.4 ms | 19.9 ms | 1 |
-| **Full cascade (shipped)** | **128.6 ms** | **142.9 ms** | 4 |
+| CF-384 alone (baseline) | 19.5 ms | 20.6 ms | 1 |
+| **Full cascade (shipped)** | **134.6 ms** | **150.9 ms** | 4 |
 | Audit mode (20-condition certificate) | ~3.0 s | — | 80 |
 | PGC alone (parked candidate) | 54.3 ms | 55.3 ms | 1 |
 
-Peak RSS **749 MB** for the shipped path.
+Peak RSS **727 MB** for the shipped path. These are one measured run; repeating
+it moves the figures a few percent, so the artifact is the source of truth and the tests assert
+the values with tolerance rather than to the decimal.
 
-The cascade costs **7.0× the baseline**, and we are not going to pretend that is free. Almost
-all of it is the three probe forward passes that produce the router's stability features — the
-router head itself is 1,827 parameters and its arithmetic is negligible. At ~7.8 images/second
-on a laptop this is comfortable for interactive use and for this project's batch sizes, but it
-is a real cost to weigh against the robustness it buys (§7).
+The cascade costs **6.9× the baseline**, and we are not going to pretend that is
+free. Almost all of it is the three probe forward passes that produce the router's stability
+features — the router head itself is 1,827 parameters and its arithmetic is negligible. At
+~7.5 images/second on a laptop this is comfortable for interactive use and for this project's
+batch sizes, but it is a real cost to weigh against the robustness it buys (§7).
 
 **And §8 shows those probes buy nothing measurable.** Dropping them would take the normal path
 to ~19 ms and an audit from 80 forward passes to 20. We have not shipped that change because it
-alters the frozen architecture and would need validating on genuinely untouched data first.
+alters the frozen architecture and the sealed benchmark measured the with-probes system (§8b).
 
 Artifact: `results/ops/ops-evidence.json`.
 

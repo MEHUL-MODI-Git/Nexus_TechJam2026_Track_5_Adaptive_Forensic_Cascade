@@ -121,7 +121,7 @@ reliability head trained for that purpose:
 | signal | AUROC predicting a wrong clean verdict |
 |---|---|
 | reliability head | 0.7206 |
-| **verdict retention** | **0.8650** |
+| **verdict retention** | **0.8696** |
 | both combined | 0.8863 |
 
 It works precisely where the reliability head fails. Of the **157** sources the head

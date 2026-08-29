@@ -28,6 +28,11 @@ models/
 # against the 21.8M-parameter expert checkpoints this rule exists to exclude.
 # Judges must be able to load the model that produced the reported number.
 !results/router-fitting-v2/router.pt
+# R1 (Codex review 2026-08-29): configs/predict.yaml points at these, so a clean
+# clone cannot run the system we describe unless they are tracked. Both are our
+# own small owned weights, not bulk model files.
+!results/router-fitting-v2/router_reliability.pt
+!results/degradation/classifier.pt
 *.ckpt
 .cache/
 **/huggingface/

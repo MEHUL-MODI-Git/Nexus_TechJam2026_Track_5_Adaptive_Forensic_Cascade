@@ -78,6 +78,16 @@ def main() -> int:
 
     cf = svc.experts[0]
     router_params = int(svc.router.payload["n_parameters"])
+    # R7 (Codex review): the degradation reporter is loaded by the UI and the
+    # audit CLI, so it is shipped and belongs in the total.
+    degradation_params = 0
+    try:
+        from src.pipeline.degradation import DegradationReporter
+
+        degradation_params = int(sum(
+            p.numel() for p in DegradationReporter.load().model.parameters()))
+    except Exception:                              # noqa: BLE001 - optional layer
+        degradation_params = 0
     doc = {
         "schema_version": "ops-evidence.v1",
         "contended": bool(busy),
@@ -89,9 +99,13 @@ def main() -> int:
         "parameters": {
             "cf_384": int(cf.param_count),
             "router_head": router_params,
-            "shipped_total": int(cf.param_count) + router_params,
+            "degradation_reporter": degradation_params,
+            "shipped_total": int(cf.param_count) + router_params + degradation_params,
             "limit": 2_000_000_000,
-            "fraction_of_limit": (int(cf.param_count) + router_params) / 2_000_000_000,
+            "fraction_of_limit": (int(cf.param_count) + router_params + degradation_params)
+                                 / 2_000_000_000,
+            "percent_of_limit": 100.0 * (int(cf.param_count) + router_params
+                                         + degradation_params) / 2_000_000_000,
         },
         "forward_passes": {
             "per_prediction": 1 + len(PROBE_IDS),

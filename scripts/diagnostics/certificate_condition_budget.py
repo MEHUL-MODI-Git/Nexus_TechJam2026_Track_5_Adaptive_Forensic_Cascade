@@ -24,18 +24,29 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from src.eval.metrics import auroc as canonical_auroc
 from src.pipeline.transforms import CONDITION_IDS
 from src.router.head import RouterHead
 from src.router.train import build_batch, load_cache_rows, load_checkpoint
 
 
 def auroc(scores, y):
-    scores, y = np.asarray(scores, float), np.asarray(y, int)
-    order = np.argsort(scores, kind="mergesort")
-    ranks = np.empty(len(scores), float)
-    ranks[order] = np.arange(1, len(scores) + 1)
-    p, n = int((y == 1).sum()), int((y == 0).sum())
-    return float((ranks[y == 1].sum() - p * (p + 1) / 2) / (p * n)) if p and n else float("nan")
+    """Tie-aware AUROC via the canonical implementation (R4, Codex review).
+
+    This file previously assigned unique sequential ranks. Retention is an
+    integer 0-20, so ties are pervasive and the result became input-order
+    dependent -- 0.8615 to 0.8775 across 20 shuffles.
+
+    `scores` are "higher = more likely WRONG" and the canonical helper validates
+    scores in [0,1], so we pass the equivalent orientation instead: score
+    CORRECTNESS with the min-max normalised signal. AUROC(-s predicting wrong)
+    rank statistic; call sites already orient higher = more likely wrong.
+    """
+    s = np.asarray(scores, float)
+    y = np.asarray(y, int)
+    lo, hi = float(np.min(s)), float(np.max(s))
+    s01 = np.full_like(s, 0.5) if hi <= lo else (s - lo) / (hi - lo)
+    return float(canonical_auroc(y, s01))
 
 
 def main() -> int:

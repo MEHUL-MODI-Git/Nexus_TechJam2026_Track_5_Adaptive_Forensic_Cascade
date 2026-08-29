@@ -18,7 +18,7 @@ baseline is handed a threshold fitted on the test set itself (**+0.4916**, CI95 
 It generalised — dev predicted 0.8144, the untouched test gave 0.8258. On top of that sit two
 capabilities that earned their place by measurement: an **abstention** policy (defer 20% →
 accuracy 0.9090→0.9317) and an **audit mode** whose verdict-retention signal predicts a wrong
-answer *better than the reliability head trained for the job* (AUROC 0.8650 vs 0.7206).
+answer *better than the reliability head trained for the job* (AUROC 0.8696 vs 0.7206).
 **But it delivers less than the architecture promised in one important way:** the designed
 two-stage cascade with adaptive escalation to a heavier second expert does not exist. What
 ships is a *one-stage* system that escalates to a **human**. **Five separate ideas were built or
@@ -51,8 +51,8 @@ image
     └─ degradation reporter (775 params) → "detected image history: JPEG compression (93%)"
 ```
 
-- **Shipped total: 21,813,796 parameters** — 0.001% of the 2B cap. Our own trainable weights are
-  0.008% of the system. The contribution is the decision layer, not scale.
+- **Shipped total: 21,814,571 parameters** — **1.09%** of the 2B cap. Our own trainable weights are
+  0.012% of the system. The contribution is the decision layer, not scale.
 - **One decision path.** Gradio UI, `scripts/infer_dir.py` (required deliverable) and the eval
   harness all import the same `PredictionService`. There is no separate demo code path.
 - **Single threshold across all 20 conditions**: `0.4667367651127279`, frozen in a validated,
@@ -170,7 +170,7 @@ a wrong verdict better than the reliability head we trained for it:
 | signal | AUROC predicting a wrong clean verdict |
 |---|---|
 | reliability head | 0.7206 |
-| **verdict retention** | **0.8650** |
+| **verdict retention** | **0.8696** |
 | combined | 0.8863 |
 
 It fixes the blind spot §4 documents. Of the **157** sources the head passes confidently but

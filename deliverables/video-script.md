@@ -129,7 +129,7 @@ Then the same command on a confident image for contrast.
 | router parameters | 1,827 | `results/router-fitting-v2/router_reliability.pt` |
 | abstention accuracy lift | 0.9090 → 0.9317 | `results/internal-test/abstention.json` |
 | format shortcut | 100.00% of 15,000 | README §8 |
-| retention beats reliability head | 0.8650 vs 0.7206 | `results/robustness/retention-signal.json` |
+| retention beats reliability head | 0.8696 vs 0.7206 | `results/robustness/retention-signal.json` |
 | certificate grade HIGH accuracy | 99.1% | same |
 | certificate grade VERY LOW accuracy | 60.6% | same |
 | audit cost | 80 forward passes, ~3.0 s | `results/ops/ops-evidence.json` |

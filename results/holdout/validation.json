@@ -25,7 +25,7 @@
   },
   "v1_certificate": {
     "auroc_reliability_head": 0.6478,
-    "auroc_verdict_retention": 0.8625,
+    "auroc_verdict_retention": 0.8636,
     "internal_test_auroc": {
       "reliability_head": 0.7206,
       "verdict_retention": 0.865
@@ -69,8 +69,8 @@
       "resize_0.25",
       "crop_0.8"
     ],
-    "auroc_subset": 0.8335,
-    "auroc_all_20": 0.8625,
+    "auroc_subset": 0.8374,
+    "auroc_all_20": 0.8636,
     "internal_test": {
       "subset": 0.8664,
       "all_20": 0.865

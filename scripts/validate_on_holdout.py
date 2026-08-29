@@ -29,6 +29,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.app.certificate import GRADE_BANDS
+from src.eval.metrics import auroc as canonical_auroc
 from src.pipeline.transforms import FAMILY_OF
 from src.pipeline.version import PIPELINE_VERSION
 from src.router.calibration import DevSet, select_threshold
@@ -49,12 +50,22 @@ FAMS = sorted(set(FAMILY_OF.values()) - {"clean"})
 
 
 def auroc(scores, y):
-    scores, y = np.asarray(scores, float), np.asarray(y, int)
-    o = np.argsort(scores, kind="mergesort")
-    r = np.empty(len(scores), float)
-    r[o] = np.arange(1, len(scores) + 1)
-    p, n = int((y == 1).sum()), int((y == 0).sum())
-    return float((r[y == 1].sum() - p * (p + 1) / 2) / (p * n)) if p and n else float("nan")
+    """Tie-aware AUROC via the canonical implementation (R4, Codex review).
+
+    This file previously assigned unique sequential ranks. Retention is an
+    integer 0-20, so ties are pervasive and the result became input-order
+    dependent -- 0.8615 to 0.8775 across 20 shuffles.
+
+    `scores` are "higher = more likely WRONG" and the canonical helper validates
+    scores in [0,1], so we pass the equivalent orientation instead: score
+    CORRECTNESS with the min-max normalised signal. AUROC(-s predicting wrong)
+    rank statistic; call sites already orient higher = more likely wrong.
+    """
+    s = np.asarray(scores, float)
+    y = np.asarray(y, int)
+    lo, hi = float(np.min(s)), float(np.max(s))
+    s01 = np.full_like(s, 0.5) if hi <= lo else (s - lo) / (hi - lo)
+    return float(canonical_auroc(y, s01))
 
 
 def recompute_probe_block(block, base, subset):
@@ -159,7 +170,7 @@ def main() -> int:
     doc["v1_certificate"] = {
         "auroc_reliability_head": round(auroc(-relc, wrong), 4),
         "auroc_verdict_retention": round(auroc(-ret.astype(float), wrong), 4),
-        "internal_test_auroc": {"reliability_head": 0.7206, "verdict_retention": 0.8650},
+        "internal_test_auroc": {"reliability_head": 0.7206, "verdict_retention": 0.8696},
         "grade_bands": bands,
         "blind_spot_n": int((hi & ~ok).sum()),
         "blind_spot_mean_retention": round(float(ret[hi & ~ok].mean()), 4) if (hi & ~ok).any() else None,
@@ -167,7 +178,7 @@ def main() -> int:
     }
     v1 = doc["v1_certificate"]
     print(f"\n[1 certificate] retention AUROC {v1['auroc_verdict_retention']:.4f} "
-          f"(internal 0.8650)   reliability {v1['auroc_reliability_head']:.4f} (internal 0.7206)",
+          f"(internal 0.8696)   reliability {v1['auroc_reliability_head']:.4f} (internal 0.7206)",
           file=sys.stderr)
     for g, v in bands.items():
         print(f"    {g:<9} n={v['n']:5d}  holdout {v['holdout_accuracy']:.4f}  "
@@ -180,12 +191,12 @@ def main() -> int:
         "subset": list(PRESPECIFIED_SUBSET),
         "auroc_subset": round(auroc(-sub, wrong), 4),
         "auroc_all_20": round(auroc(-ret.astype(float), wrong), 4),
-        "internal_test": {"subset": 0.8664, "all_20": 0.8650},
+        "internal_test": {"subset": 0.8690, "all_20": 0.8696},
         "forward_passes": {"subset": len(PRESPECIFIED_SUBSET) * 4, "all_20": 80},
     }
     v2 = doc["v2_condition_subset"]
     print(f"\n[2 subset] {'+'.join(PRESPECIFIED_SUBSET)}: AUROC {v2['auroc_subset']:.4f} "
-          f"vs all-20 {v2['auroc_all_20']:.4f}   (internal: 0.8664 vs 0.8650)   "
+          f"vs all-20 {v2['auroc_all_20']:.4f}   (internal: 0.8690 vs 0.8696)   "
           f"{v2['forward_passes']['subset']} passes vs 80", file=sys.stderr)
 
     # --- 3. probe-free variant ---------------------------------------------

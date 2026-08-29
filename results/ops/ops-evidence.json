@@ -8,9 +8,11 @@
   "parameters": {
     "cf_384": 21811969,
     "router_head": 1827,
-    "shipped_total": 21813796,
+    "degradation_reporter": 775,
+    "shipped_total": 21814571,
     "limit": 2000000000,
-    "fraction_of_limit": 0.010906898
+    "fraction_of_limit": 0.0109072855,
+    "percent_of_limit": 1.09072855
   },
   "forward_passes": {
     "per_prediction": 4,
@@ -20,15 +22,15 @@
   },
   "latency_ms": {
     "baseline_cf_only": {
-      "p50": 18.42097897315398,
-      "p95": 19.858470506733283
+      "p50": 19.45733348838985,
+      "p95": 20.56553734873887
     },
     "cascade_shipped": {
-      "p50": 128.6451039777603,
-      "p95": 142.86560246546287
+      "p50": 134.64791650767438,
+      "p95": 150.87352705013473
     },
-    "cascade_over_baseline": 6.983619283494254
+    "cascade_over_baseline": 6.920162857259887
   },
-  "peak_rss_mb": 749.48608,
+  "peak_rss_mb": 727.465984,
   "torch": "2.13.0"
 }
