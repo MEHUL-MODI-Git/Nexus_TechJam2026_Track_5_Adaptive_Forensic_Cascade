@@ -1,5 +1,14 @@
 # product — CHANGELOG (newest first)
 
+## 2026-08-29 — Claude relay/release review: BLOCK
+Why: Mehul requested the return-owner review required by PROTOCOL §6.
+What: a clean checkout cannot start the claimed shipped cascade because configured
+`router_reliability.pt` is ignored/untracked; the degradation reporter checkpoint is likewise absent.
+Public docs also contain a 1000× parameter-cap arithmetic error, omit the 775-parameter reporter,
+contradict themselves on whether the router/abstention ship, and overstate peer-gate completion.
+Repository-wide Ruff has 62 findings. Full packet:
+`handoffs/2026-08-29_claude-phase3-4-relay-review.md`. No product implementation was changed.
+
 ## 2026-08-27 — Mehul handed Codex work to Claude under PROTOCOL §6
 Why: Codex is near its usage limit and Mehul explicitly directed Claude to take over.
 What: B-028 grants temporary `[relay]` execution for Codex-owned eval/product work. Existing release,

@@ -1,38 +1,30 @@
 # eval — harness, metrics, ablations, error analysis
-**Owner: Codex · Status: ✅ REPAIR ACCEPTED · CLAUDE RELAY ACTIVE (B-028)**
+**Owner: Codex · Status: 🔴 CLAUDE PHASE-3/4 RELAY REVIEW BLOCKED (B-029)**
 
-## ✅ Current evidence
-- Commit 0a40ee8: E3c fixed with shared full threshold-artifact schema validation, sentinel,
-  exact forged-artifact regression, and fail-safe "unspecified" provenance.
-- A-025 peer verdict on B-023: APPROVE-WITH-NOTES; eval half of Phase 2R.1 is accepted/closed.
-- Evidence: 70 focused tests; full shared-tree suite **662 passed / 9 warnings**; Ruff clean.
-- Real 8,000-row diagnostic CLI: 400 sources, no literal headline, diagnostic-only warning intact.
-- The 24k DegradePrint/quality run remains unprotected diagnostic evidence only; it cannot select a
-  submission model, mint a headline, or serve as a trained fallback.
-- Router B-018 is separately **BLOCKED** by Codex re-review; see
-  handoffs/2026-08-27_router-repair-rereview.md.
-- Container-leak audit is clean: eval metrics do not consume format, extension, encoded size or
-  filename-derived features. The SID-Set confound is upstream in decoded source pixels.
-- B-028 ACKs a mandatory `quality_only` baseline and requires claims against both CF-only and
-  quality-only; Claude holds temporary `[relay]` authority while Codex is limit-blocked.
+## Current evidence
+- Original Phase-2R eval repair remains accepted at `0a40ee8`.
+- A-032/B-024 round-2 router repair is now accepted by Codex.
+- Full current suite: **733 passed, 1 skipped, 9 warnings**; 70 high-risk focused tests pass.
+- Local sealed dump independently verified complete: 174,380 rows, 8,719 unique sources,
+  exactly 20 conditions/source, 0 failures/duplicates/label conflicts. **Do not rerun it.**
+- Full blocking review: `handoffs/2026-08-29_claude-phase3-4-relay-review.md` / B-029.
 
-## 🟢 Gate status
-- E1–E5 plus E3c and the provenance/freeze/denominator boundary are accepted/closed.
-- No protected cache may launch: router B-018 and corpus/manifest prerequisites remain blocking.
-- No release/public-history action is authorized by this continuity update.
+## Blocking repair set
+1. Correct train-vs-dev threshold provenance/deviation; Mehul decides whether it is acceptable.
+2. Harden sealed summary from the preserved dump with full hashes, coverage and failure ledger.
+3. Replace ad-hoc tied AUROC with canonical tie-aware math; regenerate affected artifacts/docs.
+4. Cross-check checkpoint threshold against frozen artifact.
+5. Resolve threshold-dependent `probe_flip` train/serve semantics and test it.
 
-## ▶ NEXT ACTION
-1. Claude continues under B-028 relay; tag Codex-owned changes `[relay]` and preserve review-first.
-2. Add/report `quality_only` only under A-027/B-028 controls; do not revive confounded +39.3 claim.
-3. Do not launch protected compute while router/data gates remain blocked.
+## NEXT ACTION
+Wait for Claude's single ACK/counter + batched R1–R8 repair packet; then re-review before release.
 
 ## Literal next command
-```
-cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && \
-tail -n 120 coordination/CHANNEL.md
+```sh
+cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && tail -n 120 coordination/CHANNEL.md
 ```
 
 ## Hard constraints
-- One frozen threshold per method across every condition; incomplete/partial is diagnostic-only.
-- Sealed WildFake subset: one run after production freeze; never fitting or component selection.
-- Every public number needs method/data/code/config/artifact hashes and source-level uncertainty.
+- Never rerun the sealed reference set.
+- One frozen threshold across conditions; no test/holdout/sealed retuning.
+- No public number without data/method/code/config/artifact hashes and source-level uncertainty.

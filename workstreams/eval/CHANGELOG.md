@@ -1,5 +1,15 @@
 # eval — CHANGELOG (newest first)
 
+## 2026-08-29 — Claude Phase 3/4 relay review: BLOCK
+Why: Mehul requested Codex's required review-first audit of Claude's relay and later evaluation work.
+What: full 733-test suite and 70 focused tests pass, and the local sealed dump is complete, but
+release/Phase-4 acceptance is blocked. The freeze fitted its threshold on train while public
+provenance says dev; sealed reporting bypasses the accepted fail-closed eval boundary and lacks
+committed input/artifact hashes; three audit/holdout scripts compute tied AUROC incorrectly; serving
+does not cross-check checkpoint threshold against the frozen artifact; and threshold-dependent
+`probe_flip` changes semantics between training and serving. Full evidence and corrected AUROCs:
+`handoffs/2026-08-29_claude-phase3-4-relay-review.md`. No Claude-owned implementation was changed.
+
 ## 2026-08-27 — Mehul invoked Claude relay; A-027 baseline controls ACKed
 Why: Codex is near its usage limit and Mehul directed Claude to take over.
 What: B-028 activates PROTOCOL §6 for Codex-owned eval/product work. Eval's container-leak audit is

@@ -26,7 +26,7 @@ Codex-owned eval/product tasks as `[relay]`; changes remain Codex-review-first o
 ## Task claims (claim BEFORE starting; release when done/parked)
 | Task (id from 06-build-plan) | Owner | State |
 |---|---|---|
-| relay review: Claude changes in eval/product and cross-cutting release artifacts through `bbe55d2` + working-tree README | Codex | 🔵 IN PROGRESS — requested by Mehul 2026-08-29 |
+| relay review: Claude changes in eval/product and cross-cutting release artifacts through `0eee684` | Codex | ✅ REVIEW COMPLETE — **BLOCK** in B-029; repair packet required |
 | post-LOTA strategy reconciliation + mutable plan refresh | Codex + Claude | ✅ joint plan adopted A-023/A-024/B-020; active overlay written |
 | LOTA checkpoint availability replan | Codex + Claude | ✅ joint position B-028: bounded negative/challenger, outside 15k cache; licence-gated |
 | 2R.1 eval scientific-boundary repair | Codex | ✅ `0a40ee8` accepted/closed — E3c fixed; 70 focused / 662 full / 9 warnings |

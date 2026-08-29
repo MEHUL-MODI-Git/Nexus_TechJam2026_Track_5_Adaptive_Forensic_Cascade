@@ -1,37 +1,28 @@
 # product — Gradio app, repo hygiene, README, video, Devpost
-**Owner: Codex · Status: 🟢 task 1.5 ACCEPTED · 🔴 RELEASE BLOCKED · CLAUDE RELAY B-028**
+**Owner: Codex · Status: 🔴 RELEASE BLOCKED BY B-029 + OWNER ACTIONS**
 
-## ✅ Accepted 2026-08-27
-- Claude A-024 independently reran the app/stress gate: 39 passed; Ruff clean.
-- Invalid records become gaps, incomplete grids cannot claim stability, and dark-surface contrast
-  passes. Task 1.5 is closed.
-- README and `LICENSES.md` currently describe the accepted CF-only baseline and blocked paths rather
-  than claiming a trained router.
-- Joint post-LOTA overlay: `coordination/PLAN-UPDATE-2026-08-27.md`.
+## Accepted
+- Task 1.5 stress panel remains accepted (39 focused tests + prior peer gate).
+- Router/demo wiring works in the current local workspace.
 
-## 🔴 Release blockers
-1. Remote history still contains 1,200 raw SID-Set images (~829 MB); keep it private.
-2. Mehul has not explicitly approved MIT licensing or the verified clean-history force-push.
-3. CF revision remains unpinned.
-4. Eval/router acceptance remains blocked; no correction/router/headline claims may be restored.
-5. GAPL code integration is licence-blocked; PGC is preflight-only and not in the product.
+## Release blockers
+1. Configured `router_reliability.pt` is ignored/untracked; clean checkout cannot serve abstention.
+2. Degradation reporter `classifier.pt` is ignored/untracked; clean checkout silently omits it.
+3. Parameter-cap math is wrong by 1000× and reporter parameters are omitted.
+4. README/Devpost contradict actual shipped state and overstate peer-gate completion.
+5. Eval/training B-029 repairs and Codex re-review remain open.
+6. Remote/public-history, MIT approval and force-push still require Mehul's explicit decisions.
+7. Repository-wide Ruff currently reports 62 findings.
 
-## ▶ NEXT ACTION
-1. Claude may continue product work as `[relay]`; changes remain Codex-review-first.
-2. Do not alter the accepted stress panel while technical gates are open.
-3. After eval/training gates, update UI/README only for components that earned their slots.
-4. Obtain Mehul's explicit MIT + force-push decisions, re-audit the remote, then make public before
-   submission.
-5. Final audit: pinned revisions, licences, parameters, artifacts, `infer_dir.py`, Gradio and all
-   submission links.
+## NEXT ACTION
+Wait for Claude's batched R1–R8 repair; re-review from a clean-checkout artifact perspective.
 
 ## Literal next command
-```
-cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && \
-  git ls-remote https://github.com/MEHUL-MODI-Git/TechJam_2026_Track_5.git refs/heads/main
+```sh
+cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && tail -n 120 coordination/CHANNEL.md
 ```
 
 ## Hard constraints
-- No force-push/public visibility without explicit Mehul approval and verified targets.
-- Never present pilot, placeholder, incomplete, unprotected or uncommitted numbers as headlines.
-- Demo/video assets remain licensed and trademark-free.
+- No public/force-push action without Mehul approval and verified target.
+- Do not present incorrect, untracked, unreviewed or non-reproducible claims as shipped.
+- Preserve the completed sealed predictions; never rerun them.
