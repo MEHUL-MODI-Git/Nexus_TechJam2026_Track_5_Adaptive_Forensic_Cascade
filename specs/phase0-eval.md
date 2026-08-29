@@ -45,6 +45,9 @@ Rules:
 - A test/evaluation run requires a frozen threshold artifact containing value, objective, dev-manifest hash, config hash, fitting code version, and timestamp.
 - One threshold applies to clean and every transformed condition.
 - Threshold/calibration fitting occurs only on held-out dev; test/external/sealed runners never expose a fitting path.
+  **DEVIATION 2026-08-29:** the shipped freeze fitted the threshold on the fitting-TRAIN split, not dev. Found by peer
+  review, measured as negligible, threshold left unchanged because the sealed set is already scored. See
+  `coordination/DEVIATION-2026-08-29-threshold-split.md`. This spec line remains the requirement for any future freeze.
 - Frozen objective: maximize bootstrap-mean dev worst-transformation-family fake recall across the six transformed families (clean excluded; severities pooled within family) subject to clean FPR ≤ selected-primary FPR +1 percentage point and clean balanced accuracy ≥ selected-primary BAcc -1 point. Report worst exact condition at the selected threshold; upgrade threshold selection to exact-condition only when dev has at least 500 fake sources per exact condition. If infeasible, select the strongest simpler configuration and record the failure.
 - `UNCERTAIN` never changes forced-binary metrics. Selective metrics report coverage and accepted-set outcomes separately.
 

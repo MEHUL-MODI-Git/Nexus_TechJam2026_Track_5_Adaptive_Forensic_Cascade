@@ -13,6 +13,7 @@ artifact and is never touched; this module cannot change a decision boundary.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -78,6 +79,21 @@ class RouterHead:
         thr = loaded.threshold if threshold is None else float(threshold)
         if not np.isfinite(thr) or not (0.0 <= thr <= 1.0):
             raise ValueError(f"router threshold must be finite in [0,1], got {thr}")
+        # R5 (Codex review 2026-08-29): this override used to REPLACE the
+        # checkpoint's own threshold without comparing them, so a separately
+        # valid threshold artifact could silently retarget any checkpoint --
+        # and `_load_router_from_config` then compared the artifact only to the
+        # value it had just supplied, which made that check vacuous. A caller
+        # may name the threshold, but it must be the one this checkpoint was
+        # frozen at.
+        if threshold is not None and not math.isclose(
+            thr, float(loaded.threshold), rel_tol=0.0, abs_tol=1e-12
+        ):
+            raise ValueError(
+                f"threshold {thr!r} does not match the threshold this checkpoint was "
+                f"frozen at ({loaded.threshold!r}); refusing to retarget a frozen "
+                "checkpoint with a threshold it was never fitted against"
+            )
         return cls(loaded.model, loaded.spec, loaded.standardizer, thr, loaded.payload)
 
     @property

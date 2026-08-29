@@ -172,8 +172,11 @@ def analyze_image(image_path: str | Path | None, service: Any):
     if abstain:
         reason = _escape(str(_field(record, "abstain_reason", "") or ""))
         extra += (
-            "<p class='abstain-banner'><strong>&#9888; DEFERRED — evidence unstable "
-            "under probes.</strong> The system declines to decide this image and "
+            # R8 (Codex review): this said "unstable under probes", but the probe
+            # ablation shows probes buy nothing and abstention is triggered by the
+            # fitted reliability value, not a probe-instability rule.
+            "<p class='abstain-banner'><strong>&#9888; DEFERRED — low self-assessed "
+            "reliability.</strong> The system declines to decide this image and "
             "recommends human review."
             + (f"<br><span class='abstain-reason'>{reason}</span>" if reason else "")
             + "</p>"

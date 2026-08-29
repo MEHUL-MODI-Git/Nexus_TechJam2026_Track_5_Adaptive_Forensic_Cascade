@@ -43,9 +43,10 @@ image
 
 **The router and the reliability layer are our proposed contribution.** The expert
 detectors are public, frozen checkpoints; we do not claim them. What we claim
-today is their implementation and the evaluation protocol that will make any
-eventual performance claim checkable. The current app does not yet serve a
-trained router, calibrated verdict, abstention decision, or rescue path.
+today is their implementation and the evaluation protocol that makes every
+performance claim checkable. The app serves the trained router, its frozen
+threshold and the abstention decision (§7). It does **not** serve a rescue path:
+that was built, measured and cut on evidence (§7).
 
 ## 2. What is built today
 
@@ -60,7 +61,7 @@ trained router, calibrated verdict, abstention decision, or rescue path.
 | Calibration + threshold-selection code under a frozen objective | ✅ built, tested; threshold fitted on dev and frozen |
 | Reliability head + abstention (defer to human) | ✅ fitted in a frozen second stage; policy pre-registered on dev, verified on the test |
 | Adaptive rescue to a heavier second model | ❌ built and measured; **failed its gate**, reported as a negative result (§7) |
-| Router (7-rung ladder: quality-only → static avg → prob mean → fixed weights → logistic → MLP → +worst-group) | ✅ implemented, repaired; fitted, frozen and shipped as `results/router-fitting-v2/router.pt` (1,827 params, 17 KB); Codex re-review of the B-024 repair still pending |
+| Router (7-rung ladder: quality-only → static avg → prob mean → fixed weights → logistic → MLP → +worst-group) | ✅ implemented, repaired; fitted, frozen and shipped as `results/router-fitting-v2/router_reliability.pt` (1,827 params + a 17-param reliability head, 18 KB) — the artifact `configs/predict.yaml` loads; `router.pt` is the earlier stage-1 checkpoint, kept for provenance |
 | Full-grid baseline run (8,000 predictions) | ✅ complete |
 | Evaluation harness | ✅ diagnostic and headline paths exercised; one-shot internal test + full ablation ladder |
 | Second expert | ❌ **two** candidates integrated and both rejected on measured evidence (LOTA, PGC) — see §7 |
@@ -189,8 +190,22 @@ evaluation honest:
 
 - **One threshold across all conditions.** Never tuned per transform — that
   would be leakage dressed up as robustness.
-- **Threshold fitting happens only on held-out dev data.** Test and reference
-  runners have no fitting path at all.
+- **Where each thing was fitted, stated exactly.** Weights and the decision
+  threshold were fitted on the **fitting-TRAIN split**; the *rung* (which model in
+  the ladder) was selected on **held-out dev**; the internal test, the second
+  holdout and the sealed reference set were never used for any fitting. Test and
+  reference runners have no fitting path at all.
+
+  **This is a deviation from our own frozen protocol, found by peer review and
+  recorded rather than quietly fixed.** `specs/phase0-eval.md` required threshold
+  fitting on held-out dev only; `scripts/freeze_router.py` passed the *train*
+  split to `select_threshold`, so `threshold-artifact.v1.json` records
+  `n_dev_sources: 8998` — the training split — while these docs said dev.
+  Measured impact is small: refitting on the true 3,000-source dev split gives
+  0.4636303604 against the frozen 0.4667367651 (dev worst-family 0.81565 vs
+  0.81444). **We did not change the threshold**, because the sealed reference set
+  may be scored only once and has already been scored at the frozen value.
+  Full record: `coordination/DEVIATION-2026-08-29-threshold-split.md`.
 - **Objective:** maximise the bootstrap-mean worst *transformation-family* fake
   recall over the six families, subject to clean false-positive rate and
   balanced accuracy staying within one point of baseline. The worst individual

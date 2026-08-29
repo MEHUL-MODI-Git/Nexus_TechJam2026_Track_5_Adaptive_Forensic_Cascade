@@ -91,7 +91,7 @@ def main() -> int:
     if record.reliability is not None:
         print(f"  reliability       {record.reliability:.3f}  {_bar(record.reliability)}")
     if record.abstain:
-        print("  ⚠ DEFERRED        evidence unstable — recommend human review")
+        print("  ⚠ DEFERRED        low self-assessed reliability — recommend human review")
 
     if degradation is not None:
         weak = "  ⚠ our detector is weakest here" if degradation.detector_is_weak_here else ""

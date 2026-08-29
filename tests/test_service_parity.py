@@ -316,3 +316,40 @@ def test_abstention_threshold_is_a_frozen_value_not_a_percentile(service):
     assert service.router.abstain_threshold == pytest.approx(0.866079568862915)
     policy = service.router.payload["abstention"]
     assert policy["selected_on"] == "dev split of the fitting cache"
+
+
+def test_a_checkpoint_cannot_be_retargeted_with_a_foreign_threshold():
+    """R5, Codex review 2026-08-29.
+
+    `RouterHead.from_checkpoint(..., threshold=X)` used to REPLACE the
+    checkpoint's stored threshold without comparing them, which made the
+    service's own "threshold must match the router's frozen threshold" check
+    vacuous: it compared the artifact to the value it had just been handed.
+    A separately valid threshold artifact could therefore retarget any
+    checkpoint.
+    """
+    from src.router.head import RouterHead
+    from src.router.train import load_checkpoint
+
+    ckpt = ROOT / "results" / "router-fitting-v2" / "router_reliability.pt"
+    if not ckpt.exists():
+        pytest.skip("shipped checkpoint not present")
+    frozen = float(load_checkpoint(ckpt).threshold)
+
+    with pytest.raises(ValueError, match="frozen at"):
+        RouterHead.from_checkpoint(ckpt, threshold=0.5)
+    with pytest.raises(ValueError, match="frozen at"):
+        RouterHead.from_checkpoint(ckpt, threshold=frozen + 1e-6)
+
+    # the honest paths still work
+    assert RouterHead.from_checkpoint(ckpt).threshold == frozen
+    assert RouterHead.from_checkpoint(ckpt, threshold=frozen).threshold == frozen
+
+
+def test_service_refuses_a_router_built_at_a_foreign_threshold(service):
+    """End to end: the two guards must compose, not cancel out."""
+    if service.fusion != "router":
+        pytest.skip("shipped config is not serving the router")
+    with pytest.raises(ValueError, match="frozen threshold"):
+        PredictionService(service.experts, threshold=0.5, fusion="router",
+                          router=service.router)

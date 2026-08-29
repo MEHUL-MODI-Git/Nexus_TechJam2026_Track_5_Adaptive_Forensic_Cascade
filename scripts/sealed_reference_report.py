@@ -16,15 +16,20 @@ never a reason to re-tune.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import subprocess
 import sys
+from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.pipeline.transforms import FAMILY_OF
+from src.eval.protocol import load_frozen_threshold
+from src.pipeline.transforms import CONDITION_IDS, FAMILY_OF
+from src.pipeline.version import PIPELINE_VERSION
 
 FAMS = sorted(set(FAMILY_OF.values()) - {"clean"})
 
@@ -60,22 +65,72 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--pred", type=Path, default=Path("results/sealed/predictions.jsonl"))
     ap.add_argument("--out", type=Path, default=Path("results/sealed/reference-results.json"))
-    ap.add_argument("--threshold", type=float, default=0.4667367651127279)
+    ap.add_argument("--threshold-artifact", type=Path,
+                    default=Path("results/router-fitting-v2/threshold-artifact.v1.json"),
+                    help="R3: the threshold comes from the VALIDATED artifact. There is "
+                         "deliberately no free --threshold flag: a benchmark scored at a "
+                         "number typed on the command line proves nothing.")
+    ap.add_argument("--checkpoint", type=Path,
+                    default=Path("results/router-fitting-v2/router_reliability.pt"))
     ap.add_argument("--bootstrap", type=int, default=2000)
     args = ap.parse_args()
 
-    rows = []
+    # ---- R3: validate the preserved dump, fail closed, never rerun ---------
+    failures, rows, seen = [], [], set()
+    digest = hashlib.sha256()
+    with args.pred.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            digest.update(chunk)
+    predictions_sha256 = digest.hexdigest()
     with args.pred.open() as fh:
-        for line in fh:
+        for n, line in enumerate(fh, 1):
             r = json.loads(line)
             if r.get("ok") is False:
+                failures.append({"line": n, "view_id": r.get("view_id"),
+                                 "error": r.get("error")})
                 continue
+            vid = r.get("view_id")
+            if vid in seen:
+                print(f"REFUSING: duplicate view_id {vid!r} at line {n}", file=sys.stderr)
+                return 2
+            seen.add(vid)
+            for field in ("sha256", "label", "condition_id", "p_fake"):
+                if r.get(field) is None:
+                    print(f"REFUSING: row {n} missing {field!r}", file=sys.stderr)
+                    return 2
+            if not (0.0 <= float(r["p_fake"]) <= 1.0):
+                print(f"REFUSING: row {n} p_fake out of range", file=sys.stderr)
+                return 2
             rows.append(r)
+    if failures:
+        print(f"REFUSING: {len(failures)} failed row(s) in the dump; a benchmark with "
+              "holes is not a benchmark. First: " + json.dumps(failures[0]), file=sys.stderr)
+        return 2
     if not rows:
         print("no usable rows", file=sys.stderr)
         return 2
 
-    thr = args.threshold
+    # completeness: every unique image must carry every condition, once
+    by_source = defaultdict(set)
+    labels_by_source = defaultdict(set)
+    for r in rows:
+        by_source[r["sha256"]].add(r["condition_id"])
+        labels_by_source[r["sha256"]].add(int(r["label"]))
+    incomplete = {k: sorted(set(CONDITION_IDS) - v) for k, v in by_source.items()
+                  if v != set(CONDITION_IDS)}
+    if incomplete:
+        k = next(iter(incomplete))
+        print(f"REFUSING: {len(incomplete)} source(s) lack full condition coverage, "
+              f"e.g. {k} missing {incomplete[k][:3]}", file=sys.stderr)
+        return 2
+    conflicted = [k for k, v in labels_by_source.items() if len(v) != 1]
+    if conflicted:
+        print(f"REFUSING: {len(conflicted)} source(s) carry conflicting labels",
+              file=sys.stderr)
+        return 2
+
+    frozen = load_frozen_threshold(args.threshold_artifact)   # validates or raises
+    thr = float(frozen.value)
     sha = np.array([r["sha256"] for r in rows])
     cond = np.array([r["condition_id"] for r in rows])
     fam = np.array([FAMILY_OF[c] for c in cond])
@@ -87,9 +142,36 @@ def main() -> int:
     absta = np.array([bool(r.get("abstain")) for r in rows])
     prim = np.array([np.nan if r.get("primary_p_fake") is None else r["primary_p_fake"] for r in rows])
 
+    def _sha(path):
+        path = Path(path)
+        return hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else None
+
+    code_rev = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True,
+                              text=True, check=False).stdout.strip() or "unknown"
     doc = {
-        "schema_version": "sealed-reference-results.v1",
+        "schema_version": "sealed-reference-results.v2",
         "status": "REFERENCE BENCHMARK — one run, after freeze; never fitted on, never re-tuned",
+        "provenance": {
+            "predictions_file": str(args.pred),
+            "predictions_sha256": predictions_sha256,
+            "n_rows_read": len(rows),
+            "n_failed_rows": len(failures),
+            "completeness": "every unique image carries all 20 conditions exactly once",
+            "unique_view_ids": len(seen),
+            "threshold_artifact": str(args.threshold_artifact),
+            "threshold_artifact_sha256": frozen.artifact_sha256,
+            "checkpoint": str(args.checkpoint),
+            "checkpoint_sha256": _sha(args.checkpoint),
+            "sealed_files_manifest_sha256": _sha("data/manifests/sealed_files.json"),
+            "sealed_denylist_sha256": _sha("data/manifests/sealed_denylist.txt"),
+            "transforms_config_sha256": _sha("configs/transforms.yaml"),
+            "probes_config_sha256": _sha("configs/probes.yaml"),
+            "predict_config_sha256": _sha("configs/predict.yaml"),
+            "pipeline_version": PIPELINE_VERSION,
+            "code_revision": code_rev,
+            "one_run_rule": "the sealed subset is scored exactly once; this report is a "
+                            "SUMMARY of the preserved dump and never re-invokes the model",
+        },
         "threshold": thr,
         "n_rows": len(rows),
         "n_unique_images": len(set(sha)),

@@ -194,4 +194,6 @@ worst conditions and we report them.
 - **Data:** SID-Set (CC BY 4.0) for the training corpus; COCO train2017 for real smoke images; the
   organizers' WildFake reference subset used exactly once, for reference only, never for fitting.
 - **Tools:** VS Code, git, `uv`, and two AI coding agents working as reviewing peers — every gate in
-  this project was independently re-run by the agent that did not write it.
+  this project was independently re-run by the agent that did not write it — including a
+  standing review that currently **blocks** release on artifact and provenance defects, whose
+  findings are listed in the repository rather than resolved quietly.
