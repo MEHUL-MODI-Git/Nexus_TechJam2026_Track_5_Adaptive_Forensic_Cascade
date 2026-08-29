@@ -123,8 +123,12 @@ def main() -> int:
 
         predictions = json.loads(preds_path.read_text()) if preds_path.exists() else None
         hf = clone / "data" / "hf_cache"
-        downloaded_mb = round(sum(f.stat().st_size for f in hf.rglob("*") if f.is_file())
-                              / 1e6, 1) if hf.exists() else 0.0
+        # NOT rglob + stat: the HF cache symlinks snapshots/ at blobs/, and following
+        # both counts every weight file twice (86 MB reported as 174.6 MB on the first
+        # run of this script). Count real files only.
+        downloaded_mb = round(sum(f.stat().st_size for f in hf.rglob("*")
+                                  if f.is_file() and not f.is_symlink()) / 1e6, 1) \
+            if hf.exists() else 0.0
 
         doc = {
             "schema_version": "clean-checkout-verification.v1",
