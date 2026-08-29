@@ -454,6 +454,21 @@ the measured relationship rather than labels we chose:
 | 15–17 | LOW | 84.9% | 10.4% |
 | ≤14 | VERY LOW | 60.6% | 7.4% |
 
+**Confirmed on a second untouched set.** Because the internal test's own results generated
+this idea, we acquired a **fresh 3,000-source holdout** (shards never previously consumed,
+canonicalized identically, verified disjoint from everything we fit on) and re-measured with
+every threshold fixed beforehand. Retention AUROC **0.8625** there against 0.8650 internally —
+and the reliability head *degraded* to 0.6478, so retention's margin widened from +0.144 to
+**+0.215**. The grade-band accuracies the UI quotes hold to within a third of a point on three
+of four bands (HIGH 0.9924 vs 0.9910; MEDIUM 0.9461 vs 0.9490; LOW 0.8517 vs 0.8490), and
+VERY LOW came in *better* than promised (0.6473 vs 0.6060). Artifact:
+`results/holdout/validation.json`.
+
+We also tested, and **rejected**, a cheaper version: on the internal test a 2-condition subset
+matched the full grid at a tenth of the cost, but the subset had been chosen greedily on the
+data it was scored on. Frozen in advance and re-measured on the holdout it scored **0.8335
+against 0.8625** — selection bias, not a finding. It is not shipped.
+
 This is **audit mode**, and its cost is real: each of the 20 conditions runs the full
 service (1 expert + 3 probes), so an audit is **80 CF-384 forward passes — ~3.0 s
 against 136 ms** for a normal prediction, 21.9×. The default decision path never runs
@@ -607,7 +622,20 @@ Full artifacts: `results/internal-test/results.json`,
 
 Ranked by what our own measurements say matters most, not by what sounds impressive.
 
-**1. Fix the corpus at the source, not with a re-encode.** Our reals and fakes differ in processing
+**1. Ship the probe-free variant — already validated, deliberately not taken.** The three
+self-probes are 3 of the system's 4 forward passes and ~86% of its latency, and §8 shows they
+buy nothing measurable. On the fresh untouched holdout a probe-free router is *better on every
+metric*: worst-family **0.8373 vs 0.8289**, clean FPR **0.0720 vs 0.0753**, accuracy **0.9139 vs
+0.9124** — at **one forward pass instead of four**, which would take the normal path from 128.6 ms
+to ~19 ms.
+
+We did not adopt it, and the reason is worth stating because it is not a technical one: the
+sealed reference benchmark was scored on the *with-probes* system, and that set may be run
+exactly once. Switching now would leave our only official number describing a system we do not
+ship. A 4× speedup does not outrank that. It is the first thing to do the moment a second
+evaluation opportunity exists. Artifact: `results/holdout/validation.json`.
+
+**2. Fix the corpus at the source, not with a re-encode.** Our reals and fakes differ in processing
 pipeline, not only in being generated — real photographs carry sensor noise, our synthetic images
 never did. Canonicalizing the container removed the JPEG/PNG artefact but not this, and
 `noise_sigma` still separates the classes at AUROC 0.82 afterwards. The correct fix is a corpus where
@@ -615,34 +643,36 @@ both classes share a capture-and-processing history: generate the fakes *from* t
 that supply the reals, then push both through one identical pipeline. That is a data-collection job,
 not a modelling one, and it is the single highest-value thing we would do next.
 
-**2. Attack the noise hole directly.** Fake recall falls to 1.5% at Gaussian noise sigma=0.10, with a
+**3. Attack the noise hole directly.** Fake recall falls to 1.5% at Gaussian noise sigma=0.10, with a
 97% flip-to-real rate. This is the most exploitable weakness in the system and the one an adversary
 would reach for first. Two concrete routes we did not have time to test: noise-aware augmentation
 while fitting the router, and a denoise-then-detect preflight where the quality descriptors say the
 image is noise-dominated.
 
-**3. Find a second expert whose failures are genuinely different.** We rejected LOTA on evidence, and
+**4. Find a second expert whose failures are genuinely different.** We rejected LOTA on evidence, and
 the reason generalizes: it keys on high-frequency, least-significant-bit structure — the same band
 our primary depends on and the same band compression destroys. A useful second expert must read
 *different* evidence, most plausibly low-frequency or semantic inconsistency, which survives
 recompression. Complementarity, measured as P(expert correct | primary wrong), is the selection
 criterion; standalone accuracy is not.
 
-**4. Evaluate against unseen generators.** SID-Set does not expose generator identity, so our
+**5. Evaluate against unseen generators.** SID-Set does not expose generator identity, so our
 held-out split tests generalization to unseen *images*, not unseen *generators*. Every robustness
 number we report carries that caveat. A generator-labelled corpus would let us hold out whole
 families and measure what actually matters for deployment: performance against a model that did not
 exist when we trained.
 
-**5. Run the probe-cost gate we skipped.** Our own protocol said to decide whether the three
-self-probes earn their place *before* committing to the long extraction, so we could drop them and
-save three forward passes per image. A data crisis reordered the schedule and we launched with them
-in. The scientific question is still answerable from the finished cache; the compute saving is gone.
-
 **6. Calibration under shift.** We fit one threshold across all conditions, deliberately, because at
 inference we do not know which transform was applied. A better system would estimate the degradation
 first and select a calibration conditioned on it — which is the natural extension of the reliability
 router we already built, and the obvious next architectural step.
+
+**Closed since this list was written.** One item here was *"run the probe-cost gate we skipped"* —
+our protocol said to decide whether the three self-probes earn their place before committing to the
+long extraction, and a data crisis reordered the schedule so we launched with them in. We have since
+answered it from the finished cache: 8 probe budgets × 3 seeds, no budget distinguishable from any
+other including using none at all (§8), confirmed on the fresh holdout. The compute saving was lost
+for this run; the finding stands and is item 1 above.
 
 ## 9. Parameter inventory and operating cost
 

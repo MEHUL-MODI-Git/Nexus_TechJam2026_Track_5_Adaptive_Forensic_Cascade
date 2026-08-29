@@ -183,3 +183,48 @@ def test_ops_numbers_match_their_artifact_and_were_measured_idle():
     assert lat["cascade_shipped"]["p50"] == pytest.approx(128.6, abs=8.0)
     assert lat["cascade_over_baseline"] == pytest.approx(7.0, abs=0.6)
     assert d["peak_rss_mb"] == pytest.approx(749, rel=0.25)
+
+
+def test_holdout_validation_confirms_the_certificate():
+    """A SECOND untouched set. README section 7 upgrades the certificate's claim
+    on the strength of these, so they must keep holding."""
+    d = _load("holdout/validation.json")
+    v1 = d["v1_certificate"]
+    # the claim: retention beats the trained reliability head, by MORE here
+    assert v1["auroc_verdict_retention"] > v1["auroc_reliability_head"]
+    assert v1["auroc_verdict_retention"] == pytest.approx(0.8625, abs=0.0001)
+    assert v1["auroc_reliability_head"] == pytest.approx(0.6478, abs=0.0001)
+    margin_holdout = v1["auroc_verdict_retention"] - v1["auroc_reliability_head"]
+    internal = v1["internal_test_auroc"]
+    assert margin_holdout > internal["verdict_retention"] - internal["reliability_head"]
+    # the grade bands the UI quotes must reproduce on data that did not make them
+    for grade in ("HIGH", "MEDIUM", "LOW"):
+        band = v1["grade_bands"][grade]
+        assert abs(band["delta"]) < 0.01, f"{grade} band drifted: {band}"
+
+
+def test_holdout_rejects_the_cheap_condition_subset():
+    """The 2-condition audit looked free on the internal test and did NOT survive.
+    If this ever starts passing, it should be re-examined -- not shipped quietly."""
+    d = _load("holdout/validation.json")["v2_condition_subset"]
+    assert d["auroc_subset"] < d["auroc_all_20"], (
+        "the cheap subset matched the full grid on the holdout; the internal-test "
+        "result was attributed to selection bias and that reasoning needs revisiting"
+    )
+    assert d["auroc_all_20"] - d["auroc_subset"] > 0.02
+
+
+def test_holdout_confirms_probe_free_is_at_least_as_good():
+    """README section 8b item 1 claims a validated, deliberately unshipped speedup."""
+    d = _load("holdout/validation.json")["v3_probe_free"]
+    assert d["delta_vs_shipped"] >= 0.0
+    assert d["forward_passes"]["probe_free"] == 1
+    assert d["forward_passes"]["shipped"] == 4
+
+
+def test_headline_reproduces_on_the_second_untouched_set():
+    d = _load("holdout/validation.json")["shipped_model"]
+    ref = d["internal_test_reference"]
+    assert abs(d["worst_family_fake_recall"] - ref["worst_family_fake_recall"]) < 0.02
+    # the internal test breached the 0.0756 clean-FPR cap; the holdout did not
+    assert d["clean_fpr"] < 0.0756

@@ -1,7 +1,7 @@
 # CHANNEL — append-only message log (format & rules: PROTOCOL.md §1)
 
 claude last-read: B-019
-codex last-read: B-022
+codex last-read: A-032
 
 ---
 
