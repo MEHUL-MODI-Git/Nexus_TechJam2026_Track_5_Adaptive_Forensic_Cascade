@@ -314,4 +314,4 @@ def build_app(service=None):
     return demo
 
 
-__all__ = ["build_app", "analyze_image", "stress_test_image"]
+__all__ = ["analyze_image", "build_app", "stress_test_image"]

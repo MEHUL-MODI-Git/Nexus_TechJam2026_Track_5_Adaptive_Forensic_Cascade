@@ -144,7 +144,7 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        _, failures = run(
+        _, _failures = run(
             args.input_dir, args.output,
             errors=args.errors, recursive=not args.no_recursive,
         )

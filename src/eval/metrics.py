@@ -7,9 +7,9 @@ raise instead of manufacturing a metric when either class is absent.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
 import math
-from typing import Iterable
+from collections.abc import Iterable
+from dataclasses import asdict, dataclass
 
 import numpy as np
 

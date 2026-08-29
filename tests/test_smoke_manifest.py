@@ -1,9 +1,11 @@
-from pathlib import Path
 import json
+
 import pytest
 from PIL import Image
+
 from scripts.prepare_smoke_dataset import build_manifest
 from scripts.validate_smoke_manifest import validate
+
 
 def _args(tmp_path, seed=7, count=2):
     class A: pass

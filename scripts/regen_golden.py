@@ -16,11 +16,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import numpy as np
+
 from src.pipeline.decode import decode_image
 from src.pipeline.transforms import CONDITION_IDS, apply_transform
 from src.pipeline.version import GOLDEN_VERSION, PIPELINE_VERSION
-
-import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCES = ROOT / "tests" / "golden" / "sources"

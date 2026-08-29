@@ -18,7 +18,6 @@ from src.eval.metrics import (
     worst_condition,
 )
 
-
 LABELS = np.array([0, 0, 1, 1])
 SCORES = np.array([0.1, 0.5, 0.5, 0.9])
 

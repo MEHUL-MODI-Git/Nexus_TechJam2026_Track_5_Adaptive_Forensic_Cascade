@@ -31,6 +31,7 @@ import yaml
 
 from ..experts.base import Expert, ExpertInferenceError
 from .decode import DecodedImage
+
 # Reusing the official primitives is deliberate: one implementation of the
 # JPEG/crop/resize pixel math, so probes and conditions cannot diverge.
 from .transforms import _crop, _jpeg, _resize

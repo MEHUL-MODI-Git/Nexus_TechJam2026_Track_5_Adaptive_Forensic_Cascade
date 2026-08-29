@@ -35,7 +35,7 @@ import json
 import math
 from collections import defaultdict
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import numpy as np
 
@@ -153,7 +153,7 @@ class DevSet:
 REQUIRED_FAMILIES = frozenset({"jpeg", "blur", "resize", "noise", "color", "crop"})
 
 
-def validate_dev_for_selection(dev: "DevSet") -> None:
+def validate_dev_for_selection(dev: DevSet) -> None:
     """Strict protocol validation. Required before ANY artifact is produced.
 
     Exploratory helpers may tolerate absent groups; artifact-producing
@@ -382,7 +382,7 @@ class ThresholdArtifact:
             raise
 
     @classmethod
-    def load(cls, path) -> "ThresholdArtifact":
+    def load(cls, path) -> ThresholdArtifact:
         """Load and VALIDATE. Never trust an artifact just because it parses."""
         from pathlib import Path
 
@@ -511,7 +511,7 @@ def select_threshold(
         config_sha256=config_sha256,
         pipeline_version=pipeline_version,
         fitting_code_version=fitting_code_version,
-        created_at=datetime.now(timezone.utc).isoformat(),
+        created_at=datetime.now(UTC).isoformat(),
         warnings=warnings,
     )
 

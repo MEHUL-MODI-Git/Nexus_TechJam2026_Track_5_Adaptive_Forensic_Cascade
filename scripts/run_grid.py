@@ -29,7 +29,7 @@ import hashlib
 import json
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -86,7 +86,7 @@ def run(
         rows = rows[:limit]
     service = service or PredictionService.from_config()
     experts = service.experts
-    run_id = run_id or f"grid-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
+    run_id = run_id or f"grid-{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}"
 
     output.parent.mkdir(parents=True, exist_ok=True)
     done = completed_pairs(output)
@@ -177,7 +177,7 @@ def run(
     elapsed = time.perf_counter() - started
     manifest = {
         "run_id": run_id,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
         "manifest_path": str(manifest_path),
         "manifest_sha256": manifest_sha,
         "conditions": conditions,
@@ -215,7 +215,7 @@ def main() -> int:
         print(f"unknown condition ids: {sorted(unknown)}", file=sys.stderr)
         return 2
 
-    run_id = f"grid-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
+    run_id = f"grid-{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}"
     output = args.output or Path("results") / run_id / "prediction_rows.jsonl"
     run(args.manifest, output, conditions, limit=args.limit, run_id=run_id)
     return 0

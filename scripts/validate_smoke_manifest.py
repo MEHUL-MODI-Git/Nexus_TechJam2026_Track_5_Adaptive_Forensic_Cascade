@@ -23,7 +23,7 @@ def validate(path: Path, root: Path | None = None, near_threshold: int | None = 
     if any(row["manifest_version"] != "smoke.v1" for row in rows): raise ValueError("unsupported manifest version")
     if any(row["selection_seed"] != doc.get("selection_seed") for row in rows):
         raise ValueError("selection_seed differs between envelope and row")
-    if re.search("val2017", json.dumps(doc, ensure_ascii=False), re.I): raise ValueError("forbidden val2017 occurrence")
+    if re.search("val2017", json.dumps(doc, ensure_ascii=False), re.IGNORECASE): raise ValueError("forbidden val2017 occurrence")
     if {int(r["label"]) for r in rows} != {0, 1}: raise ValueError("both labels 0 and 1 are required")
     if sum(r["label"] == 0 for r in rows) != sum(r["label"] == 1 for r in rows): raise ValueError("manifest is not balanced")
     root = root or path.parent.parent.parent

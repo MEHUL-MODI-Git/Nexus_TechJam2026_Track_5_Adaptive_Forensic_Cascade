@@ -5,7 +5,9 @@ the property the router will depend on -- rather than exact values, which are
 content-dependent by nature.
 """
 
+import io
 from dataclasses import replace
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -14,9 +16,6 @@ from PIL import Image
 from src.pipeline.decode import decode_image
 from src.pipeline.quality import SCHEMA_VERSION, compute_quality
 from src.pipeline.transforms import apply_transform
-
-import io
-from pathlib import Path
 
 GOLDEN = Path(__file__).parent / "golden" / "sources"
 

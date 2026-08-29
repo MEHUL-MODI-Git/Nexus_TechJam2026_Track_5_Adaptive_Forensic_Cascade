@@ -18,7 +18,7 @@ from src.pipeline.decode import decode_image
 API = "https://datasets-server.huggingface.co/rows"
 REAL = ("phiyodr/coco2017", "default", "train", "036f3f8291db64d17faad9b09e59dd30bb65c4d7")
 FAKE = ("saberzl/SID_Set", "default", "validation", "dc03ead57929879319ce30a82bfcfb8d317b10bd")
-FORBIDDEN = re.compile("val2017", re.I)
+FORBIDDEN = re.compile("val2017", re.IGNORECASE)
 
 
 def _bad(value) -> bool:

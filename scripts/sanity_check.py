@@ -99,7 +99,7 @@ def check_separation(expert: CommForExpert, manifest_path: Path) -> bool:
     print(f"\nClean-smoke separation: {n_real} real / {n_fake} fake scored"
           f"{f', {failed} undecodable' if failed else ''}")
     if n_real < 20 or n_fake < 20:
-        print(f"  INSUFFICIENT: DoD requires >=20 per class (task 0.7 supplies them)")
+        print("  INSUFFICIENT: DoD requires >=20 per class (task 0.7 supplies them)")
         return False
 
     mean_real = sum(s for s, y in zip(scores, labels) if y == 0) / n_real

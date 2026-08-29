@@ -20,7 +20,7 @@ from PIL import Image
 from src.pipeline.service import PredictionService
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts.infer_dir import SUPPORTED_EXTENSIONS, find_images, run  # noqa: E402
+from scripts.infer_dir import SUPPORTED_EXTENSIONS, find_images, run
 
 ROOT = Path(__file__).resolve().parents[1]
 GOLDEN = ROOT / "tests" / "golden" / "sources"

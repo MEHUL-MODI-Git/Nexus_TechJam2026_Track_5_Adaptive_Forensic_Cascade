@@ -5,13 +5,11 @@ golden tests' job (tests/test_transforms_golden.py).
 """
 
 import hashlib
-import io
 
 import numpy as np
 import pytest
 from PIL import Image
 
-from src.pipeline.decode import decode_image
 from src.pipeline.transforms import (
     CONDITION_IDS,
     CONFIG,

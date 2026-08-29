@@ -27,11 +27,10 @@ import platform
 import re
 import sys
 import tempfile
-from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass, replace
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Iterable
 
 from ..experts.base import Expert, ExpertInferenceError
 from ..pipeline.decode import DecodeError, decode_image
@@ -149,11 +148,11 @@ def load_denylist(path: Path | None) -> Denylist:
 
 
 def _hamming(a: str, b: str) -> int:
-    return bin(int(a, 16) ^ int(b, 16)).count("1")
+    return (int(a, 16) ^ int(b, 16)).bit_count()
 
 
 def validate_manifest_rows(
-    rows: list[dict], denylist: "Denylist", *, verify_bytes: bool = True,
+    rows: list[dict], denylist: Denylist, *, verify_bytes: bool = True,
     phash_threshold: int = 6, evaluation_cache: bool = False,
 ) -> None:
     """Every hard constraint, enforced BEFORE a single forward pass runs.
@@ -375,7 +374,7 @@ def build_row(
         "probes": blocks["probes"],
         "quality": blocks["quality"],
         "disagreement": blocks["disagreement"],
-        "extracted_at": datetime.now(timezone.utc).isoformat(),
+        "extracted_at": datetime.now(UTC).isoformat(),
     }
 
 
@@ -472,7 +471,7 @@ def build_cache(
     evaluation_cache: bool = False,
 ) -> dict:
     """Extract features for every (source, condition). Returns the manifest."""
-    started = datetime.now(timezone.utc)
+    started = datetime.now(UTC)
     denylist = denylist or Denylist(frozenset(), frozenset())
     if not denylist and not denylist_acknowledged_absent:
         # Fail closed. Building an unprotected fitting cache by accident is
@@ -529,7 +528,7 @@ def build_cache(
         "storage_note": ("spec names Parquet; pyarrow is not in the lockfile so rows are "
                          "JSONL with an identical schema (recorded deviation)"),
         "created_at": started.isoformat(),
-        "completed_at": datetime.now(timezone.utc).isoformat(),
+        "completed_at": datetime.now(UTC).isoformat(),
         "status": "complete",
         "n_sources": len(manifest_rows),
         "n_conditions": len(conditions),

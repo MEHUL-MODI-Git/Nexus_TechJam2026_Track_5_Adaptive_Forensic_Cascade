@@ -4,7 +4,6 @@ Feature math is tested against a stub expert with scripted scores so the
 assertions are exact; integration with the real adapter is tested separately.
 """
 
-from dataclasses import replace
 from pathlib import Path
 
 import pytest
