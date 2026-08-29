@@ -1,5 +1,34 @@
 # core — CHANGELOG (newest first)
 
+## 2026-08-30 — a clean clone was PROVEN to run, not asserted to
+
+`tests/test_clean_checkout.py` (the R1 repair) asserts that every artifact `configs/predict.yaml`
+names exists and is git-tracked. That is necessary and not sufficient, and I had treated it as
+sufficient: it runs inside the working tree, where files exist whether or not they are committed,
+and it never scores an image. B-029's finding 1 was that a clean checkout could not run the shipped
+system; verifying the fix by the same insufficient means would have left the finding open in fact
+while closed on paper.
+
+`scripts/verify_clean_checkout.py` clones the repo into a scratch directory that shares nothing with
+the working tree, then from inside the clone runs the suite, `predict.py` and `infer_dir.py`, and
+writes `results/clean-checkout/verification.json`. It refuses to run against a dirty tree, because a
+clone would then not contain what you believe you are verifying. Not in the test suite: it clones a
+repository and pulls 87 MB.
+
+**Result at `578efa7`: every step rc=0.** Suite **756 passed, 14 skipped, 0 failed**; the expert
+checkpoint downloaded into the clone's own empty HF cache (87.3 MB); `infer_dir.py` scored 6 images
+with 0 failures, separating reals (0.0014–0.0146) from fakes (0.5184–0.9997) at the frozen
+threshold, through the tracked 18 KB router artifact.
+
+The 14 skips are the point of the exercise: they need the git-ignored feature caches and the sealed
+dump, so a suite that skips them passes in a clean checkout whether or not the system works. The
+three executed steps are what close the gap.
+
+**One defect in this script, found and fixed before its number reached the README.** The first run
+reported 174.6 MB of downloads for an 87 MB checkpoint: the HF cache symlinks `snapshots/` at
+`blobs/`, and `rglob` + `stat` follows both, counting every weight file twice. Caught by comparing
+the script's own figure against `du -sh` on the clone.
+
 ## 2026-08-29 — CHEAPER AUDIT, A SELF-CAUGHT WRONG NUMBER, AND A CLAIMS SWEEP
 
 **`scripts/audit_image.py`** — the whole system in one command for the demo and video:

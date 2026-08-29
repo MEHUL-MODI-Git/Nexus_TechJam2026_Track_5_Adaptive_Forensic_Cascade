@@ -2,17 +2,17 @@
   "schema_version": "clean-checkout-verification.v1",
   "what_this_proves": "a fresh clone of this repository, sharing nothing with the development tree, downloads the expert checkpoint and produces predictions through the frozen cascade",
   "source": "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026",
-  "revision": "c895e4a402cfd53dc46ac8cb72a967537eb55a90",
+  "revision": "578efa7f9b87629d0a98b4986643863d17abb42f",
   "interpreter": "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026/.venv/bin/python",
   "dependency_resolution": "EXTERNAL venv reused; `uv sync` was NOT exercised by this run, so this verifies code and artifacts, not dependency resolution",
   "configured_artifacts_present": {
     "results/router-fitting-v2/router_reliability.pt": true,
     "results/router-fitting-v2/threshold-artifact.v1.json": true
   },
-  "expert_checkpoint_downloaded_mb": 174.6,
+  "expert_checkpoint_downloaded_mb": 87.3,
   "steps": {
     "clone": {
-      "command": "git clone --quiet /Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026 /var/folders/8f/k48fjv1x0p175j9vmwxp5f7r0000gn/T/clean-checkout-17kh91gu/clone",
+      "command": "git clone --quiet /Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026 /var/folders/8f/k48fjv1x0p175j9vmwxp5f7r0000gn/T/clean-checkout-tcavef78/clone",
       "returncode": 0,
       "seconds": 0.5,
       "stdout_tail": [],
@@ -21,7 +21,7 @@
     "pytest": {
       "command": "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026/.venv/bin/python -m pytest tests/ -q",
       "returncode": 0,
-      "seconds": 50.2,
+      "seconds": 54.3,
       "stdout_tail": [
         "SKIPPED [1] tests/test_probe_flip_semantics.py:67: internal-test cache not present",
         "SKIPPED [1] tests/test_sealed_report_guards.py:55: sealed dump not present (it is git-ignored)",
@@ -34,14 +34,14 @@
         "SKIPPED [1] tests/test_sealed_report_guards.py:173: sealed dump not present (it is git-ignored)",
         "SKIPPED [1] tests/test_sealed_report_guards.py:186: sealed dump not present (it is git-ignored)",
         "SKIPPED [1] tests/test_service_parity.py:270: internal-test cache not present",
-        "756 passed, 14 skipped, 9 warnings in 49.58s"
+        "756 passed, 14 skipped, 9 warnings in 53.59s"
       ],
       "stderr_tail": []
     },
     "predict": {
-      "command": "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026/.venv/bin/python scripts/predict.py /var/folders/8f/k48fjv1x0p175j9vmwxp5f7r0000gn/T/clean-checkout-17kh91gu/images/real_000000.jpg --json",
+      "command": "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026/.venv/bin/python scripts/predict.py /var/folders/8f/k48fjv1x0p175j9vmwxp5f7r0000gn/T/clean-checkout-tcavef78/images/real_000000.jpg --json",
       "returncode": 0,
-      "seconds": 2.3,
+      "seconds": 2.5,
       "stdout_tail": [
         "      \"noise_sigma\": 0.007752050659651143,",
         "      \"luminance_mean\": 0.2990582048045122,",
@@ -61,15 +61,15 @@
       ]
     },
     "infer_dir": {
-      "command": "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026/.venv/bin/python scripts/infer_dir.py /var/folders/8f/k48fjv1x0p175j9vmwxp5f7r0000gn/T/clean-checkout-17kh91gu/images --output /var/folders/8f/k48fjv1x0p175j9vmwxp5f7r0000gn/T/clean-checkout-17kh91gu/predictions.json",
+      "command": "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026/.venv/bin/python scripts/infer_dir.py /var/folders/8f/k48fjv1x0p175j9vmwxp5f7r0000gn/T/clean-checkout-tcavef78/images --output /var/folders/8f/k48fjv1x0p175j9vmwxp5f7r0000gn/T/clean-checkout-tcavef78/predictions.json",
       "returncode": 0,
-      "seconds": 2.9,
+      "seconds": 3.1,
       "stdout_tail": [],
       "stderr_tail": [
-        "found 6 image(s) under /private/var/folders/8f/k48fjv1x0p175j9vmwxp5f7r0000gn/T/clean-checkout-17kh91gu/images",
+        "found 6 image(s) under /private/var/folders/8f/k48fjv1x0p175j9vmwxp5f7r0000gn/T/clean-checkout-tcavef78/images",
         "Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.",
         "  [6/6] scored",
-        "wrote /var/folders/8f/k48fjv1x0p175j9vmwxp5f7r0000gn/T/clean-checkout-17kh91gu/predictions.json -- 6 scored, 0 failed"
+        "wrote /var/folders/8f/k48fjv1x0p175j9vmwxp5f7r0000gn/T/clean-checkout-tcavef78/predictions.json -- 6 scored, 0 failed"
       ]
     }
   },

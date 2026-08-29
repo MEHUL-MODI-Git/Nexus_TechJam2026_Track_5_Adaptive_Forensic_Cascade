@@ -80,7 +80,19 @@ uv sync                      # create .venv and install pinned dependencies
 ```
 
 The expert checkpoint downloads automatically from the Hugging Face Hub on
-first use (~85 MB, MIT licensed).
+first use (87 MB, MIT licensed).
+
+**This was verified, not assumed.** `scripts/verify_clean_checkout.py` clones this
+repository into a scratch directory that shares nothing with the development tree
+and, from inside that clone, runs the suite, scores an image and runs the batch
+interface. At `578efa7`: **756 passed, 14 skipped, 0 failed**;
+the checkpoint downloaded into the clone's own empty cache; `predict.py` and
+`infer_dir.py` both returned 0, the latter scoring 6 images with 0 failures.
+The 14 skips are tests that need the git-ignored feature caches and the
+sealed dump, and they say so. Artifact: `results/clean-checkout/verification.json`.
+
+*(The skipped tests are why this check exists: a suite that skips what a clean
+checkout cannot run will pass in a clean checkout whether or not the system works.)*
 
 ## 4. Usage
 

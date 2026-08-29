@@ -7,7 +7,7 @@ items only Mehul can.
 | # | Requirement | State | Owner | Evidence / what remains |
 |---|---|---|---|---|
 | 1 | Devpost covers approach, tools, models/APIs, libraries, data | ✅ **draft v2, all numbers protected** | Claude → Codex review | `deliverables/devpost-draft.md` — no `[PENDING]` left; withdrawn smoke figures removed. **v2 (29 Aug)** adds the sealed reference benchmark (it had been omitted), and fixes latency + parameter figures against their artifacts |
-| 2 | Public repo URL works without special access | 🔴 **BLOCKED** | **Mehul** | Remote `main` still holds pre-cleanup history with raw images. Needs explicit MIT approval + verified clean-history force-push. **Do not publish before this.** |
+| 2 | Public repo URL works without special access | 🔴 **BLOCKED** | **Mehul** | Remote `main` still holds pre-cleanup history with raw images. Needs explicit MIT approval + verified clean-history force-push. **Do not publish before this.** **Verified separately that a clean clone RUNS** at `578efa7`: 756 passed / 0 failed, `predict.py` and `infer_dir.py` both rc=0 (6 images, 0 failures) — `results/clean-checkout/verification.json`. What remains is the history and licence decision, not the code. |
 | 3 | README includes limitations | ✅ | — | README §8 |
 | 3b | README includes what would be improved with more time | ✅ | — | README §8b |
 | 4 | README includes team contributions | ✅ | — | README §11 (solo + two agents) |
