@@ -65,12 +65,22 @@ def test_serving_derives_probe_flip_at_the_frozen_threshold(rows):
 
 
 def test_measured_train_serve_drift_stays_within_the_disclosed_bounds(rows):
-    """Locks the size of the known discrepancy.
+    """Locks the MEASURED size of the known discrepancy, not a loose ceiling.
 
-    Published: on the 60,000 internal-test rows, deriving probe_flip at 0.5
-    (training semantics) rather than the frozen threshold changes 550 feature
-    rows and 2 verdicts, leaving worst-family recall identical at 0.8258.
-    If a change makes this materially worse, this fails.
+    S3, Codex review 2026-08-29: the first version of this test allowed up to
+    1,499 changed rows and 10 verdict changes, and asserted nothing at all about
+    the score drift -- so it would have passed through almost three times the
+    real discrepancy without complaint, and any growth in magnitude at constant
+    row count was invisible to it.
+
+    Independently reproduced by both agents on the 60,000 internal-test rows:
+    deriving probe_flip at 0.5 (training semantics) rather than at the frozen
+    threshold changes exactly **550 feature rows**, moves p_fake by at most
+    **0.298885**, and flips **2 verdicts**, leaving worst-family recall
+    identical at 0.8258. The dev-split equivalent (B-029) is 578 / 0.29525 / 3.
+
+    These are deterministic functions of a fixed cache and a frozen checkpoint,
+    so they are asserted as values.
     """
     from src.router.train import build_batch, load_checkpoint
 
@@ -87,11 +97,16 @@ def test_measured_train_serve_drift_stays_within_the_disclosed_bounds(rows):
 
     served = score(FROZEN)
     trained = score(0.5)
-    changed_rows = int((np.abs(served - trained) > 0).sum())
+    delta = np.abs(served - trained)
+    changed_rows = int((delta > 0).sum())
+    max_abs_delta = float(delta.max())
     verdict_changes = int(((served >= FROZEN) != (trained >= FROZEN)).sum())
 
-    assert changed_rows < 1500, f"feature drift grew to {changed_rows} rows"
-    assert verdict_changes <= 10, f"verdict drift grew to {verdict_changes}"
+    assert len(rows) == 60000, "the published drift figures describe this cache"
+    assert changed_rows == 550, f"feature drift moved to {changed_rows} rows (published 550)"
+    assert verdict_changes == 2, f"verdict drift moved to {verdict_changes} (published 2)"
+    assert max_abs_delta == pytest.approx(0.298885, abs=5e-6), (
+        f"max |delta p_fake| moved to {max_abs_delta:.6f} (published 0.298885)")
     # and the headline must be unaffected either way
     labels = np.array([r["label"] for r in rows])
     fams = np.array([r.get("family") or "clean" for r in rows])

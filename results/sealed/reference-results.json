@@ -12,14 +12,27 @@
     "threshold_artifact_sha256": "6804be9c2ff50751d679411ef20951fc45c10a274002b7a7c9918349e4163523",
     "checkpoint": "results/router-fitting-v2/router_reliability.pt",
     "checkpoint_sha256": "cfd85b9efdbff8f8946652b613c0ccd195311c37ba213f20290177bb0aa23778",
+    "sealed_files_manifest": "data/manifests/sealed_files.json",
     "sealed_files_manifest_sha256": "50783271b2c8f9e802cc3b109e8fd737a15d11510a0e2df06ae02f917824e0df",
     "sealed_denylist_sha256": "b4c0451be55593e40aa3058d8adaeb2b07f0a0049676e89e169db05b33f3e444",
     "transforms_config_sha256": "113e8bfe69d934c76024d625bab7708962688acffc5ccb9e3065c419acc3f2a6",
     "probes_config_sha256": "22adbc3f2bd2d8eaaad11032769afc8f3666f1ba6a0e909c1e5ef30a7ee68662",
     "predict_config_sha256": "3f55fc873d48c7d2399b2805420fb9563a99e74aebca082a0994ccf8f1393442",
     "pipeline_version": "0.1.0",
-    "code_revision": "e299203f88d4318463dadad15ed25145bf9a6919",
-    "one_run_rule": "the sealed subset is scored exactly once; this report is a SUMMARY of the preserved dump and never re-invokes the model"
+    "summary_code_revision": "c28575f83de4e1e73b70c6bdbf176fe9142b15df",
+    "one_run_rule": "the sealed subset is scored exactly once; this report is a SUMMARY of the preserved dump and never re-invokes the model",
+    "binding": {
+      "bound_to_the_rows": [
+        "predictions_sha256 \u2014 the dump these numbers were computed from",
+        "sealed_files_manifest_sha256 \u2014 enforced: image set, per-image label, group and file_multiplicity all cross-checked row by row, run refused on any disagreement",
+        "threshold_artifact_sha256 \u2014 the validated artifact whose value scored these rows; no free --threshold flag exists"
+      ],
+      "NOT_bound_to_the_rows": [
+        "checkpoint_sha256, transforms/probes/predict config hashes \u2014 these hash whichever files exist when this SUMMARY is regenerated. The dump carries no checkpoint/config/code identity fields, so nothing here proves those files produced these rows.",
+        "summary_code_revision \u2014 the HEAD that regenerated this summary, NOT the revision that ran inference. It was previously called 'code_revision', which read as the latter."
+      ],
+      "inference_code_revision": "NOT RECORDED IN THE DUMP \u2014 the run predates this ledger. Any future sealed-class run must stamp method, checkpoint, config and code identity into each row so the binding is provable rather than asserted."
+    }
   },
   "threshold": 0.4667367651127279,
   "n_rows": 174380,
@@ -41,7 +54,7 @@
         "fake_recall": 0.9385049744554987,
         "fpr": 0.05696,
         "accuracy": 0.9411056313797453,
-        "auroc": 0.9821141793492875
+        "auroc": 0.9821140321322936
       },
       "per_family": {
         "blur": {
@@ -50,7 +63,7 @@
           "fake_recall": 0.9278479878103433,
           "fpr": 0.15926666666666667,
           "accuracy": 0.877891195473487,
-          "auroc": 0.9504163723820621
+          "auroc": 0.9504152938364554
         },
         "color": {
           "n_images": 52314,
@@ -74,7 +87,7 @@
           "fake_recall": 0.9263242807206238,
           "fpr": 0.04355,
           "accuracy": 0.9436001835072829,
-          "auroc": 0.9840045072600161
+          "auroc": 0.9840045038988976
         },
         "noise": {
           "n_images": 26157,
@@ -82,7 +95,7 @@
           "fake_recall": 0.9622658420722416,
           "fpr": 0.0778,
           "accuracy": 0.9392896738922659,
-          "auroc": 0.9880409488811209
+          "auroc": 0.98804094589346
         },
         "resize": {
           "n_images": 17438,
@@ -90,7 +103,7 @@
           "fake_recall": 0.8787308416240925,
           "fpr": 0.0586,
           "accuracy": 0.9146691134304392,
-          "auroc": 0.969672237160527
+          "auroc": 0.9696722237160527
         }
       },
       "per_condition": {
@@ -116,7 +129,7 @@
           "fake_recall": 0.8991664425920947,
           "fpr": 0.4222,
           "accuracy": 0.7148755591237527,
-          "auroc": 0.8482449583221296
+          "auroc": 0.8482425114278032
         },
         "bright_+20": {
           "n_images": 8719,
@@ -220,7 +233,7 @@
           "fake_recall": 0.937079860177467,
           "fpr": 0.149,
           "accuracy": 0.8877164812478495,
-          "auroc": 0.9633210002688894
+          "auroc": 0.9633209733799408
         },
         "resize_0.25": {
           "n_images": 8719,
@@ -236,7 +249,7 @@
           "fake_recall": 0.9311642914762033,
           "fpr": 0.0548,
           "accuracy": 0.9392132125243721,
-          "auroc": 0.9840642108093574
+          "auroc": 0.9840641839204087
         },
         "saturation_+20": {
           "n_images": 8719,
@@ -272,7 +285,7 @@
           "fake_recall": 0.6690911535358968,
           "fpr": 0.01369,
           "accuracy": 0.8510035554536071,
-          "auroc": 0.9759331456036568
+          "auroc": 0.9759331082952406
         },
         "worst_family_fake_recall": 0.4504795195841176
       },
@@ -313,7 +326,7 @@
         "fake_recall": 0.9347223792830487,
         "fpr": 0.05696,
         "accuracy": 0.9377266488477931,
-        "auroc": 0.9813147840664933
+        "auroc": 0.9813146419201628
       },
       "per_family": {
         "blur": {
@@ -322,7 +335,7 @@
           "fake_recall": 0.9220098759847714,
           "fpr": 0.15926666666666667,
           "accuracy": 0.8926533265910569,
-          "auroc": 0.9476389762147084
+          "auroc": 0.9476379948986644
         },
         "color": {
           "n_images": 52314,
@@ -346,7 +359,7 @@
           "fake_recall": 0.9242338572882506,
           "fpr": 0.04355,
           "accuracy": 0.9358701148594958,
-          "auroc": 0.983851427682913
+          "auroc": 0.9838514234422707
         },
         "noise": {
           "n_images": 26157,
@@ -354,7 +367,7 @@
           "fake_recall": 0.9618530664555769,
           "fpr": 0.0778,
           "accuracy": 0.9475306412386525,
-          "auroc": 0.9881640896126251
+          "auroc": 0.9881640883561386
         },
         "resize": {
           "n_images": 17438,
@@ -362,7 +375,7 @@
           "fake_recall": 0.8685966301029062,
           "fpr": 0.0586,
           "accuracy": 0.8948927255652677,
-          "auroc": 0.9671840042971842
+          "auroc": 0.9671839986429944
         }
       },
       "per_condition": {
@@ -388,7 +401,7 @@
           "fake_recall": 0.8904218025556938,
           "fpr": 0.4222,
           "accuracy": 0.7775048761106697,
-          "auroc": 0.8401388895171322
+          "auroc": 0.8401365939160919
         },
         "bright_+20": {
           "n_images": 8719,
@@ -492,7 +505,7 @@
           "fake_recall": 0.9356553205925591,
           "fpr": 0.149,
           "accuracy": 0.9050783789640974,
-          "auroc": 0.9630416148365939
+          "auroc": 0.9630416035282144
         },
         "resize_0.25": {
           "n_images": 8719,
@@ -508,7 +521,7 @@
           "fake_recall": 0.9241207734931585,
           "fpr": 0.0548,
           "accuracy": 0.9317344506248646,
-          "auroc": 0.9827138527648988
+          "auroc": 0.9827138414565193
         },
         "saturation_+20": {
           "n_images": 8719,
@@ -544,7 +557,7 @@
           "fake_recall": 0.6600870745222209,
           "fpr": 0.01369,
           "accuracy": 0.7779166365672181,
-          "auroc": 0.9752650343774737
+          "auroc": 0.9752649993497682
         },
         "worst_family_fake_recall": 0.4533906291228467
       },

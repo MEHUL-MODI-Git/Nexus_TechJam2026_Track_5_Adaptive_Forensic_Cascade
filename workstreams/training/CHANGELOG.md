@@ -1,5 +1,51 @@
 # CHANGELOG — training (newest first, append-only; corrections are new entries)
 
+## 2026-08-29 — S1–S4: Codex's second BLOCK, repaired
+
+B-030 accepted R1, R4, R5, R7 and the UI wording and blocked on four items. All four are repaired
+here. **No model was invoked, nothing was refitted, and no published figure moved.**
+
+**S1 — the future freeze path.** I had argued against patching `freeze_router.py` on the grounds
+that it would make the code disagree with the artifact it produced. Codex's counter is better than
+my position: the artifact records its own fitting-code revision, so patching cannot falsify it, and
+leaving a known bug executable protects a historical artifact at the cost of the next run. The
+threshold is now fitted on **held-out dev by default**; `--threshold-split train` reproduces the
+disclosed deviation but only with `--acknowledge-train-threshold-deviation`, and anything else
+fails closed. The candidate grid follows the same split — a dev threshold chosen from train
+quantiles would have been a subtler version of the same bug. Shipped threshold unchanged
+(`tests/test_freeze_threshold_split.py`, 7 tests, asserts that too).
+
+**S2 — the sealed report's boundary was not bound to the run.**
+- Its AUROC was order-dependent: it subtracted half of each row's *own* negative weight, which
+  averages a positive tied with the negative at the same sorted index and nothing else. Rows tied
+  at equal scores but different indices counted as fully ordered. On one tied pair it returned 0
+  or 1 instead of 0.5; the real dump has 31,231 rows inside tied-score groups. Replaced with a
+  genuine tie-group-aware weighted AUROC, proven equal to the canonical helper at unit weights and
+  equal to physically repeating rows when weighted. **18 AUROC fields moved, max 2.4e-6, and not
+  one published 4-dp figure changed.** Every non-AUROC field is byte-identical.
+- "Every condition exactly once" was set equality, so a second row for the same
+  `(sha256, condition_id)` under a different `view_id` passed and then voted twice. Now an exact
+  per-pair multiplicity check.
+- `label` accepted anything non-None — and `True == 1` in Python, so a bool scored as a 1.
+- The dump is now cross-checked against `sealed_files.json` row by row: image set, per-image
+  label, group and `file_multiplicity`, refusing on any disagreement. All four pass on the
+  preserved dump, which is why no number moved.
+- `code_revision` was the summary-regeneration HEAD, not the inference revision. Renamed
+  `summary_code_revision`, and the ledger now states plainly which hashes are bound to the rows
+  and which are not — the checkpoint and config hashes are **not**, because the dump carries no
+  model identity fields. Recorded as a requirement on any future sealed-class run.
+
+**S3 — R6 was bounded loosely.** The old test allowed 1,499 changed rows and 10 verdict changes
+and asserted nothing about score magnitude, so it would have passed through three times the real
+drift. Independently reproduced here before asserting: **550 rows, max |delta p_fake| 0.298885,
+2 verdicts** on the internal test, now locked as values.
+
+**S4 — release truthfulness.** LOTA is MIT *code* with *unlicensed* Baidu weights and the docs
+now separate them; the 17-parameter reliability head is inside the 1,827, not additional; the
+Devpost's "never thresholded on" is scoped to the shipped cascade (one baseline control is
+deliberately fitted on that set, in the baseline's favour, and says so); and this file's claim
+that the sealed run had never been touched is corrected — it ran once on 29 Aug.
+
 ## 2026-08-29 — R4 was repaired in the script but not in the artifact it wrote
 
 Found while re-reading the R1–R8 packet before Codex's re-review, and it is the same class of

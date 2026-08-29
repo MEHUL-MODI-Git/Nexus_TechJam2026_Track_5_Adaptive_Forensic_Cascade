@@ -23,10 +23,25 @@ DUMP = ROOT / "results" / "sealed" / "predictions.jsonl"
 ARTIFACT = ROOT / "results" / "sealed" / "reference-results.json"
 
 
-def _run(pred: Path, out: Path):
-    return subprocess.run([sys.executable, str(SCRIPT), "--pred", str(pred),
-                           "--out", str(out)],
-                          capture_output=True, text=True, cwd=ROOT, check=False)
+def _run(pred: Path, out: Path, manifest: Path | None = None):
+    cmd = [sys.executable, str(SCRIPT), "--pred", str(pred), "--out", str(out)]
+    if manifest is not None:
+        cmd += ["--sealed-manifest", str(manifest)]
+    return subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT, check=False)
+
+
+def _manifest_for(rows, path: Path) -> Path:
+    """The sealed manifest the fixture rows would have come from: one entry per
+    file, i.e. each image repeated `file_multiplicity` times."""
+    seen, entries = {}, []
+    for r in rows:
+        seen.setdefault(r["sha256"], r)
+    for sha, r in seen.items():
+        for i in range(int(r["file_multiplicity"])):
+            entries.append({"path": f"data/sealed/{r['group']}/{sha[:8]}_{i}.jpg",
+                            "sha256": sha, "label": int(r["label"]), "group": r["group"]})
+    path.write_text(json.dumps(entries))
+    return path
 
 
 @pytest.fixture
@@ -78,7 +93,99 @@ def test_committed_artifact_carries_a_full_provenance_ledger():
     for field in ("predictions_sha256", "threshold_artifact_sha256", "checkpoint_sha256",
                   "sealed_files_manifest_sha256", "sealed_denylist_sha256",
                   "transforms_config_sha256", "probes_config_sha256",
-                  "pipeline_version", "code_revision"):
+                  "pipeline_version", "summary_code_revision"):
         assert prov.get(field), f"provenance missing {field}"
     assert prov["n_failed_rows"] == 0
     assert prov["n_rows_read"] == prov["unique_view_ids"] == 174_380
+
+
+def test_the_ledger_says_which_hashes_prove_nothing():
+    """S2, Codex review 2026-08-29.
+
+    The v2 ledger hashed the checkpoint and configs that happened to exist when the
+    SUMMARY was regenerated, next to the dump's own hash, which read as though those
+    files were bound to those rows. They are not: the dump carries no checkpoint,
+    config or code identity fields. The honest ledger says so.
+    """
+    if not ARTIFACT.exists():
+        pytest.skip("sealed artifact not present")
+    prov = json.loads(ARTIFACT.read_text())["provenance"]
+    assert "code_revision" not in prov, "the ambiguous name must not come back"
+    binding = prov["binding"]
+    assert any("checkpoint_sha256" in x for x in binding["NOT_bound_to_the_rows"])
+    assert any("summary_code_revision" in x for x in binding["NOT_bound_to_the_rows"])
+    assert "NOT RECORDED" in binding["inference_code_revision"]
+    assert any("sealed_files_manifest_sha256" in x for x in binding["bound_to_the_rows"])
+
+
+def test_refuses_a_repeated_condition_under_a_fresh_view_id(tmp_path, head_rows):
+    """S2: "exactly once" was set equality, so this passed and voted twice."""
+    dup = json.loads(head_rows[0])
+    dup["view_id"] = dup["view_id"] + ":again"        # distinct id, same (sha, condition)
+    p = tmp_path / "twice.jsonl"
+    p.write_text("".join(head_rows) + json.dumps(dup) + "\n")
+    proc = _run(p, tmp_path / "out.json")
+    assert proc.returncode == 2
+    assert "appear more" in proc.stderr
+
+
+def test_refuses_a_non_binary_label(tmp_path, head_rows):
+    """`True == 1` in Python, so a bool used to sail through as a 1."""
+    for bad in (True, 2, -1):
+        row = json.loads(head_rows[0])
+        row["view_id"] = "bad:clean"
+        row["label"] = bad
+        p = tmp_path / f"lab_{bad}.jsonl"
+        p.write_text("".join(head_rows) + json.dumps(row) + "\n")
+        proc = _run(p, tmp_path / f"out_{bad}.json")
+        assert proc.returncode == 2, f"label {bad!r} was accepted"
+        assert "is not 0 or 1" in proc.stderr
+
+
+def test_refuses_a_dump_whose_images_are_not_the_sealed_manifest(tmp_path, head_rows):
+    """The dump must be bound to the set it claims to score, not merely to itself."""
+    rows = [json.loads(x) for x in head_rows]
+    manifest = _manifest_for(rows, tmp_path / "manifest.json")
+    # a whole extra image with full condition coverage: completeness passes, identity does not
+    first = rows[0]["sha256"]
+    ghost = [dict(r, sha256="0" * 64, view_id="ghost:" + r["condition_id"])
+             for r in rows if r["sha256"] == first]
+    p = tmp_path / "ghost.jsonl"
+    p.write_text("".join(head_rows) + "".join(json.dumps(g) + "\n" for g in ghost))
+    proc = _run(p, tmp_path / "out.json", manifest)
+    assert proc.returncode == 2
+    assert "image sets differ" in proc.stderr
+
+
+def test_refuses_a_multiplicity_that_disagrees_with_the_manifest(tmp_path, head_rows):
+    """`file_multiplicity` weights every published per-file number; a wrong one
+    silently re-weights them all."""
+    rows = [json.loads(x) for x in head_rows]
+    manifest = _manifest_for(rows, tmp_path / "manifest.json")
+    rows[0]["file_multiplicity"] = int(rows[0]["file_multiplicity"]) + 7
+    p = tmp_path / "mult.jsonl"
+    p.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    proc = _run(p, tmp_path / "out.json", manifest)
+    assert proc.returncode == 2
+    assert "sealed manifest on file_multiplicity" in proc.stderr
+
+
+def test_refuses_a_label_that_disagrees_with_the_manifest(tmp_path, head_rows):
+    rows = [json.loads(x) for x in head_rows]
+    manifest = _manifest_for(rows, tmp_path / "manifest.json")
+    for r in rows:
+        if r["sha256"] == rows[0]["sha256"]:
+            r["label"] = 1 - int(r["label"])
+    p = tmp_path / "lab.jsonl"
+    p.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    proc = _run(p, tmp_path / "out.json", manifest)
+    assert proc.returncode == 2
+    assert "sealed manifest on label" in proc.stderr
+
+
+def test_refuses_when_the_manifest_is_missing(tmp_path, head_rows):
+    p = tmp_path / "d.jsonl"
+    p.write_text("".join(head_rows))
+    proc = _run(p, tmp_path / "out.json", tmp_path / "nope.json")
+    assert proc.returncode == 2
+    assert "cannot be bound to the set it claims to score" in proc.stderr

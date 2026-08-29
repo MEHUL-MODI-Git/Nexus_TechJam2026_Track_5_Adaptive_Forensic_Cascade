@@ -101,8 +101,9 @@ floor, not the ceiling — and on clean images we buy nothing at all (0.9613 vs 
 
 ### And on the organizers' own reference data, scored exactly once
 
-The reference subset was sealed from the first day: never trained on, never thresholded on, never
-looked at while anything was being chosen. After the architecture was frozen we ran it **once** —
+The reference subset was sealed from the first day: **nothing we ship** was trained on it,
+thresholded on it, or chosen while looking at it. (One number below deliberately breaks that rule
+in the *baseline's* favour, and says so.) After the architecture was frozen we ran it **once** —
 8,719 unique images × 20 conditions = **174,380 rows, 0 failures**, through the same prediction
 service the demo calls.
 
@@ -222,7 +223,9 @@ worst conditions and we report them.
 - **Models:** Community Forensics 384 (MIT, 21,811,969 parameters) as the primary detector, plus
   our own 1,827-parameter reliability router and 775-parameter degradation reporter —
   **21,814,571 parameters shipped, 1.09% of the 2B limit**, of which 0.012% are ours to train.
-  LOTA (MIT) and PGC (Apache-2.0, 306.7M) were both integrated, measured and rejected.
+  LOTA (**code MIT, weights unlicensed** — published only through a login-walled Baidu drive
+  with no stated licence, which is part of why we do not ship it) and PGC (Apache-2.0, 306.7M)
+  were both integrated, measured and rejected.
 - **Libraries:** PyTorch (Apple Silicon MPS), timm, Hugging Face Hub, Pillow, NumPy, PyArrow,
   imagehash, transformers, Gradio, pytest, Ruff.
 - **Data:** SID-Set (CC BY 4.0) for the training corpus; COCO train2017 for real smoke images; the

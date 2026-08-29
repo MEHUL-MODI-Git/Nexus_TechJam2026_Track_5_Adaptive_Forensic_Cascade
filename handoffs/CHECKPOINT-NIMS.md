@@ -19,8 +19,12 @@ Single-stage cascade: CF-384 primary → quality descriptors + 3 self-probes →
 - Single frozen threshold **0.4667367651127279** across all 20 conditions
 - Frozen abstention threshold **0.866080** (reliability value, chosen on dev)
 - Served on the live path: Gradio, `scripts/infer_dir.py`, eval harness all share one
-  `PredictionService`; train/serve parity verified with **0 verdict disagreements** on 60,000 cache
-  rows and on 25 images end-to-end from pixels
+  `PredictionService`; **cache/live parity** verified with **0 verdict disagreements** on 60,000
+  cache rows and on 25 images end-to-end from pixels — i.e. the offline cache and the live service
+  agree under *serving* semantics. That is not the same claim as training/serving feature parity,
+  which is **not** zero: `probe_flip` was trained at threshold 0.5 and is served at 0.4667367651,
+  which moves 550 of those 60,000 feature rows, 2 verdicts, and p_fake by at most 0.298885
+  (`tests/test_probe_flip_semantics.py`; worst-family recall is unchanged at 0.8258)
 
 ## The numbers that define this checkpoint
 

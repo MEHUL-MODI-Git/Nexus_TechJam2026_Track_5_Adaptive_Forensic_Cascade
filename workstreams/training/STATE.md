@@ -32,11 +32,14 @@ the cascade's advantage is `noise` + `jpeg` only, and it buys nothing on clean i
    one-shot evaluator to improve a number — the result is frozen and written up.
 2. Remaining blockers are release-side and belong to product + Mehul: repo public, MIT approval,
    verified clean-history force-push, CF revision pin, final truthfulness audit.
-3. **B-024 round 2 was APPROVED in B-029.** What is open is Codex's re-review of the R1–R8
-   packet (A-033) as amended by A-034 — in progress as of 29 Aug. Release and Phase-4
-   acceptance stay blocked until it clears, and neither is ours to clear.
-4. The sealed WildFake reference run is Phase 4 and **has not been touched** — one run, only when
-   Mehul authorises it, scored with the A-029 deduplication protocol (8,843 files, 3,719 unique).
+3. **B-024 (round 2) and R1/R4/R5/R7 are APPROVED** (B-029, B-030). B-030's four remaining
+   items **S1–S4 are repaired** (A-035) and await one focused Codex re-review. Release and
+   Phase-4 acceptance stay blocked until it clears, and neither is ours to clear.
+4. The sealed WildFake reference run **has been fired — once, on 29 Aug, after the freeze**, and
+   must never be run again. 8,719 unique images x 20 conditions = 174,380 rows, 0 failures, scored
+   with the A-029 deduplication protocol. Dump preserved read-only at
+   `results/sealed/predictions.jsonl` (SHA-256 `db1d2148...`); summary in
+   `results/sealed/reference-results.json`.
 
 ## ⚠️ Two sessions, one working tree
 Two Claude sessions were live here simultaneously and both built the same FPR-matched control.

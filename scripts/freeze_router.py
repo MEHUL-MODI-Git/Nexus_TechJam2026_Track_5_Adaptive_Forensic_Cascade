@@ -38,6 +38,36 @@ CANDIDATE_RUNGS = (("quality_only", False), ("static_average", False),
                    ("logistic", False), ("mlp", False), ("mlp", True))
 
 
+class ThresholdSplitError(RuntimeError):
+    """Raised when a freeze would fit the threshold on anything but held-out dev."""
+
+
+def resolve_threshold_rows(split, train_rows, train_scores, dev_rows, dev_scores,
+                           acknowledge_deviation=False):
+    """Return the (rows, scores) the threshold is fitted on. Held-out dev, or fail closed.
+
+    `specs/phase0-eval.md` requires threshold/calibration fitting on held-out dev only. The
+    2026-08-28 freeze passed TRAIN rows here, which Codex found in review R2/S1; the shipped
+    threshold was left unchanged because the sealed set had already been scored at it, and the
+    deviation is recorded in `coordination/DEVIATION-2026-08-29-threshold-split.md`.
+
+    This function is the guard that stops it happening silently again: `dev` is the default, and
+    `train` is reachable only by explicitly acknowledging that it deviates from the spec (which
+    exists so the historical freeze stays reproducible, not so it stays repeatable).
+    """
+    if split == "dev":
+        return dev_rows, dev_scores
+    if split == "train":
+        if not acknowledge_deviation:
+            raise ThresholdSplitError(
+                "refusing to fit the threshold on TRAIN: specs/phase0-eval.md requires held-out "
+                "dev. This reproduces the 2026-08-28 freeze's deviation (see "
+                "coordination/DEVIATION-2026-08-29-threshold-split.md); pass "
+                "--acknowledge-train-threshold-deviation if that is genuinely what you want.")
+        return train_rows, train_scores
+    raise ThresholdSplitError(f"unknown threshold split {split!r}: expected 'dev' or 'train'")
+
+
 def paired_bootstrap(scores_a, scores_b, rows, thr_a, thr_b, n=2000, seed=7):
     """Paired by SOURCE: a source and all 20 of its views resample as one block."""
     labels = np.array([r["label"] for r in rows])
@@ -65,6 +95,13 @@ def main() -> int:
     ap.add_argument("--seed", type=int, default=20260827)
     ap.add_argument("--bootstrap", type=int, default=200)
     ap.add_argument("--paired", type=int, default=1000)
+    ap.add_argument("--threshold-split", choices=("dev", "train"), default="dev",
+                    help="split the ONE threshold is fitted on. Spec requires held-out dev; "
+                         "'train' reproduces the disclosed 2026-08-28 deviation and must be "
+                         "acknowledged explicitly.")
+    ap.add_argument("--acknowledge-train-threshold-deviation", action="store_true",
+                    help="required with --threshold-split train; see "
+                         "coordination/DEVIATION-2026-08-29-threshold-split.md")
     args = ap.parse_args()
 
     # Provenance the threshold artifact must carry. `load_frozen_threshold` refuses an
@@ -98,13 +135,17 @@ def main() -> int:
         with torch.no_grad():
             tr = rec["_model"](tb.features, tb.expert_logits, tb.available).p_fake.numpy()
         dv = np.asarray(rec["_dev_p_fake"], dtype=float)
-        grid = np.unique(np.quantile(np.clip(tr, 0, 1), np.linspace(0, 1, 257)))
+        grid_src = tr if args.threshold_split == "train" else dv
+        grid = np.unique(np.quantile(np.clip(grid_src, 0, 1), np.linspace(0, 1, 257)))
+        thr_rows, thr_scores = resolve_threshold_rows(
+            args.threshold_split, train_rows, tr, dev_rows, dv,
+            acknowledge_deviation=args.acknowledge_train_threshold_deviation)
         art = select_threshold(
-            DevSet(source_ids=np.array([r["source_id"] for r in train_rows]),
-                   condition_ids=np.array([r["condition_id"] for r in train_rows]),
-                   families=np.array([r.get("family") or "clean" for r in train_rows]),
-                   labels=np.array([r["label"] for r in train_rows], dtype=int),
-                   scores=np.clip(tr, 0, 1)),
+            DevSet(source_ids=np.array([r["source_id"] for r in thr_rows]),
+                   condition_ids=np.array([r["condition_id"] for r in thr_rows]),
+                   families=np.array([r.get("family") or "clean" for r in thr_rows]),
+                   labels=np.array([r["label"] for r in thr_rows], dtype=int),
+                   scores=np.clip(thr_scores, 0, 1)),
             candidates=grid, n_replicates=args.bootstrap, seed=args.seed,
             dev_manifest_sha256=fitting_manifest_sha, config_sha256=config_digest,
             pipeline_version=PIPELINE_VERSION,

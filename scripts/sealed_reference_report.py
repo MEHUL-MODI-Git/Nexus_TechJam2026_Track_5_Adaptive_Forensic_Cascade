@@ -20,7 +20,7 @@ import hashlib
 import json
 import subprocess
 import sys
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -35,17 +35,46 @@ FAMS = sorted(set(FAMILY_OF.values()) - {"clean"})
 
 
 def auroc(scores, y, w=None):
+    """Weighted AUROC that averages TIE GROUPS, not adjacent rows.
+
+    S2, Codex review 2026-08-29. The previous implementation subtracted half of
+    each row's own negative weight, which handles a positive tied with the
+    negative sitting at the same sorted index and nothing else. Rows tied at
+    equal scores but different indices were counted as fully ordered, so the
+    result depended on input order: on a single tied positive/negative pair it
+    returned 0.0 or 1.0 rather than 0.5. The real dump has 31,231 p_fake rows
+    inside tied-score groups.
+
+    Correct generalisation: for each distinct score value, every positive in the
+    group beats all negative weight strictly below it plus HALF the negative
+    weight tied with it.
+
+        AUC = sum_g P_g * (C_g + N_g / 2) / (P_total * N_total)
+
+    With unit weights this agrees with `src.eval.metrics.auroc` (the canonical
+    tie-aware implementation), which the tests assert directly.
+    """
     scores, y = np.asarray(scores, float), np.asarray(y, int)
     w = np.ones_like(scores) if w is None else np.asarray(w, float)
     order = np.argsort(scores, kind="mergesort")
-    y, w = y[order], w[order]
+    scores, y, w = scores[order], y[order], w[order]
     pos_w, neg_w = w * (y == 1), w * (y == 0)
-    # weighted AUROC via rank sums with ties averaged
-    cum_neg = np.cumsum(neg_w) - neg_w / 2.0
     tot_pos, tot_neg = pos_w.sum(), neg_w.sum()
     if tot_pos == 0 or tot_neg == 0:
         return float("nan")
-    return float((pos_w * cum_neg).sum() / (tot_pos * tot_neg))
+    # group boundaries over the sorted scores
+    starts = np.flatnonzero(np.r_[True, scores[1:] != scores[:-1]])
+    ends = np.r_[starts[1:], scores.size]
+    cum_neg = np.r_[0.0, np.cumsum(neg_w)]
+    total = 0.0
+    for a, b in zip(starts, ends):
+        p_g = pos_w[a:b].sum()
+        if p_g == 0.0:
+            continue
+        n_g = cum_neg[b] - cum_neg[a]          # negative weight tied in this group
+        below = cum_neg[a]                     # negative weight strictly below it
+        total += p_g * (below + n_g / 2.0)
+    return float(total / (tot_pos * tot_neg))
 
 
 def block(scores, labels, weights, thr):
@@ -72,6 +101,11 @@ def main() -> int:
                          "number typed on the command line proves nothing.")
     ap.add_argument("--checkpoint", type=Path,
                     default=Path("results/router-fitting-v2/router_reliability.pt"))
+    ap.add_argument("--sealed-manifest", type=Path,
+                    default=Path("data/manifests/sealed_files.json"),
+                    help="S2: the dump's image set, labels, groups and file multiplicities "
+                         "are cross-checked against this manifest and the run is refused on "
+                         "any disagreement.")
     ap.add_argument("--bootstrap", type=int, default=2000)
     args = ap.parse_args()
 
@@ -94,10 +128,17 @@ def main() -> int:
                 print(f"REFUSING: duplicate view_id {vid!r} at line {n}", file=sys.stderr)
                 return 2
             seen.add(vid)
-            for field in ("sha256", "label", "condition_id", "p_fake"):
+            for field in ("sha256", "label", "condition_id", "p_fake", "group",
+                          "file_multiplicity"):
                 if r.get(field) is None:
                     print(f"REFUSING: row {n} missing {field!r}", file=sys.stderr)
                     return 2
+            # S2: `label` used to accept anything non-None. `True == 1` in Python,
+            # so a bool sailed through every downstream comparison as a 1.
+            if isinstance(r["label"], bool) or r["label"] not in (0, 1):
+                print(f"REFUSING: row {n} label {r['label']!r} is not 0 or 1",
+                      file=sys.stderr)
+                return 2
             if not (0.0 <= float(r["p_fake"]) <= 1.0):
                 print(f"REFUSING: row {n} p_fake out of range", file=sys.stderr)
                 return 2
@@ -110,7 +151,17 @@ def main() -> int:
         print("no usable rows", file=sys.stderr)
         return 2
 
-    # completeness: every unique image must carry every condition, once
+    # completeness: every unique image must carry every condition EXACTLY ONCE.
+    # S2: this was set equality, so a second row for the same (sha256,
+    # condition_id) under a different view_id passed the "exactly once" check and
+    # then voted twice in every average below.
+    pair_counts = Counter((r["sha256"], r["condition_id"]) for r in rows)
+    repeated = [k for k, v in pair_counts.items() if v != 1]
+    if repeated:
+        s0, c0 = repeated[0]
+        print(f"REFUSING: {len(repeated)} (sha256, condition_id) pair(s) appear more "
+              f"than once, e.g. {s0[:12]}… / {c0} x{pair_counts[(s0, c0)]}", file=sys.stderr)
+        return 2
     by_source = defaultdict(set)
     labels_by_source = defaultdict(set)
     for r in rows:
@@ -127,6 +178,42 @@ def main() -> int:
     if conflicted:
         print(f"REFUSING: {len(conflicted)} source(s) carry conflicting labels",
               file=sys.stderr)
+        return 2
+
+    # S2: bind the dump to the sealed manifest's IDENTITY, not just to itself.
+    # Hashing whichever files happen to exist at summary time proves nothing about
+    # which files produced these rows; the manifest cross-check below is the one
+    # binding available from the preserved dump, and it is now enforced.
+    manifest_path = Path(args.sealed_manifest)
+    if not manifest_path.exists():
+        print(f"REFUSING: sealed manifest {manifest_path} not found; the dump cannot be "
+              "bound to the set it claims to score", file=sys.stderr)
+        return 2
+    manifest = json.loads(manifest_path.read_text())
+    man_mult = Counter(m["sha256"] for m in manifest)
+    man_label = {m["sha256"]: m["label"] for m in manifest}
+    man_group = {m["sha256"]: m["group"] for m in manifest}
+    dump_shas = set(by_source)
+    if dump_shas != set(man_mult):
+        only_dump, only_man = dump_shas - set(man_mult), set(man_mult) - dump_shas
+        print(f"REFUSING: dump/manifest image sets differ — {len(only_dump)} only in the "
+              f"dump, {len(only_man)} only in the manifest", file=sys.stderr)
+        return 2
+    mismatches = []
+    for r in rows:
+        sh = r["sha256"]
+        if int(r["file_multiplicity"]) != man_mult[sh]:
+            mismatches.append((sh, "file_multiplicity", r["file_multiplicity"], man_mult[sh]))
+        elif int(r["label"]) != int(man_label[sh]):
+            mismatches.append((sh, "label", r["label"], man_label[sh]))
+        elif r["group"] != man_group[sh]:
+            mismatches.append((sh, "group", r["group"], man_group[sh]))
+        if mismatches:
+            break
+    if mismatches:
+        sh, field, got, want = mismatches[0]
+        print(f"REFUSING: {sh[:12]}… disagrees with the sealed manifest on {field}: "
+              f"dump {got!r} vs manifest {want!r}", file=sys.stderr)
         return 2
 
     frozen = load_frozen_threshold(args.threshold_artifact)   # validates or raises
@@ -162,15 +249,42 @@ def main() -> int:
             "threshold_artifact_sha256": frozen.artifact_sha256,
             "checkpoint": str(args.checkpoint),
             "checkpoint_sha256": _sha(args.checkpoint),
-            "sealed_files_manifest_sha256": _sha("data/manifests/sealed_files.json"),
+            "sealed_files_manifest": str(manifest_path),
+            "sealed_files_manifest_sha256": _sha(manifest_path),
             "sealed_denylist_sha256": _sha("data/manifests/sealed_denylist.txt"),
             "transforms_config_sha256": _sha("configs/transforms.yaml"),
             "probes_config_sha256": _sha("configs/probes.yaml"),
             "predict_config_sha256": _sha("configs/predict.yaml"),
             "pipeline_version": PIPELINE_VERSION,
-            "code_revision": code_rev,
+            "summary_code_revision": code_rev,
             "one_run_rule": "the sealed subset is scored exactly once; this report is a "
                             "SUMMARY of the preserved dump and never re-invokes the model",
+            # S2, Codex review 2026-08-29. Being precise about what these hashes do
+            # and do not prove, rather than letting their presence imply more.
+            "binding": {
+                "bound_to_the_rows": [
+                    "predictions_sha256 — the dump these numbers were computed from",
+                    ("sealed_files_manifest_sha256 — enforced: image set, per-image label, "
+                     "group and file_multiplicity all cross-checked row by row, run refused "
+                     "on any disagreement"),
+                    ("threshold_artifact_sha256 — the validated artifact whose value scored "
+                     "these rows; no free --threshold flag exists"),
+                ],
+                "NOT_bound_to_the_rows": [
+                    ("checkpoint_sha256, transforms/probes/predict config hashes — these hash "
+                     "whichever files exist when this SUMMARY is regenerated. The dump carries "
+                     "no checkpoint/config/code identity fields, so nothing here proves those "
+                     "files produced these rows."),
+                    ("summary_code_revision — the HEAD that regenerated this summary, NOT the "
+                     "revision that ran inference. It was previously called 'code_revision', "
+                     "which read as the latter."),
+                ],
+                "inference_code_revision": ("NOT RECORDED IN THE DUMP — the run predates this "
+                                            "ledger. Any future sealed-class run must stamp "
+                                            "method, checkpoint, config and code identity into "
+                                            "each row so the binding is provable rather than "
+                                            "asserted."),
+            },
         },
         "threshold": thr,
         "n_rows": len(rows),

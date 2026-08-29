@@ -58,10 +58,10 @@ that was built, measured and cut on evidence (§7).
 | Importable prediction service (one decision path for CLI/UI/batch) | ✅ built, tested |
 | Quality descriptors | ✅ built, tested |
 | Mild self-probes | ✅ built, tested |
-| Calibration + threshold-selection code under a frozen objective | ✅ built, tested; threshold fitted on dev and frozen |
+| Calibration + threshold-selection code under a frozen objective | ✅ built, tested; **threshold fitted on the fitting split's train half** and frozen — the rung was selected on held-out dev, the threshold value was not (disclosed in §6) |
 | Reliability head + abstention (defer to human) | ✅ fitted in a frozen second stage; policy pre-registered on dev, verified on the test |
 | Adaptive rescue to a heavier second model | ❌ built and measured; **failed its gate**, reported as a negative result (§7) |
-| Router (7-rung ladder: quality-only → static avg → prob mean → fixed weights → logistic → MLP → +worst-group) | ✅ implemented, repaired; fitted, frozen and shipped as `results/router-fitting-v2/router_reliability.pt` (1,827 params + a 17-param reliability head, 18 KB) — the artifact `configs/predict.yaml` loads; `router.pt` is the earlier stage-1 checkpoint, kept for provenance |
+| Router (7-rung ladder: quality-only → static avg → prob mean → fixed weights → logistic → MLP → +worst-group) | ✅ implemented, repaired; fitted, frozen and shipped as `results/router-fitting-v2/router_reliability.pt` (1,827 params total, **of which** 17 are the second-stage reliability head, 18 KB) — the artifact `configs/predict.yaml` loads; `router.pt` is the earlier stage-1 checkpoint, kept for provenance |
 | Full-grid baseline run (8,000 predictions) | ✅ complete |
 | Evaluation harness | ✅ diagnostic and headline paths exercised; one-shot internal test + full ablation ladder |
 | Second expert | ❌ **two** candidates integrated and both rejected on measured evidence (LOTA, PGC) — see §7 |
@@ -255,7 +255,7 @@ with the **baseline strengthened, which biases every number below against us**:
 | baseline arm | thr | worst-family recall | clean FPR | cascade advantage (paired) |
 |---|---|---|---|---|
 | Primary @ 0.5 (published default) | 0.5000 | 0.1227 | 0.0027 | +0.7034 [+0.687, +0.720] |
-| Primary @ dev-fitted threshold | 0.1273 | 0.1827 | 0.0127 | +0.6433 [+0.627, +0.661] |
+| Primary @ its fitted threshold (train half) | 0.1273 | 0.1827 | 0.0127 | +0.6433 [+0.627, +0.661] |
 | **Primary @ our clean FPR, threshold fitted on this test set** | 0.0058 | 0.3342 | 0.0833 | **+0.4916 [+0.475, +0.508]** |
 
 The last row hands the primary **a threshold fitted on the internal test itself**
@@ -305,9 +305,10 @@ apparent stability on reals is an artefact of it calling almost everything real.
 
 ### The constraint that did not hold, stated rather than hidden
 
-The threshold was selected on dev under a clean-FPR cap of 0.0756 (dev value
-0.0736). **On the untouched test the cascade's clean FPR is 0.0833 — above that
-cap.** A 300-source pre-flight had flagged this before the full run, and we
+The threshold was fitted under a clean-FPR cap of 0.0756, measuring 0.0736 —
+both computed on the fitting split's **train** half, which is where the threshold
+value came from (§6). On held-out dev the same frozen threshold measures 0.0760.
+**On the untouched test the cascade's clean FPR is 0.0833 — above that cap.** A 300-source pre-flight had flagged this before the full run, and we
 recorded the decision in advance: if the full test confirmed it, it ships as a
 stated limitation and **the threshold does not get re-tuned to hide it**. The
 full test confirmed it, and the threshold is unchanged. The practical meaning is
@@ -327,9 +328,9 @@ thresholds, same conclusion.
 ### Full ablation ladder, scored on the untouched test
 
 Every rung was refit with the freeze's seed and split — reproducing its dev
-number exactly — then scored **once** on the internal test at its own dev-fitted
-threshold. Selection had already happened on dev; this is disclosure, not a
-second bite.
+number exactly — then scored **once** on the internal test at its own fitted
+threshold (fitted on the train half, like the shipped one; §6). Rung selection
+had already happened on held-out dev; this is disclosure, not a second bite.
 
 | rung | params | threshold | dev worst-family | **test worst-family** | clean FPR | overall acc |
 |---|---:|---:|---:|---:|---:|---:|
@@ -434,7 +435,14 @@ identical policy bought +2.27 accuracy points; here it buys 0.0001. The reliabil
 fitted on SID-Set and does not generalise to COCO + DALL-E. Deferring a quarter of the images for
 no measurable gain is a real cost and we state it as one.
 
-Artifact: `results/sealed/reference-results.json`.
+Artifact: `results/sealed/reference-results.json`. It carries a provenance ledger
+that is explicit about its own limits: the prediction dump's SHA-256 and the
+threshold artifact are bound to these rows, and every image's label, group and
+file multiplicity is cross-checked against the sealed manifest row by row (the
+summary refuses to run on any disagreement). The checkpoint and config hashes are
+**not** bound — the dump predates that ledger and carries no model identity
+fields, so those hash whatever exists when the summary is regenerated. We say so
+in the artifact rather than letting their presence imply more.
 
 ### Audit mode: the evaluation harness became the best confidence signal
 
@@ -519,7 +527,7 @@ so no second expert ships.**
 
 | candidate | licence | outcome |
 |---|---|---|
-| LOTA (ICCV 2025) | MIT | Reads the least-significant-bit plane; non-deterministic (one image's score moved 0.31 across runs) and AUROC falls 1.000 → **0.592** on JPEG re-encoding |
+| LOTA (ICCV 2025) | **code MIT; weights unlicensed** (published only through a login-walled Baidu drive with no stated licence) | Reads the least-significant-bit plane; non-deterministic (one image's score moved 0.31 across runs) and AUROC falls 1.000 → **0.592** on JPEG re-encoding |
 | PGC (Apache-2.0, 306.7M) | Apache-2.0 | Loads cleanly and is deterministic, but P(PGC correct \| cascade wrong) = **0.5426** on the test — a coin flip — and correction-minus-harm is **−2451** |
 
 PGC was given a fair hearing before being cut: beyond wholesale replacement we
@@ -585,8 +593,9 @@ Full artifacts: `results/internal-test/results.json`,
   transformation family — the ranking is excellent, the cut is misplaced. Fixing
   this is what the calibration stage is for.
 - **We buy robustness with false positives, and the constraint we set ourselves
-  did not hold on unseen data.** The threshold was selected on dev under a clean
-  false-positive cap of 0.0756; on the untouched test the cascade measured
+  did not hold on unseen data.** The threshold was fitted under a clean
+  false-positive cap of 0.0756 — measured on the train half it was fitted on, and
+  0.0760 on held-out dev; on the untouched test the cascade measured
   **0.0833**, above it. We had pre-registered what to do if this happened and did
   it: report it, do not re-tune. About 1 in 12 clean real photographs is called
   AI-generated, rising to 1 in 3.4 under σ=0.10 noise. A deployment should choose

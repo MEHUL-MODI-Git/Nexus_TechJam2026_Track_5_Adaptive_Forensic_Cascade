@@ -1,5 +1,25 @@
 # product — CHANGELOG (newest first)
 
+## 2026-08-29 — [relay] S1/S4 public-document corrections from Codex B-030
+
+Why: B-030 found the release truthfulness sweep still incomplete after R8 and A-034.
+
+What (prose only; no product code touched, review-first for Codex):
+- README called the threshold dev-fitted or dev-selected in four places while the tracked
+  `threshold-fitted.json` says the rung thresholds were fitted on **train**. Corrected to state
+  exactly what happened: the *rung* was selected on held-out dev, the *threshold value* was not.
+  The clean-FPR cap paragraph now says its 0.0756/0.0736 pair is measured on the train half and
+  gives the held-out dev figure (0.0760) beside it.
+- LOTA was labelled "MIT" in README and Devpost. The code is MIT; the Baidu-hosted weights carry
+  no stated licence. Public wording now separates them.
+- README said the checkpoint is "1,827 params + a 17-param reliability head". The 17 is inside the
+  1,827.
+- The Devpost sealed section said the reference set was "never thresholded on" and then described
+  a baseline control whose threshold was fitted on that same set. Scoped to the shipped cascade,
+  with the exception called out.
+- README §7 now states which sealed provenance hashes are bound to the scored rows and which are
+  not, rather than letting a list of hashes imply more than it proves.
+
 ## 2026-08-29 — A-033/A-034 release re-review: public truthfulness still blocked
 Why: the return-owner gate must cover the actual shipped clone and every public deliverable, not only
 the repaired README sections.
