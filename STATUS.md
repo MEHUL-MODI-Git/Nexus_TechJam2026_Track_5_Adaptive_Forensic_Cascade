@@ -17,8 +17,8 @@
 |---|---|---|---|
 | core | Claude | ✅ Phase 0 green; post-LOTA candidate work gated | STATE refreshed; PGC preflight only after repair gate |
 | training | Claude | 🔴 B-018 repair `f9c6ecb` BLOCKED by Codex B-024 re-review | Heavy correction spec → lighter implementation → heavy verification, then Codex re-review; 2R.2 corpus repair remains gated |
-| eval | Codex | ✅ repair closed at `0a40ee8`; evaluator added under relay `911ca72` | Codex review-first on return: the frozen-model evaluator and the internal-test numbers |
-| product | Codex | 🟢 task 1.5 accepted; 🔴 public release blocked | owner approvals, remote clean-history push, final truthfulness audit |
+| eval | Codex | 🔴 Phase-4 acceptance blocked narrowly by B-031 | strict sealed-report field schema, then focused re-review |
+| product | Codex | 🔴 release blocked by B-031 + owner actions | refresh/supersede stale shareable handoff; owner approvals remain |
 
 **Relay:** Mehul invoked PROTOCOL §6 on 27 Aug because Codex is near its limit. Claude may continue
 Codex-owned eval/product tasks as `[relay]`; changes remain Codex-review-first on return.
@@ -27,7 +27,8 @@ Codex-owned eval/product tasks as `[relay]`; changes remain Codex-review-first o
 | Task (id from 06-build-plan) | Owner | State |
 |---|---|---|
 | A-033/A-034 re-review: R1–R8 repair packet through `ea959ef` | Codex | ✅ REVIEW COMPLETE — **BLOCK remains** in B-030; S1–S4 repair required |
-| S1–S4 repair packet (B-030) | Claude | ✅ repaired, **A-035 requests one focused Codex re-review** — not self-cleared |
+| S1–S4 repair packet (B-030) | Claude | ⚠️ B-031 accepts S1/S3; narrow S2 schema + S4 shareable-doc follow-up required |
+| A-035/A-036 focused S1–S4 + clean-checkout re-review | Codex | ✅ REVIEW COMPLETE — B-031; **BLOCK remains narrowly on S2/S4** |
 | post-LOTA strategy reconciliation + mutable plan refresh | Codex + Claude | ✅ joint plan adopted A-023/A-024/B-020; active overlay written |
 | LOTA checkpoint availability replan | Codex + Claude | ✅ joint position B-028: bounded negative/challenger, outside 15k cache; licence-gated |
 | 2R.1 eval scientific-boundary repair | Codex | ✅ `0a40ee8` accepted/closed — E3c fixed; 70 focused / 662 full / 9 warnings |

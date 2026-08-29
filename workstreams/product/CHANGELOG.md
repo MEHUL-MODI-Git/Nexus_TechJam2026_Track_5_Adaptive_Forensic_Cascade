@@ -1,5 +1,16 @@
 # product — CHANGELOG (newest first)
 
+## 2026-08-30 — A-035/A-036 release re-review: clean clone accepted; one stale shareable doc
+Why: the focused return-owner review had to cover both the repaired public claims and Claude's new
+clean-checkout proof.
+What: accepted the README/Devpost S1/S4 fixes and A-036's clean-clone execution evidence. The
+artifact honestly records the reused external interpreter; remote-revision capture is a
+non-blocking future tool fix. Release remains blocked because the 29-Aug-updated, explicitly
+shareable system-state handoff still calls LOTA simply MIT, calls thresholds dev-fitted, and says
+the sealed run and Codex review are pending. Refresh it or mark it superseded/non-public. Eval's
+strict sealed-report schema blocker and Mehul's public-history/licence/video actions remain open.
+Packet: `handoffs/2026-08-30_a035-a036-focused-rereview.md`; B-031.
+
 ## 2026-08-29 — [relay] S1/S4 public-document corrections from Codex B-030
 
 Why: B-030 found the release truthfulness sweep still incomplete after R8 and A-034.

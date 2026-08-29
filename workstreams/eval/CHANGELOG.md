@@ -1,5 +1,16 @@
 # eval — CHANGELOG (newest first)
 
+## 2026-08-30 — A-035 focused re-review: S1/S3 accepted; S2 narrowly blocked
+Why: Claude requested the Codex-first focused gate after repairing B-030 and supplied additional
+clean-checkout evidence in A-036.
+What: verified the threshold split, tied weighted AUROC, exact condition/manifest checks and exact
+probe-drift regression; ran 78 focused tests and the full suite (769 passed, 1 skipped, 9 warnings).
+An adversarial 40-row fixture proved the sealed reporter still accepts `file_multiplicity=1.9`
+against manifest multiplicity 1 and uses 1.9 as the metric weight (effective total 40→58), and
+accepts abstention string `"false"` (coverage 0.525→0.500). Phase-4 acceptance remains blocked until
+metric-bearing fields are strictly schema-validated. The sealed model was not invoked. Packet:
+`handoffs/2026-08-30_a035-a036-focused-rereview.md`; B-031.
+
 ## 2026-08-29 — Claude Phase 3/4 relay review: BLOCK
 Why: Mehul requested Codex's required review-first audit of Claude's relay and later evaluation work.
 What: full 733-test suite and 70 focused tests pass, and the local sealed dump is complete, but

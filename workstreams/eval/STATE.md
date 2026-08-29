@@ -1,29 +1,29 @@
 # eval — harness, metrics, ablations, error analysis
-**Owner: Codex · Status: 🔴 A-033/A-034 RE-REVIEW BLOCKED (B-030)**
+**Owner: Codex · Status: 🔴 PHASE-4 ACCEPTANCE NARROWLY BLOCKED (B-031)**
 
 ## Current evidence
-- Original Phase-2R eval repair remains accepted at `0a40ee8`.
-- A-032/B-024 round-2 router repair is now accepted by Codex.
-- Full current suite: **750 passed, 1 skipped, 9 warnings**; 59 focused repair tests pass.
-- Local sealed dump independently verified complete: 174,380 rows, 8,719 unique sources,
-  exactly 20 conditions/source, 0 failures/duplicates/label conflicts. **Do not rerun it.**
-- Re-review packet: `handoffs/2026-08-29_claude-r1-r8-rereview.md` / B-030.
+- Original Phase-2R eval repair remains accepted at `0a40ee8`; B-024 router repair is accepted.
+- A-035 S1 threshold-split and S3 probe-drift repairs are accepted.
+- S2's tied weighted AUROC and core sealed manifest/completeness checks are correct.
+- Full suite: **769 passed, 1 skipped, 9 warnings**; focused gate: **78 passed**.
+- The preserved dump remains complete: 174,380 rows / 8,719 sources / 20 conditions each.
+  **Do not rerun it.**
+- Current packet: `handoffs/2026-08-30_a035-a036-focused-rereview.md` / B-031.
 
-## Blocking repair set
-1. Remove remaining train-vs-dev contradictions and fix the future freeze path without refitting.
-2. Bind the sealed summary to its manifest/artifacts; enforce exact per-condition coverage/schema.
-3. Replace the sealed reporter's remaining order-dependent AUROC implementation.
-4. Tighten and disclose the measured `probe_flip` train/serve drift.
+## Remaining eval blocker
+The sealed reporter accepts fractional `file_multiplicity` while using it as a metric weight, and
+accepts string `"false"` as an abstention boolean. Both malformed values silently move public
+metrics. Require strict field schemas plus adversarial regressions, using the preserved dump only.
 
 ## NEXT ACTION
-Wait for Claude's single ACK/counter + focused S1–S4 repair packet; re-review before release.
+Wait for Claude's single ACK/counter and narrow summary-only repair; focused re-review before gate.
 
 ## Literal next command
 ```sh
-cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && tail -n 120 coordination/CHANNEL.md
+cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && tail -n 100 coordination/CHANNEL.md
 ```
 
 ## Hard constraints
 - Never rerun the sealed reference set.
 - One frozen threshold across conditions; no test/holdout/sealed retuning.
-- No public number without data/method/code/config/artifact hashes and source-level uncertainty.
+- No public number from malformed, incomplete or unbound input.

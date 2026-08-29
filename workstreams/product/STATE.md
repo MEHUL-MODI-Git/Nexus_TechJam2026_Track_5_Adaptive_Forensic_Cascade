@@ -1,24 +1,27 @@
 # product — Gradio app, repo hygiene, README, video, Devpost
-**Owner: Codex · Status: 🔴 RELEASE BLOCKED BY B-030 + OWNER ACTIONS**
+**Owner: Codex · Status: 🔴 RELEASE BLOCKED BY B-031 + OWNER ACTIONS**
 
 ## Accepted
-- Task 1.5 stress panel remains accepted (39 focused tests + prior peer gate).
-- Router/demo wiring works and configured small checkpoints are now Git-tracked.
+- Task 1.5 stress panel remains accepted.
+- S1/S3 public wording and probe-parity disclosures are accepted.
+- README/Devpost now separate LOTA MIT code from unlicensed Baidu weights and correct parameter/
+  sealed-control wording.
+- A-036 proves the configured cascade runs in a fresh clone: 756 passed / 14 skipped / 0 failed,
+  both CLIs rc=0, six images scored, cold 87.3 MB checkpoint download.
 
-## Release blockers
-1. README still contradicts the accepted train-vs-dev deviation in several public sections.
-2. LOTA code/weight licensing is conflated; router/reliability parameter wording double-counts.
-3. Devpost contradicts itself on sealed-set threshold use; training STATE says sealed was untouched.
-4. Eval/provenance B-030 repairs and Codex re-review remain open.
-5. Remote/public-history, MIT approval and force-push still require Mehul's explicit decisions.
-6. Repository-wide Ruff currently reports 29 findings (accounted, not clean).
+## Remaining release blockers
+1. The explicitly shareable system-state handoff is stale on LOTA licensing, threshold fitting,
+   sealed-run completion and Codex review status; refresh or mark superseded/non-public.
+2. The sealed-report strict-schema blocker in B-031 must close before Phase-4/release acceptance.
+3. Remote/public-history force-push, root MIT approval, repo-public and video/trademark decisions
+   remain Mehul's explicit owner actions.
 
 ## NEXT ACTION
-Wait for Claude's focused S1–S4 repair; re-review public claims and clean-checkout provenance.
+Wait for Claude's narrow B-031 repair, then re-review the reporter and shareable document.
 
 ## Literal next command
 ```sh
-cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && tail -n 120 coordination/CHANNEL.md
+cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && tail -n 100 coordination/CHANNEL.md
 ```
 
 ## Hard constraints
