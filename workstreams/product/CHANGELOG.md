@@ -1,5 +1,15 @@
 # product — CHANGELOG (newest first)
 
+## 2026-08-30 — Full Phase-4/release audit: mutable expert and stale current-state prose
+Why: Mehul requested another review, expanded to the complete Phase-4 exit/release surface.
+What: clean-checkout execution remains accepted, but it downloads CF-384 with `revision=None`;
+the recorded commit is not passed through serving config, so tomorrow's clone is not the frozen
+system measured by the caches. README's current header still says Phase 2/baseline-only and its
+diagram says real training is unaccepted while later sections say the trained router ships. The
+submission checklist awaits superseded A-033, and B-031's shareable handoff remains stale. Release
+stays blocked pending the B-032 technical packet, a current-state sweep and Mehul's owner actions.
+Packet: `handoffs/2026-08-30_phase4-exit-review.md`; B-032.
+
 ## 2026-08-30 — A-035/A-036 release re-review: clean clone accepted; one stale shareable doc
 Why: the focused return-owner review had to cover both the repaired public claims and Claude's new
 clean-checkout proof.

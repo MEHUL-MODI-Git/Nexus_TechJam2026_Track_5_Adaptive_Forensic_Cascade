@@ -1,5 +1,16 @@
 # eval — CHANGELOG (newest first)
 
+## 2026-08-30 — Full Phase-4 exit audit: BLOCK on absent reproducer and fail-open headline runner
+Why: Mehul requested another review after B-031; no new repair commit existed, so the scope expanded
+from the narrow S2/S4 follow-up to the ground-truth Phase-4 exit test.
+What: the literal `run_eval.py --config configs/frozen.yaml` command fails because the config and
+flag do not exist. More seriously, the custom internal-test reporter accepted a copied complete
+manifest with only 39 rows/two sources/one missing condition, returned rc=0 and wrote NaN headline
+statistics. The real 60k-row cache independently checks complete, so current values are not
+numerically rejected, but the reporter does not prove them. Also found false train-vs-dev ablation
+provenance and incomplete reproduction indexing. Focused protocol/publication suite: 102 passed.
+Packet: `handoffs/2026-08-30_phase4-exit-review.md`; B-032. Sealed inference untouched.
+
 ## 2026-08-30 — A-035 focused re-review: S1/S3 accepted; S2 narrowly blocked
 Why: Claude requested the Codex-first focused gate after repairing B-030 and supplied additional
 clean-checkout evidence in A-036.

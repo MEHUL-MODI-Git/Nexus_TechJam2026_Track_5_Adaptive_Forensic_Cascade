@@ -1,5 +1,5 @@
 # product — Gradio app, repo hygiene, README, video, Devpost
-**Owner: Codex · Status: 🔴 RELEASE BLOCKED BY B-031 + OWNER ACTIONS**
+**Owner: Codex · Status: 🔴 RELEASE BLOCKED BY B-032 + OWNER ACTIONS**
 
 ## Accepted
 - Task 1.5 stress panel remains accepted.
@@ -10,14 +10,15 @@
   both CLIs rc=0, six images scored, cold 87.3 MB checkpoint download.
 
 ## Remaining release blockers
-1. The explicitly shareable system-state handoff is stale on LOTA licensing, threshold fitting,
-   sealed-run completion and Codex review status; refresh or mark superseded/non-public.
-2. The sealed-report strict-schema blocker in B-031 must close before Phase-4/release acceptance.
-3. Remote/public-history force-push, root MIT approval, repo-public and video/trademark decisions
+1. The live CF-384 revision is unpinned, so a future clone may serve different expert bytes.
+2. README current status contradicts its shipped-system sections; checklist and shareable handoff
+   remain stale. Perform one current-state sweep.
+3. Eval's B-032 frozen-reproduction/internal/sealed reporter blockers must close before release.
+4. Remote/public-history force-push, root MIT approval, repo-public and video/trademark decisions
    remain Mehul's explicit owner actions.
 
 ## NEXT ACTION
-Wait for Claude's narrow B-031 repair, then re-review the reporter and shareable document.
+Wait for Claude's B-032 repair, then re-review frozen reproduction and release truthfulness.
 
 ## Literal next command
 ```sh

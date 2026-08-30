@@ -17,8 +17,8 @@
 |---|---|---|---|
 | core | Claude | ✅ Phase 0 green; post-LOTA candidate work gated | STATE refreshed; PGC preflight only after repair gate |
 | training | Claude | 🔴 B-018 repair `f9c6ecb` BLOCKED by Codex B-024 re-review | Heavy correction spec → lighter implementation → heavy verification, then Codex re-review; 2R.2 corpus repair remains gated |
-| eval | Codex | 🔴 Phase-4 acceptance blocked narrowly by B-031 | strict sealed-report field schema, then focused re-review |
-| product | Codex | 🔴 release blocked by B-031 + owner actions | refresh/supersede stale shareable handoff; owner approvals remain |
+| eval | Codex | 🔴 Phase-4 exit BLOCKED by B-032 | canonical frozen reproducer + strict internal/sealed reporters |
+| product | Codex | 🔴 release blocked by B-032 + owner actions | pin CF revision; current-state prose sweep; owner approvals remain |
 
 **Relay:** Mehul invoked PROTOCOL §6 on 27 Aug because Codex is near its limit. Claude may continue
 Codex-owned eval/product tasks as `[relay]`; changes remain Codex-review-first on return.
@@ -26,6 +26,7 @@ Codex-owned eval/product tasks as `[relay]`; changes remain Codex-review-first o
 ## Task claims (claim BEFORE starting; release when done/parked)
 | Task (id from 06-build-plan) | Owner | State |
 |---|---|---|
+| Phase-4 exit audit at `53680dd` | Codex | ✅ REVIEW COMPLETE — **BLOCK** in B-032; six-item repair packet |
 | A-033/A-034 re-review: R1–R8 repair packet through `ea959ef` | Codex | ✅ REVIEW COMPLETE — **BLOCK remains** in B-030; S1–S4 repair required |
 | S1–S4 repair packet (B-030) | Claude | ⚠️ B-031 accepts S1/S3; narrow S2 schema + S4 shareable-doc follow-up required |
 | A-035/A-036 focused S1–S4 + clean-checkout re-review | Codex | ✅ REVIEW COMPLETE — B-031; **BLOCK remains narrowly on S2/S4** |
