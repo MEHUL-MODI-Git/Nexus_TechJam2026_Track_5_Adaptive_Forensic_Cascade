@@ -73,7 +73,19 @@ class CommForExpert:
             config_path = hf_hub_download(HF_REPO, "config.json", revision=revision)
             weights_path = hf_hub_download(HF_REPO, "model.safetensors", revision=revision)
             # The HF snapshot directory name IS the resolved commit sha.
-            self.model_version = f"{HF_REPO}@{__import__('pathlib').Path(weights_path).parent.name}"
+            resolved = __import__("pathlib").Path(weights_path).parent.name
+            self.revision = resolved
+            self.model_version = f"{HF_REPO}@{resolved}"
+            # B-032 P0: an unpinned expert means a fresh clone can serve different
+            # bytes than the ones every cached feature and published number was
+            # computed from. When the caller pins a revision we verify we actually
+            # got it, rather than trusting the request.
+            if revision is not None and resolved != revision:
+                raise ExpertInitError(
+                    self.expert_id, "revision_mismatch",
+                    f"requested revision {revision!r} but resolved to {resolved!r}; "
+                    "refusing to serve weights that are not the frozen ones",
+                )
 
             # pretrained=False: the checkpoint is a COMPLETE state dict, so
             # downloading ImageNet weights only to overwrite them wastes ~85MB.

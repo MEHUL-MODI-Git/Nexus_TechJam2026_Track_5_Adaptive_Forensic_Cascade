@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import subprocess
 import sys
 from collections import Counter, defaultdict
@@ -75,6 +76,46 @@ def auroc(scores, y, w=None):
         below = cum_neg[a]                     # negative weight strictly below it
         total += p_g * (below + n_g / 2.0)
     return float(total / (tot_pos * tot_neg))
+
+
+def _is_real_number(v):
+    """A number we may do arithmetic with. Bools are ints in Python and strings
+    are not numbers, however willing float() is to convert them."""
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
+def _field_error(r):
+    """Return a message describing the first schema violation, or None.
+
+    Only fields that can move a published number are checked here; the point is
+    that a malformed row is refused rather than silently averaged in.
+    """
+    sha = r["sha256"]
+    if not isinstance(sha, str) or len(sha) != 64 or any(c not in "0123456789abcdef" for c in sha):
+        return f"sha256 {sha!r} is not 64 lowercase hex characters"
+    if r["condition_id"] not in CONDITION_IDS:
+        return f"condition_id {r['condition_id']!r} is not one of the 20 official conditions"
+    if not isinstance(r["group"], str) or not r["group"]:
+        return f"group {r['group']!r} is not a non-empty string"
+    mult = r["file_multiplicity"]
+    if isinstance(mult, bool) or not isinstance(mult, int) or mult < 1:
+        return (f"file_multiplicity {mult!r} is not a positive integer "
+                "(it weights every per-file metric)")
+    p = r["p_fake"]
+    if not _is_real_number(p) or not math.isfinite(p) or not 0.0 <= float(p) <= 1.0:
+        return f"p_fake {p!r} is not a finite number in [0, 1]"
+    if "abstain" in r and r["abstain"] is not None and not isinstance(r["abstain"], bool):
+        return (f"abstain {r['abstain']!r} is not a boolean "
+                "(it decides coverage; bool('false') is True)")
+    rel = r.get("reliability")
+    if rel is not None and (not _is_real_number(rel) or not math.isfinite(rel)
+                            or not 0.0 <= float(rel) <= 1.0):
+        return f"reliability {rel!r} is not a finite number in [0, 1]"
+    prim = r.get("primary_p_fake")
+    if prim is not None and (not _is_real_number(prim) or not math.isfinite(prim)
+                             or not 0.0 <= float(prim) <= 1.0):
+        return f"primary_p_fake {prim!r} is not a finite number in [0, 1]"
+    return None
 
 
 def block(scores, labels, weights, thr):
@@ -139,8 +180,16 @@ def main() -> int:
                 print(f"REFUSING: row {n} label {r['label']!r} is not 0 or 1",
                       file=sys.stderr)
                 return 2
-            if not (0.0 <= float(r["p_fake"]) <= 1.0):
-                print(f"REFUSING: row {n} p_fake out of range", file=sys.stderr)
+            # B-031: every field that CARRIES WEIGHT in a published metric is
+            # type-checked, not merely present. Two ways this leaked:
+            #   * `file_multiplicity` was compared to the manifest as int(value)
+            #     but weighted the per-file convention as the original float, so
+            #     1.9 passed as 1 and then counted as 1.9.
+            #   * `abstain` was read as bool(value), and bool("false") is True,
+            #     so a string flipped a row's coverage.
+            bad = _field_error(r)
+            if bad:
+                print(f"REFUSING: row {n} {bad}", file=sys.stderr)
                 return 2
             rows.append(r)
     if failures:

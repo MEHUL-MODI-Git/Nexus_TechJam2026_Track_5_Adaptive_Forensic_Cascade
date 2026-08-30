@@ -180,7 +180,16 @@ class PredictionService:
                 if factory is None:
                     raise ValueError(f"unknown expert id in config: {spec['id']!r}")
                 try:
-                    experts.append(factory(device=spec.get("device")))
+                    # A pinned revision is passed only when the config declares
+                    # one: not every expert is hub-hosted (PGC takes a checkpoint
+                    # path, not a revision). If a spec DOES declare one and the
+                    # adapter cannot accept it, that is a loud TypeError rather
+                    # than a silently unpinned expert -- which is the right way
+                    # round for B-032 P0.
+                    kwargs = {"device": spec.get("device")}
+                    if spec.get("revision") is not None:
+                        kwargs["revision"] = spec["revision"]
+                    experts.append(factory(**kwargs))
                 except ExpertInitError as exc:
                     # An unavailable expert degrades the cascade; it does not
                     # abort the run (doc 03). Zero survivors IS fatal (B-012 #1).

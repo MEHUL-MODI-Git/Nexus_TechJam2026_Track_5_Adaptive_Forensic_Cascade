@@ -3,8 +3,15 @@
 The freeze compared rungs on dev, which is what selection is allowed to use. That
 leaves an obvious question a reviewer should ask: was `mlp+wg` a lucky dev pick?
 This refits the whole ladder with the freeze's seed and split (so its dev numbers
-must reproduce), then scores EVERY rung on the internal test at its own
-dev-fitted threshold.
+must reproduce), then scores EVERY rung on the internal test at its own fitted
+threshold.
+
+Where those thresholds come from (B-032 P1, Codex Phase-4 exit audit): each rung's
+threshold is fitted on the fitting split's **train** half, exactly as the shipped
+freeze did. This file previously called them "dev-fitted" in its prose, its inline
+comment and its committed artifact while lines below fitted them on train -- the
+same mislabelling Codex found in the freeze (R2/S1). The thresholds are unchanged;
+only the description of where they came from is corrected.
 
 No selection happens here. The architecture was frozen before the test existed as
 a scored object; reporting the losing rungs alongside the winner is disclosure,
@@ -36,7 +43,13 @@ from src.router.train import (
     worst_family_recall,
 )
 
+# All SEVEN implemented rungs. This ran five and still called itself the full
+# ladder (B-032 P1); `probability_mean` and `fixed_weights` were omitted. They are
+# near-degenerate with one expert -- a probability-space mean of one probability,
+# and a weighted sum over one weight -- which is a reason to REPORT them as such,
+# not a reason to leave them out of a table labelled "full".
 RUNGS = (("quality_only", False), ("static_average", False),
+         ("probability_mean", False), ("fixed_weights", False),
          ("logistic", False), ("mlp", False), ("mlp", True))
 FAMS = sorted(set(FAMILY_OF.values()) - {"clean"})
 
@@ -114,7 +127,7 @@ def main() -> int:
         dev_worst, dev_fam = worst_family_recall(dv, dev_labels, dev_fams, thr,
                                                  require_all=False)
 
-        # Score this rung on the untouched test at ITS OWN dev-fitted threshold.
+        # Score this rung on the untouched test at ITS OWN train-fitted threshold.
         tbatch = build_batch(test_rows, spec, std, thr)
         with torch.no_grad():
             ts = rec["_model"](tbatch.features, tbatch.expert_logits,
@@ -130,7 +143,7 @@ def main() -> int:
 
     doc = {"schema_version": "ablation-matrix.v1",
            "note": "every rung refit with the freeze seed/split, then scored ONCE on the "
-                   "untouched internal test at its own dev-fitted threshold; no selection here",
+                   "untouched internal test at its own threshold, FITTED ON THE TRAIN HALF exactly as the shipped freeze did (see coordination/DEVIATION-2026-08-29-threshold-split.md); no selection happens here",
            "code_revision": code_rev, "rungs": table}
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(doc, indent=2) + "\n")

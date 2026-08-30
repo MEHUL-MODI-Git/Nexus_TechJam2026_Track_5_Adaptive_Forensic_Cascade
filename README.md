@@ -3,12 +3,19 @@
 **Robust detection of AI-generated images under real-world transformations.**
 TikTok TechJam 2026 — Track 5.
 
-> **Status: work in progress (Phase 2 repair).** The current deployable path is
-> the frozen CF-384 baseline plus the diagnostic stress UI. Headline evaluation,
-> router deployment, licensing approval, and the clean remote-history push are
-> still blocked on review. Sections marked *pending* stay empty rather than being
-> filled with placeholder numbers; committed aggregate evidence lives in
-> `results/`.
+> **Status (31 Aug 2026).** The **frozen cascade ships and is served on every
+> path** — CLI, batch and UI all call one `PredictionService` with the frozen
+> router, one threshold (0.4667367651) and abstention. It has been evaluated once
+> on an untouched 3,000-source internal test (§7), confirmed on a second holdout,
+> and scored once on the organizers' sealed reference subset after the freeze.
+>
+> **What is not finished is release, not engineering:** the demo video, the MIT
+> licence approval, and the clean remote-history push are the owner's decisions,
+> and a peer review gate (`coordination/CHANNEL.md`, B-032) is open against the
+> reproduction and provenance surfaces — not against the measured results, which
+> Codex has independently checked and not rejected. Every number here has a
+> committed artifact behind it, and the ones that went against us are in §7 and
+> §8 beside the ones that did not.
 
 ---
 
@@ -35,7 +42,7 @@ image
   -> quality descriptors (blur / blockiness / noise / geometry)
   -> frozen expert detector(s)          <- downloaded, never fine-tuned
   -> mild self-probes on the primary    <- how fragile is this score, here?
-  -> OUR reliability/fusion router       <- implemented; real training not accepted yet
+  -> OUR reliability/fusion router       <- trained, frozen, and SERVED (§7)
        reliable  -> calibrated verdict
        uncertain -> behavioural rescue -> rescued verdict
   -> calibrated score + reliability readout
@@ -348,9 +355,20 @@ had already happened on held-out dev; this is disclosure, not a second bite.
 |---|---:|---:|---:|---:|---:|---:|
 | quality_only | 17 | 0.49680 | 0.5076 | 0.5402 | **0.4393** | 0.6542 |
 | static_average | 0 | 0.12725 | 0.1849 | 0.1827 | 0.0127 | 0.8351 |
+| probability_mean | 0 | 0.12725 | 0.1849 | 0.1827 | 0.0127 | 0.8351 |
+| fixed_weights | 0 | 0.12725 | 0.1849 | 0.1827 | 0.0127 | 0.8351 |
 | logistic | 117 | 0.46491 | 0.6860 | 0.6902 | 0.0713 | 0.8943 |
 | mlp | 1,827 | 0.42994 | 0.7587 | 0.7664 | 0.0500 | **0.9213** |
 | **mlp+wg (selected)** | 1,827 | 0.46674 | 0.8144 | **0.8258** | 0.0833 | 0.9090 |
+
+All **seven** implemented rungs are here. Three of them — `static_average`,
+`probability_mean` and `fixed_weights` — return **numerically identical** results,
+to every decimal. That is not a copy-paste error: with a single expert, a
+logit-space mean, a probability-space mean and a weighted sum over one weight are
+the same monotone function of one score, so any threshold-based metric must agree.
+We report them rather than omitting them, because a table that calls itself the
+full ladder and silently runs five of seven rungs is asking to be trusted on
+exactly the point it is hiding. (Codex caught that omission; B-032.)
 
 The dev ordering survives on unseen data, so the selection was not a lucky draw.
 Two things in this table cut against us and we are pointing at them rather than

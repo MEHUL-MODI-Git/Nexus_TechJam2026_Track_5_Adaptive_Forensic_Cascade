@@ -159,7 +159,9 @@ def test_service_requires_at_least_one_expert():
 
 # --- B-012 review fixes: init-failure handling, warning aggregation, validation ---
 class _InitFailingExpert:
-    def __init__(self, device=None):
+    # `revision` is passed by from_config for every expert since the CF-384 pin
+    # (B-032 P0); a factory that cannot take it cannot be pinned.
+    def __init__(self, device=None, revision=None):
         from src.experts.base import ExpertInitError
 
         raise ExpertInitError("broken_expert", "load_failed", "scripted failure")

@@ -23,6 +23,11 @@ experts:
   - id: commfor_384
     enabled: true
     device: null        # null = auto (mps when available, else cpu)
+    # PINNED (B-032 P0). Every feature cache, published table and the sealed
+    # reference run were computed with these exact weights. Without the pin a
+    # fresh clone downloads whatever `main` points at today, which need not be
+    # these bytes; the adapter fails closed if the hub resolves to anything else.
+    revision: "6076002bf0d9dd37537f965ee2f06f826c333b61"
 
 # `router` = the frozen cascade (default). `naive_mean` = the Phase-0 single
 # expert baseline, kept so the ablation can be reproduced through the same

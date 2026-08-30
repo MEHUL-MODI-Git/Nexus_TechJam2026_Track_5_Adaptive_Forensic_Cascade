@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -119,6 +120,120 @@ def match_threshold_to_fpr(scores, labels, fams, target_fpr):
     return float(s[s.size - k]) if k > 0 else float(np.nextafter(s[-1], np.inf))
 
 
+FROZEN_EXPERT_REVISION = "6076002bf0d9dd37537f965ee2f06f826c333b61"
+
+
+def _sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with Path(path).open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def validate_evaluation_cache(rows, manifest, expert_id):
+    """Every reason this cache may not produce a headline. Returns a list of messages.
+
+    B-032 P0, Codex Phase-4 exit audit. This script checked `manifest.role` and nothing
+    else: it loaded rows directly, never validated schema or coverage, hashed the MANIFEST
+    but not the ROWS, and serialised with JSON's default `allow_nan=True`. Codex copied the
+    real complete manifest over a cache holding 39 rows from 2 sources with one condition
+    missing, and the script returned rc=0 while writing NaN headline statistics under a
+    manifest still claiming 60,000 rows.
+
+    A manifest is a claim. These checks are what make it evidence.
+    """
+    errors = []
+    if manifest.get("status") != "complete":
+        errors.append(f"manifest status is {manifest.get('status')!r}, not 'complete'")
+    if manifest.get("may_not_be_used_for_fitting") is not True:
+        errors.append("manifest does not carry may_not_be_used_for_fitting: true")
+
+    # the manifest's own counts must describe the rows actually present
+    expected_rows = manifest.get("rows_total")
+    if expected_rows is not None and len(rows) != expected_rows:
+        errors.append(f"manifest claims {expected_rows} rows; the file holds {len(rows)}")
+    srcs = {r.get("source_id") for r in rows}
+    expected_sources = manifest.get("n_sources")
+    if expected_sources is not None and len(srcs) != expected_sources:
+        errors.append(f"manifest claims {expected_sources} sources; the file holds {len(srcs)}")
+
+    # the frozen expert, by revision, not by name
+    declared = manifest.get("experts") or []
+    if not any(str(e).startswith(expert_id) for e in declared):
+        errors.append(f"manifest experts {declared} do not include {expert_id!r}")
+    if not any(FROZEN_EXPERT_REVISION in str(e) for e in declared):
+        errors.append(f"manifest experts {declared} were not produced by the frozen "
+                      f"expert revision {FROZEN_EXPERT_REVISION[:12]}")
+
+    # exactly one row per (source, condition), across the full official grid
+    seen = {}
+    for r in rows:
+        key = (r.get("source_id"), r.get("condition_id"))
+        seen[key] = seen.get(key, 0) + 1
+    repeated = [k for k, v in seen.items() if v != 1]
+    if repeated:
+        errors.append(f"{len(repeated)} (source, condition) pair(s) appear more than once, "
+                      f"e.g. {repeated[0]}")
+    grid = set(CONDITION_IDS)
+    by_source = {}
+    for r in rows:
+        by_source.setdefault(r.get("source_id"), set()).add(r.get("condition_id"))
+    incomplete = {k: sorted(grid - v) for k, v in by_source.items() if v != grid}
+    if incomplete:
+        k = next(iter(incomplete))
+        errors.append(f"{len(incomplete)} source(s) lack the full 20-condition grid, "
+                      f"e.g. {k} missing {incomplete[k][:3]}")
+
+    # labels and split must be consistent and well-formed
+    labels_by_source = {}
+    for r in rows:
+        labels_by_source.setdefault(r.get("source_id"), set()).add(r.get("label"))
+    conflicted = [k for k, v in labels_by_source.items() if len(v) != 1]
+    if conflicted:
+        errors.append(f"{len(conflicted)} source(s) carry conflicting labels, e.g. {conflicted[0]}")
+    bad_labels = [r.get("label") for r in rows
+                  if isinstance(r.get("label"), bool) or r.get("label") not in (0, 1)]
+    if bad_labels:
+        errors.append(f"{len(bad_labels)} row(s) carry a label that is not 0 or 1, "
+                      f"e.g. {bad_labels[0]!r}")
+    splits = {r.get("dataset_split") for r in rows}
+    if splits - {"test", None}:
+        errors.append(f"rows carry unexpected dataset_split values {sorted(s for s in splits if s)}")
+
+    # the expert score every metric is built on must exist and be finite
+    missing, nonfinite = 0, 0
+    for r in rows:
+        block = (r.get("experts") or {}).get(expert_id)
+        if not isinstance(block, dict) or block.get("p_fake") is None:
+            missing += 1
+            continue
+        v = block["p_fake"]
+        if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) \
+                or not 0.0 <= float(v) <= 1.0:
+            nonfinite += 1
+    if missing:
+        errors.append(f"{missing} row(s) have no {expert_id} score; a failure must never "
+                      "become a number")
+    if nonfinite:
+        errors.append(f"{nonfinite} row(s) carry a non-finite or out-of-range {expert_id} p_fake")
+    return errors
+
+
+def assert_finite(doc, path=""):
+    """No NaN or inf may reach a published artifact. Returns offending paths."""
+    bad = []
+    if isinstance(doc, dict):
+        for k, v in doc.items():
+            bad += assert_finite(v, f"{path}/{k}")
+    elif isinstance(doc, list):
+        for i, v in enumerate(doc):
+            bad += assert_finite(v, f"{path}[{i}]")
+    elif isinstance(doc, float) and not math.isfinite(doc):
+        bad.append(path or "<root>")
+    return bad
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--cache", type=Path, required=True)
@@ -140,7 +255,16 @@ def main() -> int:
     print(f"frozen threshold {thr:.6f} (artifact {frozen.artifact_sha256[:12]}), "
           f"rung {loaded.payload['rung']}", file=sys.stderr)
 
-    rows = load_cache_rows(args.cache / "rows.jsonl")
+    rows_path = args.cache / "rows.jsonl"
+    rows = load_cache_rows(rows_path)
+    eid_expected = loaded.spec.expert_ids[0]
+    problems = validate_evaluation_cache(rows, manifest, eid_expected)
+    if problems:
+        print("REFUSING: this cache cannot produce a headline:", file=sys.stderr)
+        for msg in problems:
+            print(f"  - {msg}", file=sys.stderr)
+        return 2
+    rows_sha256 = _sha256(rows_path)
     labels = np.array([r["label"] for r in rows])
     fams = np.array([r.get("family") or FAMILY_OF.get(r["condition_id"], "clean") for r in rows])
     conds = np.array([r["condition_id"] for r in rows])
@@ -169,6 +293,15 @@ def main() -> int:
         "cache": str(args.cache), "cache_role": manifest.get("role"),
         "cache_manifest_sha256": hashlib.sha256(
             (args.cache / "manifest.json").read_bytes()).hexdigest(),
+        # B-032: the manifest was the only thing hashed, so a complete manifest
+        # copied over a truncated rows file produced a document that looked
+        # provenanced. The rows are the evidence; hash the rows.
+        "cache_rows_sha256": rows_sha256,
+        "cache_key": manifest.get("cache_key"),
+        "expert_revision": FROZEN_EXPERT_REVISION,
+        "validated": "schema, manifest/row count agreement, exactly one of every official "
+                     "condition per source, consistent labels and split, finite in-range "
+                     "expert scores, and finite output",
         "checkpoint": str(args.checkpoint), "rung": loaded.payload["rung"],
         "n_parameters": loaded.payload.get("n_parameters"),
         "threshold": thr, "threshold_artifact_sha256": frozen.artifact_sha256,
@@ -187,8 +320,15 @@ def main() -> int:
         "paired_bootstrap_router_vs_primary_matched": paired_bootstrap(
             router, primary, labels, fams, srcs, thr, t_match, n=args.bootstrap),
     }
+    nonfinite = assert_finite(doc)
+    if nonfinite:
+        print(f"REFUSING: {len(nonfinite)} non-finite value(s) in the result document, "
+              f"e.g. {nonfinite[0]}. A NaN headline is not a result.", file=sys.stderr)
+        return 2
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(doc, indent=2) + "\n")
+    # allow_nan=False: json.dumps would otherwise emit bare NaN, which is not
+    # valid JSON and which every downstream reader silently accepts.
+    args.out.write_text(json.dumps(doc, indent=2, allow_nan=False) + "\n")
 
     print(f"\n{'':<22}{'worst-fam':>10}{'clean-rec':>11}{'clean-FPR':>11}{'overall-acc':>13}",
           file=sys.stderr)

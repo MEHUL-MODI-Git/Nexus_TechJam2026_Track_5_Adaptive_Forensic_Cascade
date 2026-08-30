@@ -17,9 +17,9 @@
     "sealed_denylist_sha256": "b4c0451be55593e40aa3058d8adaeb2b07f0a0049676e89e169db05b33f3e444",
     "transforms_config_sha256": "113e8bfe69d934c76024d625bab7708962688acffc5ccb9e3065c419acc3f2a6",
     "probes_config_sha256": "22adbc3f2bd2d8eaaad11032769afc8f3666f1ba6a0e909c1e5ef30a7ee68662",
-    "predict_config_sha256": "3f55fc873d48c7d2399b2805420fb9563a99e74aebca082a0994ccf8f1393442",
+    "predict_config_sha256": "238f1c6402a1d38ef4c8dd65ebb580b12a426ae45e9c4621f7bf6c4ae84f262e",
     "pipeline_version": "0.1.0",
-    "summary_code_revision": "c28575f83de4e1e73b70c6bdbf176fe9142b15df",
+    "summary_code_revision": "592d23c8fec14667b2933db0ceffb105df25789f",
     "one_run_rule": "the sealed subset is scored exactly once; this report is a SUMMARY of the preserved dump and never re-invokes the model",
     "binding": {
       "bound_to_the_rows": [

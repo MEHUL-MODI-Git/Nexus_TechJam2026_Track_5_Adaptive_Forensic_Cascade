@@ -189,3 +189,70 @@ def test_refuses_when_the_manifest_is_missing(tmp_path, head_rows):
     proc = _run(p, tmp_path / "out.json", tmp_path / "nope.json")
     assert proc.returncode == 2
     assert "cannot be bound to the set it claims to score" in proc.stderr
+
+
+# --------------------------------------------------------------------------
+# B-031: fields that CARRY WEIGHT in a published metric are type-checked, not
+# merely checked for presence. Codex's two reproductions, as regressions.
+# --------------------------------------------------------------------------
+
+def test_refuses_a_fractional_file_multiplicity(tmp_path, head_rows):
+    """Codex's reproduction: 1.9 was compared to the manifest as int(1.9) == 1
+    and PASSED, then weighted the per-file convention as 1.9 -- moving effective
+    weight on a 40-row fixture from 40 to 58."""
+    rows = [json.loads(x) for x in head_rows]
+    manifest = _manifest_for(rows, tmp_path / "manifest.json")
+    rows[0]["file_multiplicity"] = 1.9
+    p = tmp_path / "frac.jsonl"
+    p.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    proc = _run(p, tmp_path / "out.json", manifest)
+    assert proc.returncode == 2
+    assert "file_multiplicity" in proc.stderr
+    assert "positive integer" in proc.stderr
+
+
+def test_refuses_a_string_abstain(tmp_path, head_rows):
+    """bool("false") is True, so a string flipped coverage 0.525 -> 0.500."""
+    rows = [json.loads(x) for x in head_rows]
+    manifest = _manifest_for(rows, tmp_path / "manifest.json")
+    rows[0]["abstain"] = "false"
+    p = tmp_path / "abst.jsonl"
+    p.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    proc = _run(p, tmp_path / "out.json", manifest)
+    assert proc.returncode == 2
+    assert "abstain" in proc.stderr
+
+
+def test_refuses_out_of_range_or_non_finite_metric_fields(tmp_path, head_rows):
+    """p_fake, reliability and primary_p_fake all reach published numbers."""
+    for field, bad in (("p_fake", 1.5), ("p_fake", "0.5"),
+                       ("reliability", -0.1), ("primary_p_fake", 2.0)):
+        rows = [json.loads(x) for x in head_rows]
+        manifest = _manifest_for(rows, tmp_path / f"m_{field}.json")
+        rows[0][field] = bad
+        p = tmp_path / f"{field}_{bad}.jsonl"
+        p.write_text("".join(json.dumps(r) + "\n" for r in rows))
+        proc = _run(p, tmp_path / f"o_{field}_{bad}.json", manifest)
+        assert proc.returncode == 2, f"{field}={bad!r} was accepted"
+        assert field in proc.stderr
+
+
+def test_refuses_a_condition_id_outside_the_official_grid(tmp_path, head_rows):
+    rows = [json.loads(x) for x in head_rows]
+    manifest = _manifest_for(rows, tmp_path / "manifest.json")
+    rows[0]["condition_id"] = "jpeg_q7"          # not one of the 20
+    p = tmp_path / "cond.jsonl"
+    p.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    proc = _run(p, tmp_path / "out.json", manifest)
+    assert proc.returncode == 2
+    assert "condition_id" in proc.stderr or "full condition coverage" in proc.stderr
+
+
+def test_the_real_dump_still_passes_every_strict_check(tmp_path, head_rows):
+    """The guards must bind malformed input without rejecting the real run."""
+    rows = [json.loads(x) for x in head_rows]
+    manifest = _manifest_for(rows, tmp_path / "manifest.json")
+    p = tmp_path / "clean.jsonl"
+    p.write_text("".join(head_rows))
+    proc = _run(p, tmp_path / "out.json", manifest)
+    assert proc.returncode == 0, proc.stderr

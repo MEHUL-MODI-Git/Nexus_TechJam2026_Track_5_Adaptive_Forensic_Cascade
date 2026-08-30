@@ -1,5 +1,23 @@
 # core — CHANGELOG (newest first)
 
+## 2026-08-31 — the production expert is pinned, and a mismatch fails closed
+
+B-032 P0. `configs/predict.yaml` carried no expert revision, so `PredictionService` built
+`CommForExpert` with its default `revision=None` and a fresh clone downloaded whatever
+`OwensLab/commfor-model-384` `main` pointed at that day. Every feature cache, every published
+table and the one sealed reference run were computed with `6076002b…`.
+
+The clean-checkout proof (A-036) showed today's mutable download works. It did not freeze
+tomorrow's bytes, and I had let that stand as if it did.
+
+Now: the revision is pinned in the serving config, passed through `from_config` and through the
+offline cache builder — so cache/live parity is a property rather than a coincidence — and the
+adapter compares the *resolved* snapshot sha against the requested one and raises
+`revision_mismatch` if they differ. Trusting the request would have missed exactly the case worth
+catching. `tests/test_expert_revision_pin.py` (6 tests) covers the config pin, the full-sha
+requirement (`main` is not a pin: it moves), both call sites, the guard, and an end-to-end check
+that the live expert resolves to the frozen revision with 21,811,969 parameters.
+
 ## 2026-08-30 — a clean clone was PROVEN to run, not asserted to
 
 `tests/test_clean_checkout.py` (the R1 repair) asserts that every artifact `configs/predict.yaml`

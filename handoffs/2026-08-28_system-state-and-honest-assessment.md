@@ -1,6 +1,6 @@
 # Adaptive Forensic Cascade — system state, results, and honest assessment
 
-**Date:** 2026-08-28, updated 2026-08-29 · **Author:** Claude (AGENT-A) · **Purpose:** shareable context dump —
+**Date:** 2026-08-28, updated 2026-08-29 and **2026-08-31** · **Author:** Claude (AGENT-A) · **Purpose:** shareable context dump —
 what was built, what the numbers are, what succeeded, what failed, and where it falls short of
 the original design.
 
@@ -89,7 +89,7 @@ threshold **fitted on the test set itself** — leakage granted to it and denied
 | baseline arm | thr | worst-family | clean FPR | cascade advantage |
 |---|---|---|---|---|
 | Primary @ 0.5 | 0.5000 | 0.1227 | 0.0027 | +0.7034 |
-| Primary @ dev-fitted thr | 0.1273 | 0.1827 | 0.0127 | +0.6433 |
+| Primary @ its fitted thr (train half) | 0.1273 | 0.1827 | 0.0127 | +0.6433 |
 | **Primary @ our clean FPR, test-fitted** | 0.0058 | 0.3342 | 0.0833 | **+0.4916 [+0.475, +0.508]** |
 
 **+0.49 is the number we report.** A second implementation matching on *overall* FPR agrees
@@ -201,7 +201,7 @@ structurally cannot reach the verdict.
 
 | candidate | licence | params | outcome |
 |---|---|---|---|
-| **LOTA** (ICCV 2025) | MIT | 23.5M | Reads the **least-significant-bit plane** of a random 32×32 patch. Non-deterministic (0.31 score swing on one image). AUROC 1.000 → **0.592** on JPEG q95 re-encode, fake recall → **0.000**. Rejected. |
+| **LOTA** (ICCV 2025) | code MIT; **weights unlicensed** (Baidu drive, no stated licence) | 23.5M | Reads the **least-significant-bit plane** of a random 32×32 patch. Non-deterministic (0.31 score swing on one image). AUROC 1.000 → **0.592** on JPEG q95 re-encode, fake recall → **0.000**. Rejected. |
 | **PGC** (Apache-2.0) | Apache-2.0 | 306.7M | Loads with 0 missing/unexpected keys, **fully deterministic** (spread 0.0). But P(correct \| cascade wrong) = **0.5426**, correction−harm = **−2451**. Rejected. |
 
 PGC was given a fair hearing before being cut. Beyond wholesale replacement we tried
@@ -252,7 +252,7 @@ do not re-tune.** The threshold is unchanged.
 ### 5.3 A rung we did not ship looks better on average
 
 Full ablation, every rung refit with the freeze seed/split (each reproduces its dev number exactly)
-then scored once on the untouched test at its own dev-fitted threshold:
+then scored once on the untouched test at its own threshold, fitted on the train half (see `coordination/DEVIATION-2026-08-29-threshold-split.md`):
 
 | rung | params | thr | dev worst | **test worst** | clean FPR | overall acc |
 |---|---|---|---|---|---|---|
@@ -340,13 +340,20 @@ the result means.
 
 ## 8. Open / pending
 
-- **The sealed reference run is IN FLIGHT** (~20,000 of 174,380 rows at time of writing). The
-  threshold was frozen on SID-Set; COCO val2017 reals + DALL-E 3 fakes are a different distribution
-  and the frozen operating point may sit badly there. **If it comes back weak, that is the result
-  and it gets reported — no re-tuning.** So "it works" is currently established on our own held-out
-  data; the organizers' benchmark is still an open question.
-- **Codex (AGENT-B) has not reviewed** the B-024 repair or ~25 `[relay]` entries. Everything built
-  on 28 Aug is self-reviewed; the rulebook wants peer review at gates and it has not happened.
+- **The sealed reference run is DONE — fired once, 29 Aug, after the freeze, and never again.**
+  174,380 rows over 8,719 unique images, 0 failures. It came back **stronger** than our own held-out
+  test, not weaker: clean AUROC 0.9964, all-conditions 0.9821, worst-family 0.8787 against 0.8258
+  internally, and the clean-FPR constraint our internal test breached did not reproduce (0.0158
+  against a 0.0756 cap). Two things did **not** transfer and are reported beside the wins: against a
+  baseline given our operating point on that very set our advantage is **+0.09, not +0.49**, and
+  **abstention buys 0.0001 there** while deferring 26% of images. Artifact
+  `results/sealed/reference-results.json`; the preserved dump is read-only.
+- **Codex (AGENT-B) HAS now reviewed it, repeatedly, and the reviews found real defects.** B-024
+  round 2, R1/R4/R5/R7 and S1/S3 are accepted. Blocks remain open (B-031, B-032) against the
+  *reproduction and provenance surfaces* — a frozen exit command, strict schemas on the reporters,
+  the expert revision pin, ablation provenance — **not** against the measured results, which Codex
+  independently checked and did not reject. Current state is always in `coordination/CHANNEL.md`
+  and `STATUS.md`; this document is a snapshot and those are the record.
 - **Owner-only actions:** make repo public, approve MIT, verified clean-history force-push (remote
   `main` still holds raw-image history), record the demo video, link it on Devpost.
 - **Trademark call:** the strongest protected false-positive case shows fire apparatus with

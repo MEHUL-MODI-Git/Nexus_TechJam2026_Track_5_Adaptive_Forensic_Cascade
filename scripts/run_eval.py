@@ -31,7 +31,17 @@ from src.eval.results import (
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the evaluation protocol.")
-    parser.add_argument("--rows", type=Path, required=True)
+    # B-032 P0: the build plan's Phase-4 exit test is
+    #     scripts/run_eval.py --config configs/frozen.yaml
+    # and neither this flag nor that config existed, so the documented exit test
+    # could never have passed. --rows is therefore no longer unconditionally
+    # required; exactly one of --rows or --config must be given.
+    parser.add_argument("--config", type=Path, default=None,
+                        help="frozen-reproduction.v1 manifest: verify every published "
+                             "table against its artifact and inputs (Phase-4 exit test)")
+    parser.add_argument("--regenerate", action="store_true",
+                        help="with --config, re-run each regenerable command and report drift")
+    parser.add_argument("--rows", type=Path, default=None)
     parser.add_argument("--out-dir", type=Path, default=None)
     parser.add_argument("--threshold-artifact", type=Path, default=None,
                         help="held-out-dev threshold-artifact.v1 (required unless --diagnostic)")
@@ -45,6 +55,14 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=20260826)
     parser.add_argument("--allow-partial-grid", action="store_true")
     args = parser.parse_args()
+
+    if bool(args.config) == bool(args.rows):
+        print("choose exactly one of --config (frozen reproduction) or --rows "
+              "(score a prediction-row file)", file=sys.stderr)
+        return 2
+    if args.config:
+        from scripts.reproduce_frozen import run as reproduce_frozen
+        return reproduce_frozen(args.config, args.regenerate)
 
     if args.diagnostic == bool(args.threshold_artifact):
         print("choose exactly one of --diagnostic or --threshold-artifact", file=sys.stderr)

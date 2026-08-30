@@ -49,7 +49,7 @@ def main() -> int:
     config = load_predict_config()
     from src.experts.commfor import CommForExpert
 
-    experts = [CommForExpert(device=spec.get("device"))
+    experts = [CommForExpert(device=spec.get("device"), revision=spec.get("revision"))
                for spec in config.get("experts", []) if spec.get("enabled", True)]
 
     conditions = args.conditions or CONDITION_IDS
