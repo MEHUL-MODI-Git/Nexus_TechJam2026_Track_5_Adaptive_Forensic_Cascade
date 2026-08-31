@@ -55,12 +55,19 @@ on this specific image*.
 that is guessing swings. That instability is a reliability signal that needs no second model and no
 ground truth.
 
-**3. Abstain instead of guessing.** The output is a verdict plus a reliability readout and an
-explicit "uncertain" band. This is not a design intention — it is measured. Deferring the least
-reliable 20% of images lifts accuracy from **0.9090 to 0.9317** and worst-case recall from **0.8258
-to 0.9136** on the held-back test. The deferred images score 0.8191 against 0.9317 for the kept ones:
-the system declines on the images it would have got wrong. For a moderation workflow, an honest
-"route this to a human" is worth more than a confident coin flip.
+**3. Price the answer, don't just give it.** Every verdict arrives with a reliability readout and an
+explicit "uncertain" band, so a downstream system can decide what each answer is worth instead of
+trusting them all equally. On the held-back test, deferring the least reliable 20% lifts accuracy
+from **0.9090 to 0.9317** and worst-case recall from **0.8258 to 0.9136**, and the deferred images
+score 0.8191 against 0.9317 for the kept ones — it declines on the images it would have got wrong.
+
+**And then it failed the test that mattered more.** On the organizers' sealed set — a genuinely
+different distribution — the same frozen policy deferred **26% of images and gained 0.0001 accuracy**
+(kept 0.94123, deferred 0.94074). It separated nothing. The reliability head we *fitted* does not
+generalise off its training distribution; the signal we *measured* (point 4 below) does, holding at
+AUROC 0.8636 on a fresh holdout while the fitted head fell to 0.6478. We ship abstention disclosed
+and we do not claim it as the contribution — knowing which of your confidence signals survives new
+data is the more useful result.
 
 **4. Audit the verdict, not just the image.** The 20-condition stress grid we built to
 *evaluate* the system turned out to be its best confidence signal. Run on a single image it

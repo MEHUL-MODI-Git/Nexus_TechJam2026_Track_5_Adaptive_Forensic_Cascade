@@ -23,6 +23,30 @@ satisfy it. But Technical Execution (35%) explicitly rewards *"the demo runs rel
 (20%) rewards value to real users, and `infer_dir.py` is itself a required deliverable. **The
 product now leads the video**, and the terminal supports it rather than replacing it.
 
+## One framing decision, made on evidence (read before recording)
+
+**Do not sell "routes it to a human" as the contribution.** Our own sealed-set result argues against
+it, and a judge who reads the repo will find that before we tell them:
+
+| | internal test (SID-Set) | sealed set (COCO + DALL-E) |
+|---|---|---|
+| images deferred | 20.1% | **26.0%** |
+| accuracy gain from deferring | **+2.26 points** | **+0.0001 points** |
+| deferred-set accuracy | 0.8191 — clearly worse, so it *is* separating | 0.9407 vs 0.9412 kept — separating **nothing** |
+
+Abstention is driven by the **fitted reliability head**, which degraded to AUROC 0.6478 on a fresh
+holdout. The **certificate** is driven by **verdict retention**, which held at 0.8636 there against
+0.8696 internally. One of our two confidence signals survived a distribution shift and one did not,
+and we know which.
+
+So the claim the video makes is: **every verdict arrives with a grade we measured, and the grade
+holds up on data from a different distribution.** Abstention is reported as a measured result that
+did **not** transfer — which is a strength, because we tested it externally and published the
+failure rather than quoting the in-distribution number alone.
+
+It still ships: it is advisory, it helps in-distribution, and the sealed benchmark was scored with
+it — removing it now would leave our one official number describing a system we do not ship.
+
 ## What the video must show, and why — mapped to the brief
 
 The brief's only demand is: *"Demonstrates your solution working end-to-end (e.g. inference results,
@@ -201,9 +225,13 @@ this verdict: 0.413 at blur_s1.0*, then the conditions that flip it.
 > "The organizers' reference set was sealed from day one — never trained on, never thresholded on.
 > After the architecture was frozen we scored it **once**: a hundred and seventy-four thousand rows,
 > zero failures. Clean AUROC nought point nine nine six.
-> Two things didn't transfer, and they're on the slide next to the wins: against a properly-tuned
-> baseline our advantage there is nine points, not forty-nine — and abstention buys nothing on that
-> distribution. We publish both."
+> Two things didn't transfer, and they're on the slide next to the wins.
+> Against a properly-tuned baseline our advantage there is nine points, not forty-nine.
+> And our abstention policy **failed outright** — it deferred twenty-six percent of the images and
+> bought one ten-thousandth of a point of accuracy. The deferred images were exactly as accurate as
+> the ones it kept. The confidence head we *trained* doesn't generalise off its own distribution.
+> The one we *measured* — verdict retention — does. We publish both, because which of your signals
+> survives contact with new data is the thing a reviewer most needs to know."
 
 ## 4:25–4:40 — Engineering receipts ✅ verified
 
@@ -236,7 +264,7 @@ produced it.
 > eighty-six percent of our runtime and buys nothing measurable. We report all of it.
 > Twenty-one point eight million parameters. One percent of the limit. A hundred and thirty-five
 > milliseconds on a laptop.
-> An honest 'route this to a human' beats a confident coin flip."
+> A score you can price is worth more than a score you can't."
 
 **Final card:** repo URL · *"Synthetic sample image: SID-Set, CC BY 4.0"*
 
@@ -261,7 +289,9 @@ produced it.
 | batch interface | 2 scored, 0 failed | `scripts/infer_dir.py`, reproduced above |
 | certificate: degraded / clean | 17/20 LOW 84.9% · 20/20 HIGH 99.1% | `results/robustness/retention-signal.json` |
 | retention beats reliability head | 0.8696 vs 0.7206 | same |
-| abstention lift | 0.9090 → 0.9317; worst-family 0.8258 → 0.9136 | `results/internal-test/abstention.json` |
+| abstention lift, in-distribution | 0.9090 → 0.9317; worst-family 0.8258 → 0.9136 | `results/internal-test/abstention.json` |
+| **abstention, out-of-distribution** | defers 26.0%, gain **+0.0001**; kept 0.94123 vs deferred 0.94074 | `results/sealed/reference-results.json` |
+| retention held, reliability head did not | 0.8636 vs 0.6478 on the fresh holdout | `results/holdout/validation.json` |
 | sealed: rows / clean AUROC / all-cond / worst | 174,380 / 0.9964 / 0.9821 / 0.8787 | `results/sealed/reference-results.json` |
 | sealed non-transfers | +0.09 advantage; abstention +0.0001 | same |
 | router parameters | 1,827 | `results/router-fitting-v2/router_reliability.pt` |

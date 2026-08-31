@@ -288,7 +288,7 @@
 
   <section class="slide">
     <p class="rail"><b>09</b> <span>Knowing when it is wrong</span></p>
-    <h2>The system grades its own verdict, and the grade is measured.</h2>
+    <h2>It reports a confidence grade — and the grade survives a distribution shift.</h2>
     <p class="lede">We re-run the verdict through all 20 transformations and count how many survive.
       That number predicts whether the verdict is wrong <strong>better than the reliability head we
       trained for the job</strong> — AUROC <strong>0.8696</strong> against 0.7206.</p>
@@ -297,11 +297,12 @@
         <div class="b">clean verdict was correct for <strong>99.1%</strong> of held-out sources</div></div>
       <div class="card"><div class="h">Retention ≤ 14 → VERY LOW</div>
         <div class="b">correct for <strong>60.6%</strong> — and the system says so on its face</div></div>
-      <div class="card"><div class="h">Abstention</div>
-        <div class="b">deferring the least reliable <strong>20%</strong> lifts accuracy
-          90.9% → <strong>93.2%</strong> and worst-family 82.6% → <strong>91.4%</strong></div></div>
+      <div class="card"><div class="h">It held on a second holdout</div>
+        <div class="b">retention <strong>0.8636</strong> on a fresh untouched set — while the fitted
+          reliability head <strong>degraded to 0.6478</strong>. The measured signal generalised;
+          the trained one did not.</div></div>
     </div>
-    <p class="src">Confirmed on a second untouched 3,000-source holdout with every band fixed in advance</p>
+    <p class="src">Every grade band fixed in advance · results/holdout/validation.json</p>
   </section>
 
   <section class="slide">
@@ -314,9 +315,12 @@
       <div class="card"><div class="h">All 20 conditions</div><div class="b"><span class="big sig" style="font-size:clamp(30px,3.6vw,58px)">0.9821</span></div></div>
       <div class="card"><div class="h">Worst family</div><div class="b"><span class="big sig" style="font-size:clamp(30px,3.6vw,58px)">87.9%</span></div></div>
     </div>
-    <p class="lede">Two things did <strong>not</strong> transfer, and we report them beside the wins:
-      against a properly-tuned baseline our advantage here is <strong>+9 points, not +49</strong>, and
-      <strong>abstention buys nothing</strong> on this distribution while deferring a quarter of images.</p>
+    <p class="lede">Two things did <strong>not</strong> transfer, and we report them beside the wins.
+      Against a properly-tuned baseline our advantage here is <strong>+9 points, not +49</strong>.
+      And <strong>abstention failed outright</strong>: it deferred <strong>26% of images and bought
+      0.0001 accuracy</strong> — the deferred set was exactly as accurate as the kept set. The
+      fitted reliability head does not generalise off its training distribution. We ship it
+      disclosed, and we would not defend it as the contribution.</p>
   </section>
 
   <section class="slide">
@@ -342,10 +346,10 @@
 
   <section class="slide">
     <p class="rail"><b>12</b> <span>Close</span></p>
-    <h2>An honest "route this to a human" beats a confident coin flip.</h2>
+    <h2>A score you can price is worth more than a score you can't.</h2>
     <p class="lede">Worst-case recall <strong>12% → 83%</strong> on images nothing in our pipeline had
-      ever seen, a reliability grade on every verdict that we measured rather than asserted, and a
-      full list of the conditions where we still fail.</p>
+      ever seen — and every verdict arrives with a grade we <em>measured</em>, so a downstream system
+      can decide what each answer is worth instead of trusting all of them equally.</p>
     <p class="lede">Code, evaluation harness, every artifact and every negative result are in the repo.</p>
     <p class="src">21,814,571 parameters · 1.09% of the 2B cap · 135 ms per image on a laptop</p>
   </section>
