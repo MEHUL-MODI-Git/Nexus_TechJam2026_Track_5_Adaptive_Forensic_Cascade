@@ -219,9 +219,11 @@
   <section class="slide">
     <p class="rail"><b>05</b> <span>The fair comparison</span></p>
     <h2>We handicapped ourselves, and still report the smaller number.</h2>
-    <p class="lede">That baseline runs at a <strong>30× lower false-alarm rate</strong>, so part of
-      the gap is just a looser cut. So we gave it <strong>our operating point, with its threshold
-      fitted on the test set itself</strong> — an advantage we never allowed ourselves.</p>
+    <p class="lede">Any detector catches more fakes by accusing more images. The baseline accuses a
+      real photo <strong>0.27%</strong> of the time; we accuse <strong>8.3%</strong>. That is a
+      difference in <em>setting</em>, not skill — so we removed our advantage: we set the baseline to
+      accuse at exactly our rate, and let it tune <strong>on the test set itself</strong>, which we
+      never did.</p>
     <div class="duo">
       <div class="stat">
         <div class="n bad">33<span style="font-size:.42em">%</span></div>
