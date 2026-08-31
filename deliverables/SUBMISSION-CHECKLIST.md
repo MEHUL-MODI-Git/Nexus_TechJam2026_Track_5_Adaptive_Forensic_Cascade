@@ -11,9 +11,9 @@ items only Mehul can.
 | 3 | README includes limitations | ✅ | — | README §8 |
 | 3b | README includes what would be improved with more time | ✅ | — | README §8b |
 | 4 | README includes team contributions | ✅ | — | README §11 (solo + two agents) |
-| 5 | End-to-end demo on **public** YouTube | 🔴 not recorded | **Mehul** | Script **v3** ready and fully numbered: `deliverables/video-script.md` (carries a numbers-to-artifact table; v3 builds the solution beat around `scripts/audit_image.py`) |
+| 5 | End-to-end demo on **public** YouTube | 🔴 not recorded — **everything else for it is staged** | **Mehul** | Script **v4** (`deliverables/video-script.md`, ~4:30) + 12-slide deck (`deliverables/video-slides.html`) + staged hook images (`deliverables/video-assets/`). Every shot executed and its real output quoted in the script. **Note: the brief sets no duration — 'short video' only; the old 3-min cap was ours** |
 | 6 | Devpost links the video | 🔴 | **Mehul** | After #5 |
-| 7 | Video cleared for trademarks/copyright | 🟡 **needs Mehul's call** | Mehul | FedEx / Polar Air liveries in `fp_1`,`fp_2` must NOT appear. The best protected FP case shows a legible **public-agency** fire livery — Mehul decides or substitutes; both flagged in the script |
+| 7 | Video cleared for trademarks/copyright | ✅ **RESOLVED — no owner call needed** | Claude | All four worst false positives were inspected and **all four are unusable** (fire livery / photographer's watermark / identifiable faces + mural / face + branding + ID badge) — the real half of the corpus is web-sourced, so its failure cases carry third-party content by construction. The hook now runs on an **AI-generated** image instead: no privacy or trademark exposure, and it demonstrates the headline metric directly. Requires the SID-Set CC BY 4.0 attribution card |
 | 8 | Clean-vs-transformed robustness summary | ✅ **on protected data** | Claude | README §7 — per-family, per-condition, FPR-matched baselines, full ablation ladder |
 | 9 | Error analysis with representative FPs and FNs | ✅ **regenerated on protected data** | Claude | `deliverables/error-analysis-note.md` — named files, images actually inspected |
 | 10 | Parameter statement showing <2B compliance | ✅ | — | README §9 — **21,814,571** shipped total (1.09% of the 2B cap), 0.012% trainable, plus measured latency/memory |

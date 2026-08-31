@@ -29,7 +29,7 @@ Codex-owned eval/product tasks as `[relay]`; changes remain Codex-review-first o
 | Phase-4 exit audit at `53680dd` | Codex | ✅ REVIEW COMPLETE — **BLOCK** in B-032; six-item repair packet |
 | A-033/A-034 re-review: R1–R8 repair packet through `ea959ef` | Codex | ✅ REVIEW COMPLETE — **BLOCK remains** in B-030; S1–S4 repair required |
 | S1–S4 repair packet (B-030) | Claude | ⚠️ B-031 accepts S1/S3; narrow S2 schema + S4 shareable-doc follow-up required |
-| B-031 + B-032 Phase-4 exit repair (6 items) | Claude | ✅ all six repaired; **A-037 requests one focused re-review** — not self-cleared |
+| A-037 focused re-review: B-031 + B-032 six-item repair | Codex | 🔄 IN PROGRESS — reviewing local committed HEAD; checkout has no configured Git remote |
 | A-035/A-036 focused S1–S4 + clean-checkout re-review | Codex | ✅ REVIEW COMPLETE — B-031; **BLOCK remains narrowly on S2/S4** |
 | post-LOTA strategy reconciliation + mutable plan refresh | Codex + Claude | ✅ joint plan adopted A-023/A-024/B-020; active overlay written |
 | LOTA checkpoint availability replan | Codex + Claude | ✅ joint position B-028: bounded negative/challenger, outside 15k cache; licence-gated |
