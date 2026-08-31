@@ -1,4 +1,4 @@
-# Demo video script — v4 (target ~4:30)
+# Demo video script — v5 (target ~5:00)
 
 > **Status:** Claude draft (Phase 5R); Codex reviews. Every spoken number is filled from a committed
 > artifact — see the numbers table at the end. Shots marked ✅ have been **executed and verified**
@@ -13,7 +13,41 @@ video"* — no duration anywhere in the brief. The "3-min" figure came from our 
 That self-imposed cap is why v3 had **no architecture beat at all**. Judging is Technical Execution
 **35%**, Innovation & Problem Insight **20%**, Impact **20%**, Feasibility **15%**, Presentation
 **10%** — so ninety seconds spent actually explaining the cascade buys more than the compression
-saved. **v4 targets ~4:30 and stays under 5:00.** "Short" rules out rambling, not explaining.
+saved. **v5 targets ~5:00.** "Short" rules out rambling, not explaining.
+
+**v5 fixes a regression I introduced in v4.** v4's asset table and checklist both said "for the UI
+beat" while the script contained no UI beat at all — I dropped the Gradio and `infer_dir.py` shots
+from v3 while making room for architecture. The brief's wording is *"such as inference results,
+dashboard, or model predictions"* — examples, not requirements, so CLI alone would technically
+satisfy it. But Technical Execution (35%) explicitly rewards *"the demo runs reliably"*, Impact
+(20%) rewards value to real users, and `infer_dir.py` is itself a required deliverable. **The
+product now leads the video**, and the terminal supports it rather than replacing it.
+
+## What the video must show, and why — mapped to the brief
+
+The brief's only demand is: *"Demonstrates your solution working end-to-end (e.g. inference results,
+dashboard, model predictions)."* Those are **examples, not a checklist** — any one of them satisfies
+it. We show all three, because each one buys a different judging criterion.
+
+| beat | what it proves | criterion it serves |
+|---|---|---|
+| UI: upload → verdict → the card naming the router's correction | the solution works end-to-end, on a real interface | **required** · Impact 20% |
+| UI: stress test → certificate + chart | the *idea* is real and visible, not asserted | Innovation 20% |
+| Architecture slide | deliberate, explained design | **Technical Execution 35%** |
+| `audit_image.py` cutaway | UI and CLI are one system | Technical Execution |
+| `infer_dir.py` batch run | the brief's own required batch interface | **required deliverable** |
+| Engineering receipts (suite + frozen reproduction) | "the demo runs reliably", reproducibility | Technical Execution 35% · Feasibility 15% |
+| FPR-matched slide + limitations | claims are disciplined, not cherry-picked | Innovation · Feasibility |
+| Sealed-benchmark slide | validated on the organizers' own data | Impact · Feasibility |
+| Latency / parameter figures | proportionate resource use, buildable beyond a prototype | **Feasibility 15%** |
+
+**Hard rules for what must NOT appear on screen:**
+- No image from the organizers' sealed reference set — it is the official benchmark and stays sealed.
+- No false-positive case from `results/robustness/cases/` — all four were inspected and every one
+  carries third-party content (livery, watermark, faces, branding). Use the staged synthetic image.
+- No local absolute paths, tokens, API keys, or personal filenames — `cd` into the repo and use
+  relative paths throughout.
+- The closing card must carry *"Synthetic sample image: SID-Set, CC BY 4.0"*.
 
 ## Assets — all staged and verified
 
@@ -22,7 +56,8 @@ saved. **v4 targets ~4:30 and stays under 5:00.** "Short" rules out rambling, no
 | Slide deck (12 slides) | `deliverables/video-slides.html` | ✅ built; `←/→` navigate, `F` fullscreen, `N` presenter notes (hidden by default so recordings stay clean) |
 | Hook image, clean | `deliverables/video-assets/bird_clean.png` | ✅ staged |
 | Hook image, noise σ=0.10 | `deliverables/video-assets/bird_noise_s010.png` | ✅ staged |
-| Gradio UI | `.venv/bin/python -m src.app` → `http://127.0.0.1:7860` | ✅ launches, HTTP 200 |
+| Gradio UI | `.venv/bin/python -m src.app` → `http://127.0.0.1:7860` | ✅ launches, HTTP 200; analyze 0.4 s, stress 3.4 s |
+| UI look, pre-checked | `deliverables/video-assets/ui-preview.html` | ✅ static render of the REAL UI output — open it before recording to judge framing/zoom |
 
 ### Trademark and copyright clearance — RESOLVED, and this is a change from v3
 
@@ -50,29 +85,30 @@ a side-issue false positive.
 
 ---
 
-## 0:00–0:35 — The hook ✅ verified
+## 0:00–0:40 — The hook, in the product ✅ verified
 
-**On screen:** `bird_clean.png`, then `bird_noise_s010.png`. At playback size they look identical.
-Terminal beneath runs the real CLI on each.
+**On screen:** the Gradio app — "Forensic Lab" header. Drag in `bird_clean.png`, click
+**Analyze image**. Then drag in `bird_noise_s010.png` and analyze again.
 
 ```
-.venv/bin/python scripts/predict.py deliverables/video-assets/bird_clean.png --json
-.venv/bin/python scripts/predict.py deliverables/video-assets/bird_noise_s010.png --json
+.venv/bin/python -m src.app        # http://127.0.0.1:7860
 ```
 
-**Verified output** — clean: primary `0.9995` → AI-GENERATED. Noise σ=0.10: primary **`0.0166`
-→ REAL (missed)**, ours **`0.9986` → AI-GENERATED**, reliability `0.794` → **DEFERRED**.
+**Verified output** — clean: **AI-GENERATED**, p_fake `0.9999`, CF-384 `0.9995`.
+Noisy: **AI-GENERATED**, p_fake `0.9986`, and the card itself prints
+**"Primary CF-384 alone: 0.0166 → after router correction: 0.9986"**. Latency ~223 ms. 0.4 s per analyze.
 
 > "This image is AI-generated. A state-of-the-art open detector agrees — ninety-nine point nine
 > percent confident.
 > This is the same image with a small amount of noise added. You can't see the difference.
-> The same detector now says it's a real photograph. One point seven percent.
-> Ours still catches it — and it also tells you it's less sure than usual, and routes it to a human."
+> Watch the detector's own score: **one point seven percent**. It now calls it a real photograph.
+> Our system still catches it — and it shows you exactly that: the raw detector alone missed this,
+> and the correction is what saved it."
 
-**Why this shot:** three things in twenty seconds — the collapse, the rescue, and the honesty — all
-from one command on one image.
+**Why this shot:** the collapse and the rescue in the product's own words, on one image, in the UI a
+reviewer would actually use — not a claim in a terminal.
 
-## 0:35–1:05 — Why this matters · SLIDES 2–3
+## 0:40–1:10 — Why this matters · SLIDES 2–3
 
 > "Published detectors report near-perfect accuracy on clean images. But every platform recompresses
 > and resizes what users upload. That's not an attack — it's the normal path from camera roll to feed.
@@ -83,7 +119,7 @@ from one command on one image.
 > Not degraded. Erased. And it fails the other way too — at that noise level it calls nearly a third
 > of *genuine* photographs AI-generated. It doesn't get uncertain. It gets confidently wrong."
 
-## 1:05–1:35 — The insight · SLIDE 4
+## 1:10–1:40 — The insight · SLIDE 4
 
 > "The failures aren't random, and that's the opening.
 > Real photographs carry sensor noise. Generated images are smooth. Blur strips sensor noise, so
@@ -93,7 +129,7 @@ from one command on one image.
 > Which means: if we can measure **what was done to the image**, we can predict **how much the
 > verdict is worth**."
 
-## 1:35–2:15 — The architecture · SLIDE 5
+## 1:40–2:20 — The architecture · SLIDE 5
 
 > "So the system measures the damage before it judges the image.
 > A canonical decode — we never re-compress before the expert sees the pixels.
@@ -108,32 +144,47 @@ from one command on one image.
 > The CLI, batch inference and the demo UI all call the same prediction service. There is no separate
 > demo code path that could flatter these numbers."
 
-## 2:15–2:55 — It works, and it knows when it doesn't ✅ verified
+## 2:20–3:00 — It knows when it doesn't know ✅ verified
 
-**On screen:** `audit_image.py` on the degraded image, then on the clean one.
+**On screen:** same image still loaded in the UI. Click **Stress-test this image**. (~3.4 s — do not
+cut the wait, it is the system doing 80 forward passes.) Chart and certificate fill in.
+
+**Verified output:** *Forensic robustness certificate · Verdict AI-GENERATED (p_fake 0.9986,
+threshold 0.4667) · Verdict retention **17 / 20** stress conditions · Forensic reliability: **LOW** —
+verdicts at this retention were correct for **84.9%** of held-out sources · Worst-case score against
+this verdict: 0.413 at blur_s1.0*, then the conditions that flip it.
+
+> "And this is the part we think matters most. The system audits its own answer: it re-runs that
+> verdict through all twenty transformations and counts how many survive.
+> Seventeen out of twenty. So it grades its own call **low** — verdicts this fragile are right about
+> eighty-five percent of the time — and it names the conditions that break it.
+> That percentage isn't a label we chose. It's what we measured on three thousand held-out images.
+> Run the clean version and it's twenty out of twenty, grade high, ninety-nine percent."
+
+**Cutaway (~8 s):** the same certificate from the CLI, to show it is one system, not a UI feature:
 
 ```
-.venv/bin/python scripts/audit_image.py deliverables/video-assets/bird_noise_s010.png
 .venv/bin/python scripts/audit_image.py deliverables/video-assets/bird_clean.png
 ```
 
-**Verified output, degraded:** raw detector `0.0166` → corrected `0.9986` (`+0.9820`, annotated
-*"the router changed this verdict"*), reliability `0.794` **⚠ DEFERRED**, image history *"added noise
-(100% confidence) ⚠ our detector is weakest here"*, certificate **17 / 20**, grade **LOW — correct
-for 84.9%**, and it names the three conditions that flip it.
-**Verified output, clean:** **20 / 20**, grade **HIGH — correct for 99.1%**, worst case 0.946 at jpeg_q30.
+**Verified:** **20 / 20**, grade **HIGH — correct for 99.1%**, worst case 0.946 at jpeg_q30.
 
-> "Here's the same image again, degraded. The raw detector missed it at zero point zero one six. The
-> router corrects it to zero point nine nine — caught.
-> But look at what else it says. It identifies that noise was added, and flags that noise is where
-> we're weakest. Then it audits its own answer by re-running that verdict through all twenty
-> transformations. Only seventeen survive, so it grades its own call **low** — verdicts this fragile
-> are right about eighty-five percent of the time — and it names the three conditions that break it.
-> Same command on the clean image: twenty out of twenty, grade high, ninety-nine percent.
-> Those percentages aren't labels we picked. They're what we measured on three thousand held-out
-> images."
+## 3:00–3:20 — Batch, and one decision path ✅ verified
 
-## 2:55–3:35 — The result, and the fair version of it · SLIDES 6–8
+**On screen:** terminal.
+
+```
+.venv/bin/python scripts/infer_dir.py deliverables/video-assets --output predictions.json
+```
+
+**Verified output:** `found 2 image(s)` → `[2/2] scored` → `2 scored, 0 failed`, emitting
+`[{"image_path": "bird_clean.png", "pred": 0.9999}, {"image_path": "bird_noise_s010.png", "pred": 0.9986}]`.
+
+> "The same system runs as a batch interface over a folder — and the UI, the command line and the
+> evaluation harness all call one prediction service. There is no separate demo code path that could
+> flatter these numbers."
+
+## 3:20–4:00 — The result, and the fair version of it · SLIDES 6–8
 
 > "Across the worst transformation family, the off-the-shelf detector catches **twelve percent** of
 > AI images. Ours catches **eighty-three**.
@@ -145,7 +196,7 @@ for 84.9%**, and it names the three conditions that flip it.
 > rate is eight point three percent, above the cap we set ourselves. We reported that rather than
 > re-tuning to hide it."
 
-## 3:35–4:05 — The organizers' benchmark · SLIDE 10
+## 4:00–4:25 — The organizers' benchmark · SLIDE 10
 
 > "The organizers' reference set was sealed from day one — never trained on, never thresholded on.
 > After the architecture was frozen we scored it **once**: a hundred and seventy-four thousand rows,
@@ -154,7 +205,24 @@ for 84.9%**, and it names the three conditions that flip it.
 > baseline our advantage there is nine points, not forty-nine — and abstention buys nothing on that
 > distribution. We publish both."
 
-## 4:05–4:30 — Rigour and close · SLIDES 11–12
+## 4:25–4:40 — Engineering receipts ✅ verified
+
+**On screen:** two commands, fast cuts. This is the cheapest thirty seconds of Technical Execution
+credit in the whole video — it shows the work is reproducible rather than claimed.
+
+```
+.venv/bin/python -m pytest tests/ -q
+.venv/bin/python scripts/run_eval.py --config configs/frozen.yaml
+```
+
+**Verified:** `787 passed, 1 skipped` · and `10 verified, 0 verified with absent inputs, 0 drifted,
+0 missing` — every published table checked against the artifact it came from *and* the inputs that
+produced it.
+
+> "Every table in this video regenerates from one command, and every number is checked against the
+> artifact it came from — inputs included. Seven hundred and eighty-seven tests pass."
+
+## 4:40–5:00 — Rigour and close · SLIDES 11–12
 
 > "Three things we'd want a reviewer to check.
 > We found a flaw in our own training data — every real image stored as JPEG, every fake as PNG, so
@@ -188,7 +256,9 @@ for 84.9%**, and it names the three conditions that flip it.
 | cascade clean FPR (over our own cap) | 0.0833 vs 0.0756 | same |
 | overall accuracy | 0.9090 | same |
 | per-family table (slide 8) | all seven rows | same |
-| hook image, clean / noise | primary 0.9995 / **0.0166**; ours 0.9999 / **0.9986** | live CLI, reproduced above |
+| hook image, clean / noise | primary 0.9995 / **0.0166**; ours 0.9999 / **0.9986** | live UI + CLI, reproduced above |
+| UI stress panel on the degraded image | 17/20, LOW, 84.9%, worst 0.413 at blur_s1.0 | live UI, reproduced above |
+| batch interface | 2 scored, 0 failed | `scripts/infer_dir.py`, reproduced above |
 | certificate: degraded / clean | 17/20 LOW 84.9% · 20/20 HIGH 99.1% | `results/robustness/retention-signal.json` |
 | retention beats reliability head | 0.8696 vs 0.7206 | same |
 | abstention lift | 0.9090 → 0.9317; worst-family 0.8258 → 0.9136 | `results/internal-test/abstention.json` |
@@ -207,7 +277,11 @@ for 84.9%**, and it names the three conditions that flip it.
 - [ ] Deck open at `deliverables/video-slides.html`, `F` for fullscreen, notes **off**
 - [ ] Terminal font ≥ 18pt, window sized so `audit_image.py` output fits without wrapping
 - [ ] Warm the model first (run one `predict.py`) so no download/first-load pause is recorded
-- [ ] `.venv/bin/python -m src.app` running for the UI beat
+- [ ] `.venv/bin/python -m src.app` running **before you hit record** — the first analyze loads the
+      model; warm it once so no load pause is filmed
+- [ ] Browser zoom so the verdict card and stress chart are legible at 1080p; hide bookmarks bar
 - [ ] No personal paths, tokens, or filenames in frame — `cd` to the repo and use relative paths
 - [ ] Final card carries the SID-Set CC BY 4.0 attribution
+- [ ] Open `deliverables/video-assets/ui-preview.html` first and set browser zoom from it
+- [ ] Nothing from the sealed set and nothing from `results/robustness/cases/` on screen
 - [ ] Upload to YouTube as **public**, then paste the link into the Devpost description

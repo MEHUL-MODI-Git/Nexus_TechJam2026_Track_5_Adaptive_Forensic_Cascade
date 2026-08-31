@@ -1,0 +1,140 @@
+<!doctype html><meta charset="utf-8"><title>UI preview — what the video will show</title>
+<style>:root { --ink: #111315; --ivory: #f3efe5; --signal: #ff6b35; --muted: #a9aaa2; }
+body, .gradio-container { background: var(--ink) !important; color: var(--ivory) !important; }
+.lab-shell { max-width: 980px; margin: 0 auto; }
+.lab-header { border-bottom: 1px solid #4a4b46; padding: 1.5rem 0 1rem; }
+.lab-kicker { color: var(--signal); font: 700 .72rem/1.2 ui-monospace, SFMono-Regular, monospace; letter-spacing: .14em; text-transform: uppercase; }
+.lab-title { color: var(--ivory); font: 800 clamp(2rem, 6vw, 4.3rem)/.95 Georgia, serif; margin: .45rem 0; }
+.lab-scope { color: #d0cec4; font-size: 1.05rem; }
+.result-card { border: 1px solid #66675f; border-left: 6px solid var(--signal); background: #1b1d1d; padding: 1.15rem; min-height: 120px; }
+.verdict { font: 800 2rem/1.1 ui-monospace, SFMono-Regular, monospace; letter-spacing: .04em; }
+.score-label, .disclaimer, .evidence { color: #d0cec4; }
+.score { color: var(--signal); font: 700 1.5rem ui-monospace, SFMono-Regular, monospace; }
+.placeholder-card { border-left-color: #f6c453; }
+.placeholder-verdict { color: var(--ivory); font-size: .92rem; }
+.error-card { border-color: #ffb4a0; border-left-color: #ffb4a0; }
+button.primary { background: var(--signal) !important; color: var(--ink) !important; }
+
+
+/* ------------------------------------------------------------------ */
+/* [relay] Task 1.5 stress panel — added by Claude while Codex is      */
+/* limit-blocked. Appended as its own block so it is trivial to revert */
+/* or restyle; nothing above this line was modified.                   */
+/* ------------------------------------------------------------------ */
+.afc-heading { margin: 28px 0 4px; font-size: 1.05rem; letter-spacing: .01em; }
+.afc-intro { margin: 0 0 12px; opacity: .78; font-size: .9rem; max-width: 64ch; }
+.afc-idle { opacity: .6; font-size: .9rem; }
+
+.afc-chart { display: block; width: 100%; height: auto; margin: 6px 0 2px; }
+/* The app forces a dark surface above, so chart roles must follow that actual
+   surface instead of the OS theme. */
+.afc-chart {
+  --afc-series: #5aa2f2;
+  --afc-critical: #ff7b72;
+  --afc-grid: rgba(255,255,255,.14);
+  --afc-ink: #d0cec4;
+  --afc-rule: #ffffff;
+}
+
+.afc-bar { fill: var(--afc-series); }
+.afc-bar-flip { fill: var(--afc-critical); }
+.afc-bar-error { fill: var(--afc-grid); opacity: .5; }
+.afc-flip-mark { fill: var(--afc-critical); }
+.afc-grid { stroke: var(--afc-grid); stroke-width: 1; }
+.afc-axis-line { stroke: var(--afc-grid); stroke-width: 1.5; }
+.afc-axis { fill: var(--afc-ink); font-size: 10px; }
+.afc-family { fill: var(--afc-ink); font-size: 10px; letter-spacing: .04em; }
+.afc-rule-label { fill: var(--afc-ink); font-size: 10px; }
+.afc-threshold { stroke: var(--afc-rule); stroke-width: 2; opacity: .75; }
+.afc-clean { stroke: var(--afc-rule); stroke-width: 2; stroke-dasharray: 5 4; opacity: .5; }
+
+.afc-stable, .afc-unstable, .afc-incomplete { margin: 8px 0 2px; font-size: .95rem; font-weight: 600; }
+.afc-unstable { color: var(--afc-critical, #ff7b72); }
+.afc-incomplete { color: #f6c453; }
+.afc-caveat { margin: 4px 0; font-size: .82rem; opacity: .75; max-width: 70ch; }
+.afc-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.afc-table th, .afc-table td { text-align: left; padding: 3px 8px;
+  border-bottom: 1px solid var(--afc-grid, rgba(0,0,0,.1)); }
+.afc-table th { font-weight: 600; opacity: .8; }
+
+/* --- [relay] Phase 3: cascade reasoning + abstention -----------------------
+   Appended as a self-contained, revertible block. Colours reuse the existing
+   palette tokens so the dark surface keeps >= 4.5:1 contrast, matching the
+   contrast discipline already applied to the stress panel. */
+.router-line {
+  margin: 6px 0 0;
+  font-size: .86rem;
+  color: var(--afc-ink, #d0cec4);
+  opacity: .92;
+}
+.router-line .delta {
+  color: var(--afc-accent, #ff6b35);
+  font-variant-numeric: tabular-nums;
+}
+.abstain-banner {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border-left: 4px solid #f6c453;
+  background: rgba(246, 196, 83, .12);
+  color: #f6c453;
+  font-size: .9rem;
+  line-height: 1.45;
+}
+.abstain-banner .abstain-reason {
+  color: var(--afc-ink, #d0cec4);
+  opacity: .85;
+  font-size: .8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Forensic robustness certificate (audit mode) -------------------------
+   Appended as a self-contained revertible block. Grade colours reuse existing
+   palette tokens and keep >= 4.5:1 on the forced dark surface. */
+.afc-cert {
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--afc-grid, rgba(255,255,255,.14));
+  border-radius: 8px;
+  background: rgba(255,255,255,.03);
+}
+.afc-cert-head {
+  font-size: .74rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  opacity: .7;
+  margin-bottom: 8px;
+}
+.afc-cert-verdict, .afc-cert-retention, .afc-cert-worst {
+  margin: 4px 0;
+  font-size: .9rem;
+}
+.afc-cert-retention strong { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.afc-cert-high    { margin: 8px 0; font-size: .9rem; color: #7ee0a5; }
+.afc-cert-medium  { margin: 8px 0; font-size: .9rem; color: #f6c453; }
+.afc-cert-low     { margin: 8px 0; font-size: .9rem; color: #ffb4a0; }
+.afc-cert-verylow { margin: 8px 0; font-size: .9rem; color: #ff7b72; font-weight: 600; }
+.afc-cert-unstable { margin: 8px 0 0; font-size: .84rem; opacity: .9; }
+.afc-cert-unstable ul { margin: 4px 0 0 18px; padding: 0; }
+.afc-cert-unstable li { margin: 1px 0; font-variant-numeric: tabular-nums; }
+.degr-line { margin-top: 8px; }
+.degr-weak { color: #f6c453; font-size: .82rem; }
+.degr-caveat { color: var(--afc-ink, #d0cec4); opacity: .7; font-size: .78rem; }
+
+body{margin:0;padding:32px;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.lab-shell{max-width:980px;margin:0 auto}
+.evidence{display:flex;gap:18px;margin:14px 0;font:600 .9rem ui-monospace,monospace}
+.evidence div{border:1px solid #66675f;padding:10px 14px;background:#1b1d1d}
+.note{margin:26px auto 0;max-width:980px;color:#a9aaa2;font-size:.85rem;border-top:1px solid #4a4b46;padding-top:12px}
+</style>
+<div class="lab-shell">
+<header class="lab-header"><div class="lab-kicker">Adaptive Forensic Cascade / CF-384</div>
+<div class="lab-title">Forensic Lab</div>
+<div class="lab-scope">A robust AI-image detection prototype for investigating synthetic-image signals.</div></header>
+<section class='result-card' role='status'><div class='verdict'>✦ AI-GENERATED</div><p class='score-label'>Model score · p_fake <span class='score'>0.9986</span></p><p class='disclaimer'>Research prototype output; do not treat one score as forensic proof.</p><p class='router-line'>Primary CF-384 alone: <strong>0.0166</strong> &rarr; after router correction: <strong>0.9986</strong> <span class='delta'>(+0.9820)</span></p><p class='router-line'>Self-assessed reliability: <strong>0.794</strong></p><p class='router-line degr-line'>Detected image history: <strong>added noise</strong> (100% confidence)  <span class='degr-weak'>&#9888; our detector is measurably weakest under this condition</span></p><p class='abstain-banner'><strong>&#9888; DEFERRED — low self-assessed reliability.</strong> The system declines to decide this image and recommends human review.<br><span class='abstain-reason'>reliability 0.7942 below the frozen policy threshold 0.8661</span></p></section>
+<div class="evidence"><div>CF-384 p_fake 0.0166</div><div>221.1 ms</div></div>
+<h2 class="afc-heading">Robustness stress test</h2>
+<p class="afc-intro">Re-scores this image under all 20 official transformations and reports whether the verdict survives them.</p>
+<section class='afc-cert' role='status'><div class='afc-cert-head'>Forensic robustness certificate</div><p class='afc-cert-verdict'>Verdict <strong>AI-GENERATED</strong> (p_fake 0.9986, threshold 0.4667)</p><p class='afc-cert-retention'>Verdict retention <strong>17 / 20</strong> stress conditions</p><p class='afc-cert-low'>Forensic reliability: <strong>LOW</strong> — verdicts at this retention were correct for 84.9% of held-out sources</p><p class='afc-cert-worst'>Worst-case score against this verdict: 0.413 at blur_s1.0</p><div class='afc-cert-unstable'>Verdict changes under:<ul><li>blur_s1.0</li><li>blur_s2.0</li><li>resize_0.5</li></ul></div><p class='afc-caveat'>Audit mode: 80 forward passes, about 3 s. The normal decision path does not run this.</p></section><p class='afc-unstable'>Verdict changed under 3 of 20 conditions: blur_s1.0, blur_s2.0, resize_0.5.</p><svg viewBox="0 0 760 300" width="100%" role="img" aria-label="Score under each official transformation" class="afc-chart"><line x1="46" y1="242.0" x2="746" y2="242.0" class="afc-grid"/><text x="38" y="245.5" class="afc-axis" text-anchor="end">0.00</text><line x1="46" y1="186.0" x2="746" y2="186.0" class="afc-grid"/><text x="38" y="189.5" class="afc-axis" text-anchor="end">0.25</text><line x1="46" y1="130.0" x2="746" y2="130.0" class="afc-grid"/><text x="38" y="133.5" class="afc-axis" text-anchor="end">0.50</text><line x1="46" y1="74.0" x2="746" y2="74.0" class="afc-grid"/><text x="38" y="77.5" class="afc-axis" text-anchor="end">0.75</text><line x1="46" y1="18.0" x2="746" y2="18.0" class="afc-grid"/><text x="38" y="21.5" class="afc-axis" text-anchor="end">1.00</text><rect x="49.0" y="18.3" width="29.0" height="223.7" rx="3" class="afc-bar"><title>clean — p_fake 0.9986 — AI-GENERATED</title></rect><rect x="84.0" y="18.3" width="29.0" height="223.7" rx="3" class="afc-bar"><title>jpeg_q90 — p_fake 0.9986 — AI-GENERATED</title></rect><rect x="119.0" y="19.5" width="29.0" height="222.5" rx="3" class="afc-bar"><title>jpeg_q70 — p_fake 0.9933 — AI-GENERATED</title></rect><rect x="154.0" y="28.2" width="29.0" height="213.8" rx="3" class="afc-bar"><title>jpeg_q50 — p_fake 0.9545 — AI-GENERATED</title></rect><rect x="189.0" y="49.4" width="29.0" height="192.6" rx="3" class="afc-bar"><title>jpeg_q30 — p_fake 0.8596 — AI-GENERATED</title></rect><rect x="224.0" y="19.3" width="29.0" height="222.7" rx="3" class="afc-bar"><title>blur_s0.5 — p_fake 0.9944 — AI-GENERATED</title></rect><rect x="259.0" y="149.5" width="29.0" height="92.5" rx="3" class="afc-bar-flip"><title>blur_s1.0 — p_fake 0.4131 — REAL (VERDICT FLIPPED)</title></rect><path d="M269.5 145.5 L273.5 139.5 L277.5 145.5 Z" class="afc-flip-mark"/><rect x="294.0" y="148.1" width="29.0" height="93.9" rx="3" class="afc-bar-flip"><title>blur_s2.0 — p_fake 0.4191 — REAL (VERDICT FLIPPED)</title></rect><path d="M304.5 144.1 L308.5 138.1 L312.5 144.1 Z" class="afc-flip-mark"/><rect x="329.0" y="146.8" width="29.0" height="95.2" rx="3" class="afc-bar-flip"><title>resize_0.5 — p_fake 0.4249 — REAL (VERDICT FLIPPED)</title></rect><path d="M339.5 142.8 L343.5 136.8 L347.5 142.8 Z" class="afc-flip-mark"/><rect x="364.0" y="77.4" width="29.0" height="164.6" rx="3" class="afc-bar"><title>resize_0.25 — p_fake 0.7346 — AI-GENERATED</title></rect><rect x="399.0" y="18.3" width="29.0" height="223.7" rx="3" class="afc-bar"><title>noise_s0.02 — p_fake 0.9988 — AI-GENERATED</title></rect><rect x="434.0" y="18.3" width="29.0" height="223.7" rx="3" class="afc-bar"><title>noise_s0.05 — p_fake 0.9987 — AI-GENERATED</title></rect><rect x="469.0" y="18.3" width="29.0" height="223.7" rx="3" class="afc-bar"><title>noise_s0.10 — p_fake 0.9986 — AI-GENERATED</title></rect><rect x="504.0" y="18.4" width="29.0" height="223.6" rx="3" class="afc-bar"><title>bright_-20 — p_fake 0.9983 — AI-GENERATED</title></rect><rect x="539.0" y="18.3" width="29.0" height="223.7" rx="3" class="afc-bar"><title>bright_+20 — p_fake 0.9985 — AI-GENERATED</title></rect><rect x="574.0" y="19.0" width="29.0" height="223.0" rx="3" class="afc-bar"><title>contrast_-20 — p_fake 0.9956 — AI-GENERATED</title></rect><rect x="609.0" y="18.3" width="29.0" height="223.7" rx="3" class="afc-bar"><title>contrast_+20 — p_fake 0.9987 — AI-GENERATED</title></rect><rect x="644.0" y="18.5" width="29.0" height="223.5" rx="3" class="afc-bar"><title>saturation_-20 — p_fake 0.9975 — AI-GENERATED</title></rect><rect x="679.0" y="18.5" width="29.0" height="223.5" rx="3" class="afc-bar"><title>saturation_+20 — p_fake 0.9979 — AI-GENERATED</title></rect><rect x="714.0" y="18.3" width="29.0" height="223.7" rx="3" class="afc-bar"><title>crop_0.8 — p_fake 0.9985 — AI-GENERATED</title></rect><line x1="46" y1="137.5" x2="746" y2="137.5" class="afc-threshold"/><text x="746" y="132.5" class="afc-rule-label" text-anchor="end">decision threshold 0.467</text><line x1="46" y1="18.3" x2="746" y2="18.3" class="afc-clean"/><text x="50" y="13.3" class="afc-rule-label">clean score 0.999</text><text x="63.5" y="266.0" class="afc-family" text-anchor="middle">clean</text><text x="151.0" y="266.0" class="afc-family" text-anchor="middle">jpeg</text><text x="273.5" y="266.0" class="afc-family" text-anchor="middle">blur</text><text x="361.0" y="266.0" class="afc-family" text-anchor="middle">resize</text><text x="448.5" y="266.0" class="afc-family" text-anchor="middle">noise</text><text x="606.0" y="266.0" class="afc-family" text-anchor="middle">color</text><text x="728.5" y="266.0" class="afc-family" text-anchor="middle">crop</text><line x1="46" y1="242.0" x2="746" y2="242.0" class="afc-axis-line"/><text x="46" y="288.0" class="afc-axis">p(AI-generated) under each official transformation — higher is more likely AI</text></svg><table class='afc-table'><thead><tr><th>condition</th><th>family</th><th>p_fake</th><th>verdict</th><th>vs clean</th></tr></thead><tbody><tr><td>clean</td><td>clean</td><td>0.9986</td><td>AI-GENERATED</td><td>reference</td></tr><tr><td>jpeg_q90</td><td>jpeg</td><td>0.9986</td><td>AI-GENERATED</td><td>held</td></tr><tr><td>jpeg_q70</td><td>jpeg</td><td>0.9933</td><td>AI-GENERATED</td><td>held</td></tr><tr><td>jpeg_q50</td><td>jpeg</td><td>0.9545</td><td>AI-GENERATED</td><td>held</td></tr><tr><td>jpeg_q30</td><td>jpeg</td><td>0.8596</td><td>AI-GENERATED</td><td>held</td></tr><tr><td>blur_s0.5</td><td>blur</td><td>0.9944</td><td>AI-GENERATED</td><td>held</td></tr><tr><td>blur_s1.0</td><td>blur</td><td>0.4131</td><td>REAL</td><td>FLIPPED</td></tr><tr><td>blur_s2.0</td><td>blur</td><td>0.4191</td><td>REAL</td><td>FLIPPED</td></tr><tr><td>resize_0.5</td><td>resize</td><td>0.4249</td><td>REAL</td><td>FLIPPED</td></tr><tr><td>resize_0.25</td><td>resize</td><td>0.7346</td><td>AI-GENERATED</td><td>held</td></tr><tr><td>noise_s0.02</td><td>noise</td><td>0.9988</td><td>AI-GENERATED</td><td>held</td></tr><tr><td>noise_s0.05</td><td>noise</td><td>0.9987</td><td>AI-GENERATED</td><td>held</td></tr><tr><td>noise_s0.10</td><td>noise</td><td>0.9986</td><td>AI-GENERATED</td><td>held</td></tr><tr><td>bright_-20</td><td>color</td><td>0.9983</td><td>AI-GENERATED</td><td>held</td></tr><tr><td>bright_+20</td><td>color</td><td>0.9985</td><td>AI-GENERATED</td><td>held</td></tr><tr><td>contrast_-20</td><td>color</td><td>0.9956</td><td>AI-GENERATED</td><td>held</td></tr><tr><td>contrast_+20</td><td>color</td><td>0.9987</td><td>AI-GENERATED</td><td>held</td></tr><tr><td>saturation_-20</td><td>color</td><td>0.9975</td><td>AI-GENERATED</td><td>held</td></tr><tr><td>saturation_+20</td><td>color</td><td>0.9979</td><td>AI-GENERATED</td><td>held</td></tr><tr><td>crop_0.8</td><td>crop</td><td>0.9985</td><td>AI-GENERATED</td><td>held</td></tr></tbody></table>
+</div>
+<p class="note">Static render of the real UI output on deliverables/video-assets/bird_noise_s010.png — generated by the actual analyze_image / stress_test_image functions, not a mockup.</p>
