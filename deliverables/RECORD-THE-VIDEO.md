@@ -1,317 +1,216 @@
 # Record the video — read only this file
 
-Everything technical is already done. You do three things: **run one command, click what it says,
-read what it says.** Nothing here can break the project — every command only reads.
+Target length: **4 minutes 40 seconds.** Hard cap 5:00. The narration below has been word-counted
+against a normal speaking pace, so if you read it at a natural speed and don't ad-lib, you land
+under the cap.
+
+Everything technical is done. You run one command, click what it says, read what it says.
 
 ---
 
 ## Before you press record
 
-**Step 1.** Open a terminal, paste this, press enter. Takes about 40 seconds.
+**1. Run this.** Takes about 40 seconds.
 
 ```
 cd "/Users/mehulmodi/MEHUL WORK/Hackathon/TechJam 2026" && .venv/bin/python scripts/video_setup.py
 ```
 
-It stops old servers, checks the images, loads the detector so there's no loading pause on camera,
-tests all three commands, and starts the demo. It finishes by printing **READY TO RECORD**.
-If it prints NOT READY instead, stop and send me what it printed.
+It must finish with **READY TO RECORD**. If it says NOT READY, stop and send me the message.
 
-**Step 2.** Open these two things and leave them open:
+**2. Open two Chrome tabs and one terminal:**
 
-| what | where |
-|---|---|
-| The slides | `deliverables/video-slides.html` — double-click it. Press **F** for fullscreen, **→** for next slide |
-| The demo | http://127.0.0.1:7860 in your browser |
+| | what | how to show it |
+|---|---|---|
+| Tab 1 | The demo — http://127.0.0.1:7860 | Windowed. Leave the address bar visible — it proves the demo is really running |
+| Tab 2 | The slides — `deliverables/video-slides.html` | Press **F** for fullscreen (hides your file path) |
+| Terminal | the one you just used | Font 18pt or bigger |
 
-**Step 3.** Before recording, take 30 seconds:
-- Make your terminal text **big** (18pt+) so it's readable in the video.
-- Zoom the browser so the whole verdict box fits without scrolling.
-- Close other tabs. Hide your bookmarks bar. Nothing personal on screen.
+**3. Clean up Chrome** (from your screenshot, these are showing):
+- Remove the **"Ask Gemini"** button — that's someone else's brand in every frame
+- Click **"Relaunch to update"** and let Chrome restart, so it can't interrupt you mid-recording
+- Hide the bookmarks bar, close all other tabs
 
-**Step 4.** Record your whole screen at 1080p. Don't stop and start — record it in one pass. If you
-fumble a line, pause, breathe, and say it again; you can cut it later.
+**4. Set the demo zoom to 150%** (Cmd and + three times). Check: after you analyze an image, the
+verdict, the `Primary CF-384 alone` line, and the `CF-384 score` box should all be visible together.
 
----
-
-## What the product actually shows you
-
-Read this once so you can point at things confidently. **When you upload an image and click
-"Analyze image", the screen shows six things:**
-
-1. **The verdict** — big text: `AI-GENERATED` or `REAL`
-2. **The score** — `p_fake 0.9986`. This is 0 to 1. Higher means more likely AI-made.
-3. **The before-and-after** — `Primary CF-384 alone: 0.0166 → after router correction: 0.9986`.
-   This is the most important line in the whole demo. It means: *the standard detector on its own
-   said 0.0166 — which is "this is a real photo", and it was wrong. Our part corrected it to 0.9986.*
-4. **The detector's own score and speed** — two small boxes, `CF-384 p_fake 0.0166` and `221 ms`
-5. **Technical details** (click to expand) — image size, format, a content hash, and which frozen
-   settings file was used
-6. **Then a separate button, "Stress-test this image"** — this is the special part
-
-**When you click "Stress-test this image"** it takes about 3 seconds and shows:
-
-7. **A certificate** — `Verdict retention 17 / 20 stress conditions`, `Forensic reliability: LOW`,
-   and *"verdicts at this retention were correct for 84.9% of held-out sources"*
-8. **A bar chart** of all 20 versions of the image
-9. **A table** (click to expand) with all 20 rows, each marked **held** or **FLIPPED**
-
-### Two things to be clear about, so you don't promise what isn't there
-
-You mentioned "rewind" and "citation". **We do not have those** — please don't refer to them.
-
-- There's **no rewind** feature and **no citation** feature in the app.
-- The **before/after comparison** you're thinking of *does* exist — that's point 3 above.
-- There **is** hashing, but it's small: the "Technical details" panel shows a `Content hash` and the
-  frozen settings ID. That's provenance, not a byte-by-byte diff view.
-- The "every number traces to a file" idea is real but it lives in the **README and the slides**,
-  not inside the app.
+**5. Record the whole screen** — Cmd + Shift + 5 → Record Entire Screen.
 
 ---
 
-## Now record. Ten scenes, in order.
+## The seven scenes
 
-Each scene tells you what's on screen, what to do, and what to say. Read the **SAY** parts out loud
-in your normal voice. Short pauses between sentences are good.
+Read the **SAY** lines at a natural pace. Short pauses are fine — they're in the budget.
 
 ---
 
-### Scene 1 — The hook (about 40 seconds) · in the DEMO
+### Scene 1 · The demo (about 45 seconds) — TAB 1
 
-**DO:** Drag `deliverables/video-assets/bird_clean.png` into the demo. Click **Analyze image**.
-Wait for the verdict. Then drag in `bird_noise_s010.png` and click **Analyze image** again.
+**DO:** Drag in `deliverables/video-assets/bird_clean.png` → click **Analyze image**.
+Then drag in `deliverables/video-assets/bird_jpeg_q30.png` → click **Analyze image**.
 
 **SAY:**
-> "This picture was made by an AI. A well-known open-source detector agrees — it's ninety-nine point
-> nine percent sure.
+> "This image was made by an AI. A well-known open detector agrees. It's ninety-nine point nine
+> percent sure.
 >
-> Now here's the same picture with a tiny bit of noise added. You can't see any difference.
+> Now the same image, saved as an ordinary compressed JPEG. Exactly what happens when you send a
+> photo through a messaging app. It looks fine.
 >
-> Look at what that same detector says now: **zero point zero one six**. It now thinks this is a real
-> photograph. It's completely wrong.
+> That same detector now says zero point zero one nine. It thinks this is a real photograph, and it's
+> wrong.
 >
-> Our system still gets it right — and it shows you exactly why. That line says the standard detector
-> on its own missed this, and our correction is what caught it."
+> Ours still catches it. And look what else it says: it worked out that the image was JPEG
+> compressed, it flags that compression is where it's weakest, and it says it isn't confident enough
+> and wants a human to check."
 
-**Point at:** the line `Primary CF-384 alone: 0.0166 → after router correction: 0.9986`.
+**Point at, in order:** `Primary CF-384 alone: 0.0191 → after router correction: 0.9458` ·
+`Detected image history: JPEG compression (99% confidence)` · the yellow **DEFERRED** box.
 
 ---
 
-### Scene 2 — Why this matters (about 30 seconds) · SLIDES 2 and 3
-
-**DO:** Switch to the slides. Slide 2, then slide 3.
+### Scene 2 · Why it matters (about 30 seconds) — TAB 2, slides 1 → 2
 
 **SAY:**
-> "Detectors like this report near-perfect accuracy — on clean images. But no image on the internet
-> stays clean. Every app and every website squashes, resizes and re-compresses what you upload. That
-> isn't an attack, it's just what happens when you post something.
+> "Detectors report near-perfect accuracy on clean images. But no image online stays clean. Every app
+> and every website recompresses what you upload.
 >
-> So we tested it properly: three thousand images our system had never seen, each one put through all
-> twenty of the official transformations. Sixty thousand tests.
+> So we tested properly. Three thousand images the system had never seen, each one through all twenty
+> official transformations. Sixty thousand tests.
 >
-> On clean images, the standard detector catches seventy-one percent of AI images. Add that
-> invisible noise, and it catches **zero point seven percent**.
->
-> That's not 'a bit worse'. That's gone. And it breaks the other way too — at that noise level it
-> starts calling nearly a third of **real** photographs fake. It doesn't get unsure. It gets
-> confidently wrong."
+> On clean images the standard detector catches seventy-one percent of AI images. Add mild noise and
+> it catches zero point seven percent. That's not worse. That's gone."
 
 ---
 
-### Scene 3 — Why it happens (about 30 seconds) · SLIDE 4
+### Scene 3 · How it's built (about 40 seconds) — slide 3
 
 **SAY:**
-> "Once you look at the failures, there's a pattern.
+> "So our system measures the damage before it judges the picture.
 >
-> Real photographs have a faint texture from the camera sensor. AI images are smoother. Blurring a
-> real photo wipes that texture away — so a blurred real photo starts to look, to the detector,
-> exactly like an AI one. And adding noise buries the fingerprint the detector was looking for.
+> A frozen expert detector looks at the image — twenty-two million parameters, downloaded, never
+> retrained by us. Then we measure how blurry, how compressed and how noisy the picture is.
 >
-> So here's the idea the whole project is built on: **if we can measure what's been done to a
-> picture, we can work out how much to trust the answer.**"
+> And then the part we built: a correction layer of one thousand eight hundred and twenty-seven
+> numbers, which turns what was done to this picture into a correction of the verdict.
+>
+> One cut-off for every kind of damage. And the demo, the command line and our testing all run the
+> same code."
 
 ---
 
-### Scene 4 — How it's built (about 40 seconds) · SLIDE 5
+### Scene 4 · It checks its own answer (about 40 seconds) — TAB 1
+
+**DO:** Back to the demo. The compressed image is still loaded. Scroll down, click
+**"Stress-test this image"**. Wait ~3 seconds — don't cut it. Then expand the results table.
 
 **SAY:**
-> "So the system measures the damage before it judges the picture.
+> "Now the part that matters most. The system checks its own answer.
 >
-> First it opens the image carefully, without re-compressing it.
+> It makes twenty damaged versions of this picture and re-runs its own verdict on each one, then
+> counts how many still agree.
 >
-> Then a frozen expert detector looks at it — twenty-two million parameters, downloaded, never
-> retrained by us, locked to one exact version.
+> Eighteen out of twenty. So it grades its own answer medium confidence, and tells you what that
+> means: answers this solid are right about ninety-five percent of the time. And it names the two
+> kinds of damage that would break it.
 >
-> Then we measure the damage: how blurry, how compressed, how noisy. And we re-score the picture
-> three more times under small changes, to see how much the score wobbles.
->
-> And then the actual thing we built: a correction layer of **one thousand eight hundred and
-> twenty-seven** numbers. That's tiny. It takes 'here's what was done to this picture' and turns it
-> into a correction to the verdict.
->
-> One cut-off, used for every kind of damage — we never tune it per case, because that would be
-> cheating.
->
-> And the demo, the command line and our testing all run the same code. There's no special demo
-> version that looks better than the real thing."
+> That percentage isn't invented. It's measured on three thousand unseen images."
+
+**Point at:** the two rows marked **FLIPPED** — `blur_s2.0` and `resize_0.25`.
 
 ---
 
-### Scene 5 — It knows when it's unsure (about 40 seconds) · in the DEMO
+### Scene 5 · Results (about 40 seconds) — TAB 2, slides 4 → 5 → 6
 
-**DO:** Go back to the browser. The noisy image should still be loaded. Click
-**"Stress-test this image"**. It takes about 3 seconds — **don't cut the wait**, it's doing 80
-checks. Then expand the results table.
+**SAY (slide 4):**
+> "On the damage it handles worst, the standard detector catches twelve percent of AI images. Ours
+> catches eighty-three."
 
-**SAY:**
-> "This is the part we're most proud of. The system checks its own answer.
->
-> It takes this one picture, makes twenty damaged versions of it, and re-runs its own verdict on
-> every one. Then it counts how many still agree.
->
-> Seventeen out of twenty. So it grades **its own answer** as **low confidence** — and it tells you
-> what that grade means: answers this shaky turn out to be right about eighty-five percent of the
-> time.
->
-> And it shows you exactly which kinds of damage break it. Look — blur and resizing flip this one.
->
-> That eighty-five percent isn't a number we invented. It's what we measured on three thousand
-> images the system had never seen."
-
-**Point at:** the rows marked **FLIPPED** — `blur_s1.0`, `blur_s2.0`, `resize_0.5`.
-
----
-
-### Scene 6 — Same system, command line and batch (about 20 seconds) · TERMINAL
-
-**DO:** Switch to the terminal. Run these two, one after the other:
-
-```
-.venv/bin/python scripts/audit_image.py deliverables/video-assets/bird_clean.png
-.venv/bin/python scripts/infer_dir.py deliverables/video-assets --output predictions.json
-```
-
-**SAY:**
-> "Same check from the command line — and on the clean picture it's twenty out of twenty, high
-> confidence, right ninety-nine percent of the time.
->
-> And it runs over a whole folder for bulk use. Same code underneath, every time."
-
----
-
-### Scene 7 — The headline result (about 40 seconds) · SLIDES 6, 7 and 8
+**SAY (slide 5 — don't skip this one):**
+> "But we have to be fair. That detector was being far more cautious, so some of our lead is just us
+> being less cautious. So we gave it our exact false-alarm rate, and let it tune itself on the test
+> answers — which we never allowed ourselves. Even then it only reaches thirty-three percent. We're
+> still ahead by forty-nine points. That's the number we publish."
 
 **SAY (slide 6):**
-> "So here's the result. On the kind of damage it handles worst, the standard detector catches
-> **twelve percent** of AI images. Ours catches **eighty-three**."
-
-**SAY (slide 7 — do not skip this one):**
-> "But we have to be fair about that. The other detector was being much more cautious than us — it
-> raises far fewer false alarms, and some of our lead is just us being less cautious.
->
-> So we gave it every advantage. We set it to raise false alarms at exactly our rate, and we let it
-> tune itself on the test answers — something we never allowed ourselves.
->
-> Even then, it only gets to thirty-three percent. We're still ahead by **forty-nine points**. That's
-> the number we publish."
-
-**SAY (slide 8):**
-> "Here's every type of damage, including the ones where we help least. And here's the cost: we
-> raise more false alarms than we said we'd allow — eight point three percent against the seven point
-> six we set ourselves. We missed our own target, and we're reporting it rather than quietly moving
-> the target."
+> "And here's every kind of damage, including the ones where we help least."
 
 ---
 
-### Scene 8 — The official benchmark (about 25 seconds) · SLIDE 10
+### Scene 6 · The organizers' data (about 25 seconds) — slide 7
 
 **SAY:**
-> "The organisers gave everyone a reference set of images. We locked it away on day one — never
-> trained on it, never tuned to it, never even looked at the results while we were making decisions.
->
-> After everything was frozen, we ran it **once**. A hundred and seventy-four thousand tests, zero
+> "The organizers gave everyone a reference set. We sealed it on day one and never trained or tuned
+> on it. After everything was frozen, we ran it once. A hundred and seventy-four thousand tests, zero
 > failures.
 >
-> And it did **better** than on our own test data. Eighty-eight percent on the hardest kind of
-> damage, against eighty-three on ours. And false alarms came in at one and a half percent — five
-> times better than our own test, and comfortably inside the limit we'd set ourselves.
->
-> We also measured what didn't carry over, because a result you haven't stress-tested isn't a
-> result. On this easier set our lead over a properly-tuned competitor narrows to nine points, and
-> the confidence signal we *measured* held up while the one we *trained* didn't.
->
-> We'd rather be the team that knows which is which."
+> And it did better than on our own data. Eighty-eight percent on the hardest damage, and false
+> alarms down at one and a half percent."
 
-### Scene 9 — Proof it's real (about 15 seconds) · TERMINAL
+---
 
-**DO:** Run these two:
+### Scene 7 · Close (about 30 seconds) — TERMINAL, then slide 8
+
+**DO:** Switch to the terminal and run these two. Both finish in about 2 seconds.
 
 ```
-.venv/bin/python -m pytest tests/ -q
+.venv/bin/python scripts/infer_dir.py deliverables/video-assets --output predictions.json
 .venv/bin/python scripts/run_eval.py --config configs/frozen.yaml
 ```
 
-**SAY:**
-> "Every table in this video regenerates from one command, and every number is checked against the
-> file it came from. Seven hundred and eighty-seven tests pass."
+**SAY (over the terminal):**
+> "It runs over a whole folder for bulk use. And every table in this video regenerates from one
+> command, checked against the file it came from."
 
----
-
-### Scene 10 — What we threw away, and close (about 30 seconds) · SLIDES 11 and 12
+**DO:** Switch to slide 8.
 
 **SAY:**
-> "Three things worth checking us on.
->
-> First — you should ask whether this thing is just reading JPEG compression instead of anything
-> real. We asked that too. And we found that in our source data, every real image happened to be a
-> JPEG and every fake a PNG, so the file type alone gave away the answer.
->
-> So we re-saved everything into one single format, and we added a control that uses **no detector
-> at all** — just plain image statistics. That control only reaches fifty-four percent, and it gets
-> there by calling **forty-four percent of real photographs fake**. Statistics can't do this job.
-> The detector is doing the work.
->
-> We tried two state-of-the-art second opinions and rejected both, for the same reason: they both
-> read the fine detail in an image, and fine detail is exactly what noise and compression destroy.
-> You can't rescue a damaged image using the part that's damaged.
->
-> And we killed five of our own ideas this way — including our own wobble-test, which costs
-> eighty-six percent of our running time and, when we measured it properly, bought us nothing. We
-> published that too.
->
-> Twenty-two million parameters. About one percent of the size limit. A tenth of a second per image
-> on a laptop.
+> "Twenty-two million parameters. One percent of the size limit. A tenth of a second per image on a
+> laptop.
 >
 > A score you can price is worth more than a score you can't."
 
-**FINAL SCREEN:** show the repo link, and this line, which is required:
+**FINAL SCREEN:** your repo link, and this line, which is required:
 `Synthetic sample image: SID-Set, CC BY 4.0`
 
 ---
 
-## After you stop recording
-
-**Step 1.** Shut everything down cleanly:
+## After recording
 
 ```
 .venv/bin/python scripts/video_setup.py --stop
 ```
 
-**Step 2.** Upload to YouTube. Set it to **Public** — not Unlisted, not Private. The brief requires
-public.
+Then: upload to YouTube as **Public**, paste the link into Devpost, and tell me.
 
-**Step 3.** Paste the YouTube link into the Devpost description.
+---
 
-**Step 4.** Tell me it's done and I'll tick it off the submission checklist.
+## What's on the demo screen, so you can point confidently
+
+After **Analyze image**:
+
+1. Verdict — `AI-GENERATED`
+2. Score — `p_fake 0.9458` (0 to 1; higher means more likely AI)
+3. **The before/after** — `Primary CF-384 alone: 0.0191 → after router correction: 0.9458`
+4. `CF-384 score` and speed boxes
+5. `Detected image history: JPEG compression (99% confidence)`
+6. Yellow **DEFERRED** box
+
+After **Stress-test this image**:
+
+7. Certificate — `18 / 20`, `MEDIUM`, "correct for 94.9% of held-out sources"
+8. A bar chart of all 20 versions
+9. A table where `blur_s2.0` and `resize_0.25` are marked **FLIPPED**
+
+**The app has no "rewind" and no "citation" feature** — don't refer to those. The before/after
+comparison is item 3.
 
 ---
 
 ## If something goes wrong
 
-| problem | what to do |
+| problem | do this |
 |---|---|
-| Setup says NOT READY | Send me the message. Don't try to fix it yourself. |
-| The page at 127.0.0.1:7860 won't load | Re-run the setup command; it restarts the server. |
-| A number on screen doesn't match this guide | **Stop and tell me.** Say what you saw. Don't record around it. |
-| You stumble on a line | Pause, then say it again. Cut it in editing. |
-| The demo feels slow on the stress test | That's correct — it's doing 80 checks. Let it run. |
+| Setup says NOT READY | Send me the message. Don't improvise. |
+| A number on screen differs from this guide | **Stop and tell me.** Don't record around it. |
+| You stumble | Pause, say the line again, cut it later. |
+| Stress test feels slow | Correct — it's doing 80 checks. Let it run. |

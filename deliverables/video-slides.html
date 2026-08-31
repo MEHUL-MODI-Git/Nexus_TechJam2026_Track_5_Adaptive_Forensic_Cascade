@@ -139,24 +139,13 @@
     <p class="rail"><b>01</b> <span>Title</span></p>
     <p class="kicker">TikTok TechJam 2026 · Track 5</p>
     <h1>Detection that knows<br>when it is wrong.</h1>
-    <p class="lede">An adaptive forensic cascade for AI-image detection that survives the
-      compression, resizing and noise every upload actually goes through — and reports its own
-      reliability instead of guessing confidently.</p>
+    <p class="lede">AI-image detection that survives the compression, resizing and noise every upload
+      actually goes through — and reports how much each verdict is worth.</p>
     <p class="src">21,814,571 parameters · 1.09% of the 2B limit · one frozen threshold</p>
   </section>
 
   <section class="slide">
     <p class="rail"><b>02</b> <span>The problem</span></p>
-    <h2>Published accuracy is measured on images nobody ever receives.</h2>
-    <p class="lede">Every platform recompresses, resizes and re-encodes what users upload. That is not
-      an attack — it is the normal path from camera roll to feed. It is also where published
-      detector accuracy goes to die.</p>
-    <p class="lede">We measured it: <strong>3,000 images our system had never seen</strong>, across all
-      20 official transformations. <strong>60,000 scored views.</strong></p>
-  </section>
-
-  <section class="slide">
-    <p class="rail"><b>03</b> <span>The collapse</span></p>
     <p class="kicker">Off-the-shelf detector · AI images correctly caught</p>
     <div class="duo">
       <div class="stat">
@@ -166,48 +155,32 @@
       <div class="arrow">→</div>
       <div class="stat">
         <div class="n bad">0.7<span style="font-size:.42em">%</span></div>
-        <div class="lbl">after imperceptible noise</div>
+        <div class="lbl">after mild noise</div>
       </div>
     </div>
-    <p class="lede">Not degraded. <strong>Erased.</strong> Of the AI images it gets right when clean,
-      <strong>26.6% flip to "real"</strong> the moment any transformation touches them. And it fails
-      the other way too — at that same noise level it calls nearly a third of genuine photographs
-      AI-generated.</p>
+    <p class="lede">Every platform recompresses and resizes what you upload. That is not an attack —
+      it is the normal path from camera roll to feed. We measured it on <strong>3,000 images the
+      system had never seen</strong>, across all 20 official transformations: 60,000 tests.</p>
     <p class="src">results/internal-test/results.json · noise σ=0.10 · primary at its published default</p>
   </section>
 
   <section class="slide">
-    <p class="rail"><b>04</b> <span>Why it happens</span></p>
-    <h2>The damage tells you how much to trust the answer.</h2>
-    <ul class="plain">
-      <li>Real photographs carry <strong>sensor noise</strong>. Generated images are <strong>smooth</strong>.</li>
-      <li>Blur removes sensor noise — so blurring a real photo pushes it along <strong>exactly the axis
-        the detector cares about</strong>, into the region where generated images live.</li>
-      <li>Added noise buries the generator's fingerprint, which lives in the same high-frequency band.</li>
-      <li>So the detector does not become <em>uncertain</em> under degradation. It becomes
-        <strong>confidently wrong</strong>, in both directions.</li>
-    </ul>
-    <p class="lede">That is the opening: if we can measure <strong>what was done to the image</strong>,
-      we can predict <strong>how much the verdict is worth</strong>.</p>
-  </section>
-
-  <section class="slide">
-    <p class="rail"><b>05</b> <span>Architecture</span></p>
-    <h2>One decision path. Four forward passes.</h2>
+    <p class="rail"><b>03</b> <span>Architecture</span></p>
+    <h2>Measure the damage, then judge the picture.</h2>
     <div class="flow">
       <div class="step">
         <div class="ix">01</div>
-        <div class="nm">Canonical decode<span>EXIF applied, never re-compressed before the expert sees it</span></div>
+        <div class="nm">Canonical decode<span>never re-compressed before the detector sees it</span></div>
         <div class="tag">deterministic</div>
       </div>
       <div class="step">
         <div class="ix">02</div>
-        <div class="nm">Frozen expert — Community Forensics 384<span>21,811,969 params, MIT, pinned revision, never fine-tuned</span></div>
+        <div class="nm">Frozen expert — Community Forensics 384<span>21,811,969 parameters · MIT · pinned revision · never fine-tuned</span></div>
         <div class="tag">1 pass</div>
       </div>
       <div class="step">
         <div class="ix">03</div>
-        <div class="nm">Damage descriptors + self-probes<span>blur, blockiness, noise, luminance — plus re-scoring under 3 mild perturbations</span></div>
+        <div class="nm">Damage descriptors<span>how blurry, how compressed, how noisy — plus 3 stability probes</span></div>
         <div class="tag">3 passes</div>
       </div>
       <div class="step hero">
@@ -217,15 +190,15 @@
       </div>
       <div class="step hero">
         <div class="ix">05</div>
-        <div class="nm">Verdict + reliability + abstention<span>one frozen threshold 0.4667 across all 20 conditions — never tuned per condition</span></div>
-        <div class="tag">defer to human</div>
+        <div class="nm">Verdict + confidence grade<span>one frozen cut-off, 0.4667, for all 20 conditions — never tuned per case</span></div>
+        <div class="tag">graded</div>
       </div>
     </div>
-    <p class="src">CLI, batch inference and the demo UI all call the same PredictionService — there is no separate demo code path</p>
+    <p class="src">CLI, batch inference and the demo UI all call the same PredictionService</p>
   </section>
 
   <section class="slide">
-    <p class="rail"><b>06</b> <span>The headline</span></p>
+    <p class="rail"><b>04</b> <span>The headline</span></p>
     <p class="kicker">Worst transformation family · AI images correctly caught</p>
     <div class="duo">
       <div class="stat">
@@ -238,21 +211,21 @@
         <div class="lbl">our cascade</div>
       </div>
     </div>
-    <p class="lede">Measured on 3,000 held-back images at a <strong>single frozen threshold</strong>,
-      chosen before the test existed and never re-tuned.</p>
+    <p class="lede">3,000 held-back images, at a <strong>single frozen threshold</strong> chosen
+      before the test existed and never re-tuned.</p>
     <p class="src">12.3% → 82.6% worst-family fake recall · results/internal-test/results.json</p>
   </section>
 
   <section class="slide">
-    <p class="rail"><b>07</b> <span>The fair comparison</span></p>
-    <h2>We handicapped ourselves and still report the smaller number.</h2>
-    <p class="lede">That baseline runs at a <strong>30× lower false-positive rate</strong>, so part of
-      the gap is just a looser cut. So we handed it <strong>our operating point, with its threshold
-      fitted on the test set itself</strong> — leakage we grant the baseline and deny ourselves.</p>
+    <p class="rail"><b>05</b> <span>The fair comparison</span></p>
+    <h2>We handicapped ourselves, and still report the smaller number.</h2>
+    <p class="lede">That baseline runs at a <strong>30× lower false-alarm rate</strong>, so part of
+      the gap is just a looser cut. So we gave it <strong>our operating point, with its threshold
+      fitted on the test set itself</strong> — an advantage we never allowed ourselves.</p>
     <div class="duo">
       <div class="stat">
         <div class="n bad">33<span style="font-size:.42em">%</span></div>
-        <div class="lbl">baseline, FPR-matched, tuned in its favour</div>
+        <div class="lbl">baseline, tuned in its own favour</div>
       </div>
       <div class="arrow">→</div>
       <div class="stat">
@@ -265,7 +238,7 @@
   </section>
 
   <section class="slide">
-    <p class="rail"><b>08</b> <span>Clean vs transformed</span></p>
+    <p class="rail"><b>06</b> <span>Clean vs transformed</span></p>
     <h2>Every family, including the ones where we gain least.</h2>
     <div class="tw">
       <table>
@@ -281,94 +254,46 @@
         </tbody>
       </table>
     </div>
-    <p class="lede">Overall accuracy <strong>90.9%</strong>. We raise the floor, not the ceiling — and
-      we publish the cost: our clean false-positive rate is <strong>8.3%</strong>, above the 7.6% cap
-      we set ourselves. We reported it rather than re-tuning.</p>
+    <p class="lede">Overall accuracy <strong>90.9%</strong>. We raise the floor, not the ceiling.</p>
   </section>
 
   <section class="slide">
-    <p class="rail"><b>09</b> <span>Knowing when it is wrong</span></p>
-    <h2>It reports a confidence grade — and the grade survives a distribution shift.</h2>
-    <p class="lede">We re-run the verdict through all 20 transformations and count how many survive.
-      That number predicts whether the verdict is wrong <strong>better than the reliability head we
-      trained for the job</strong> — AUROC <strong>0.8696</strong> against 0.7206.</p>
-    <div class="cards">
-      <div class="card"><div class="h">Retention 20 / 20 → HIGH</div>
-        <div class="b">clean verdict was correct for <strong>99.1%</strong> of held-out sources</div></div>
-      <div class="card"><div class="h">Retention ≤ 14 → VERY LOW</div>
-        <div class="b">correct for <strong>60.6%</strong> — and the system says so on its face</div></div>
-      <div class="card"><div class="h">It held on a second holdout</div>
-        <div class="b">retention <strong>0.8636</strong> on a fresh untouched set — while the fitted
-          reliability head <strong>degraded to 0.6478</strong>. The measured signal generalised;
-          the trained one did not.</div></div>
-    </div>
-    <p class="src">Every grade band fixed in advance · results/holdout/validation.json</p>
-  </section>
-
-  <section class="slide">
-    <p class="rail"><b>10</b> <span>Organizers' benchmark</span></p>
+    <p class="rail"><b>07</b> <span>Organizers' benchmark</span></p>
     <h2>On the organizers' own data, it beat our own numbers.</h2>
     <p class="lede">Sealed from day one, scored <strong>once</strong> after the freeze:
-      8,719 unique images × 20 conditions = <strong>174,380 rows, 0 failures</strong>, through the
+      8,719 unique images × 20 conditions = <strong>174,380 tests, 0 failures</strong>, through the
       same service the demo calls. Nothing fitted, threshold untouched.</p>
     <div class="cards">
-      <div class="card"><div class="h">Clean AUROC</div><div class="b"><span class="big sig" style="font-size:clamp(30px,3.6vw,58px)">0.9964</span></div></div>
-      <div class="card"><div class="h">Worst case · vs 82.6% on our own test</div>
+      <div class="card"><div class="h">Clean AUROC</div>
+        <div class="b"><span class="big sig" style="font-size:clamp(30px,3.6vw,58px)">0.9964</span></div></div>
+      <div class="card"><div class="h">Hardest damage · vs 82.6% on our own test</div>
         <div class="b"><span class="big sig" style="font-size:clamp(30px,3.6vw,58px)">87.9%</span>
-          <br>better on data we had never touched</div></div>
+          <br>better, on data we had never touched</div></div>
       <div class="card"><div class="h">False alarms · vs 8.3% on our own test</div>
         <div class="b"><span class="big sig" style="font-size:clamp(30px,3.6vw,58px)">1.58%</span>
-          <br>comfortably inside the cap we set ourselves</div></div>
+          <br>five times better</div></div>
     </div>
-    <p class="lede">We also measured what <em>didn't</em> carry over, because a result you haven't
-      stress-tested isn't a result: on this easier distribution our lead over a properly-tuned
-      competitor narrows to <strong>+9 points</strong>, and our abstention policy stops paying.
-      <strong>The confidence signal we measured held; the one we trained did not</strong> — and we
-      would rather be the team that knows which is which.</p>
   </section>
 
   <section class="slide">
-    <p class="rail"><b>11</b> <span>Rigour</span></p>
-    <h2>Five of our own ideas died. That is why we trust the ones that lived.</h2>
-    <div class="cards">
-      <div class="card dead"><div class="h">Killed · our own self-probes</div>
-        <div class="b">An 8-arm, 3-seed ablation found <strong>no probe budget distinguishable from
-          none at all</strong> — 86% of our runtime, nothing measurable.</div></div>
-      <div class="card dead"><div class="h">Killed · second expert, twice</div>
-        <div class="b">LOTA and PGC both read the <strong>high-frequency band</strong> — exactly what
-          noise and compression destroy. You cannot rescue noise-destroyed evidence with a detector
-          that reads the noise band. So we escalate to a human.</div></div>
-      <div class="card"><div class="h">Is it just reading JPEG artifacts?</div>
-        <div class="b">We asked that first. In our source data every real image was a JPEG and every
-          fake a PNG — <strong>format alone predicted the label 100% of the time</strong>. So we
-          re-encoded everything to one container and added a control using <strong>no detector at
-          all</strong>: it reaches 54% recall only by calling <strong>44% of real photos fake</strong>.
-          Statistics cannot do this job.</div></div>
-    </div>
-    <p class="lede">Two AI agents built this as reviewing peers: every gate was independently re-run by
-      the agent that did not write it, and the review that currently <strong>blocks release</strong>
-      is published in the repository rather than resolved quietly.</p>
-  </section>
-
-  <section class="slide">
-    <p class="rail"><b>12</b> <span>Close</span></p>
+    <p class="rail"><b>08</b> <span>Close</span></p>
     <h2>A score you can price is worth more than a score you can't.</h2>
     <p class="lede">Worst-case recall <strong>12% → 83%</strong> on images nothing in our pipeline had
       ever seen — and every verdict arrives with a grade we <em>measured</em>, so a downstream system
-      can decide what each answer is worth instead of trusting all of them equally.</p>
-    <p class="lede">Code, evaluation harness, every artifact and every negative result are in the repo.</p>
-    <p class="src">21,814,571 parameters · 1.09% of the 2B cap · 135 ms per image on a laptop</p>
+      can decide what each answer is worth instead of trusting them all equally.</p>
+    <p class="lede">Every table here regenerates from one command, and every number is checked
+      against the artifact it came from.</p>
+    <p class="src">21,814,571 parameters · 1.09% of the 2B cap · ~135 ms per image on a laptop</p>
   </section>
 
 </div>
 
 <div class="notes" id="notes">
   <h3>Presenter notes — press N to hide</h3>
-  <p><b>Slide 3:</b> the two numbers are the hook. Pause after "0.7 percent".</p>
-  <p><b>Slide 6:</b> say "twelve percent to eighty-three". Do not round to 11 or 81.</p>
-  <p><b>Slide 7:</b> this is the credibility slide — do not skip it to save time.</p>
-  <p><b>Slide 10:</b> say the two non-transfers out loud; judges reward the disclosure.</p>
-  <p><b>Cut to terminal</b> after slide 5 (audit_image demo) and after slide 9 (abstention).</p>
+  <p><b>Slide 2:</b> pause after "zero point seven percent".</p>
+  <p><b>Slide 4:</b> say "twelve to eighty-three". Not 11 or 81.</p>
+  <p><b>Slide 5:</b> the credibility slide. Do not skip to save time.</p>
+  <p><b>Demo cut-ins:</b> before slide 2 (the hook) and after slide 3 (the self-check).</p>
 </div>
 <p class="hint">← → slides · N notes · F fullscreen</p>
 

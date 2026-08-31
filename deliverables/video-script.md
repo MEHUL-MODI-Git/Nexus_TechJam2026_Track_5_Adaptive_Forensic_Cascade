@@ -1,4 +1,4 @@
-# Demo video script — v5 (target ~5:00)
+# Demo video script — v6 (target ~5:00)
 
 > **Status:** Claude draft (Phase 5R); Codex reviews. Every spoken number is filled from a committed
 > artifact — see the numbers table at the end. Shots marked ✅ have been **executed and verified**
@@ -79,7 +79,8 @@ it. We show all three, because each one buys a different judging criterion.
 |---|---|---|
 | Slide deck (12 slides) | `deliverables/video-slides.html` | ✅ built; `←/→` navigate, `F` fullscreen, `N` presenter notes (hidden by default so recordings stay clean) |
 | Hook image, clean | `deliverables/video-assets/bird_clean.png` | ✅ staged |
-| Hook image, noise σ=0.10 | `deliverables/video-assets/bird_noise_s010.png` | ✅ staged |
+| Hook image, JPEG q30 | `deliverables/video-assets/bird_jpeg_q30.png` | ✅ staged — looks normal, still breaks the detector |
+| Hook image, noise σ=0.10 | `deliverables/video-assets/bird_noise_s010.png` | ✅ staged, **not used** — grain is visible on screen |
 | Gradio UI | `.venv/bin/python -m src.app` → `http://127.0.0.1:7860` | ✅ launches, HTTP 200; analyze 0.4 s, stress 3.4 s |
 | UI look, pre-checked | `deliverables/video-assets/ui-preview.html` | ✅ static render of the REAL UI output — open it before recording to judge framing/zoom |
 
@@ -111,26 +112,32 @@ a side-issue false positive.
 
 ## 0:00–0:40 — The hook, in the product ✅ verified
 
-**On screen:** the Gradio app — "Forensic Lab" header. Drag in `bird_clean.png`, click
-**Analyze image**. Then drag in `bird_noise_s010.png` and analyze again.
+**On screen:** the Gradio app. Drag in `bird_clean.png`, click **Analyze image**. Then drag in
+`bird_jpeg_q30.png` and analyze again.
 
-```
-.venv/bin/python -m src.app        # http://127.0.0.1:7860
-```
+**v6 CHANGE — why this is no longer the noise image.** v5 used `bird_noise_s010.png` and the
+narration said "you can't see any difference". Mehul uploaded it and the grain is plainly visible on
+screen, so that line would have been contradicted by the frame it was spoken over. **JPEG quality 30
+breaks the detector just as hard (0.0191) while looking completely normal**, and it is the more
+honest and more relatable degradation: it is exactly what a messaging app does to a photo. The
+project's whole thesis is platform recompression, so the hook now demonstrates the thesis literally.
 
-**Verified output** — clean: **AI-GENERATED**, p_fake `0.9999`, CF-384 `0.9995`.
-Noisy: **AI-GENERATED**, p_fake `0.9986`, and the card itself prints
-**"Primary CF-384 alone: 0.0166 → after router correction: 0.9986"**. Latency ~223 ms. 0.4 s per analyze.
+**Verified output** — clean: primary `0.9995` → AI-GENERATED, ours `0.9999`.
+JPEG q30: primary **`0.0191` → REAL (missed)**, ours **`0.9458` → AI-GENERATED (+0.9267)**,
+reliability `0.788` → **DEFERRED**, and *"Detected image history: JPEG compression (99% confidence)
+⚠ our detector is measurably weakest under this condition"*.
 
 > "This image is AI-generated. A state-of-the-art open detector agrees — ninety-nine point nine
 > percent confident.
-> This is the same image with a small amount of noise added. You can't see the difference.
-> Watch the detector's own score: **one point seven percent**. It now calls it a real photograph.
-> Our system still catches it — and it shows you exactly that: the raw detector alone missed this,
-> and the correction is what saved it."
+> Here's the same image saved as an ordinary compressed JPEG — what happens to every photo sent
+> through a messaging app. It looks completely fine.
+> That same detector now says **zero point zero one nine**. It calls it a real photograph, and
+> nothing has been done to this image that isn't done to every image on the internet.
+> Ours still catches it — and it tells you why: it detects the compression, flags that compression
+> is where it's weakest, and says out loud that it wants a human to check."
 
-**Why this shot:** the collapse and the rescue in the product's own words, on one image, in the UI a
-reviewer would actually use — not a claim in a terminal.
+**Why this shot:** the collapse, the rescue, the self-diagnosis and the abstention, in one command on
+one image, under the most ordinary degradation there is.
 
 ## 0:40–1:10 — Why this matters · SLIDES 2–3
 
@@ -173,10 +180,10 @@ reviewer would actually use — not a claim in a terminal.
 **On screen:** same image still loaded in the UI. Click **Stress-test this image**. (~3.4 s — do not
 cut the wait, it is the system doing 80 forward passes.) Chart and certificate fill in.
 
-**Verified output:** *Forensic robustness certificate · Verdict AI-GENERATED (p_fake 0.9986,
-threshold 0.4667) · Verdict retention **17 / 20** stress conditions · Forensic reliability: **LOW** —
-verdicts at this retention were correct for **84.9%** of held-out sources · Worst-case score against
-this verdict: 0.413 at blur_s1.0*, then the conditions that flip it.
+**Verified output:** *Forensic robustness certificate · Verdict AI-GENERATED (p_fake 0.9458,
+threshold 0.4667) · Verdict retention **18 / 20** stress conditions · Forensic reliability:
+**MEDIUM** — verdicts at this retention were correct for **94.9%** of held-out sources · Worst-case
+score against this verdict: 0.349 at resize_0.25*, then `blur_s2.0` and `resize_0.25` as the flips.
 
 > "And this is the part we think matters most. The system audits its own answer: it re-runs that
 > verdict through all twenty transformations and counts how many survive.
@@ -292,8 +299,8 @@ produced it.
 | cascade clean FPR (over our own cap) | 0.0833 vs 0.0756 | same |
 | overall accuracy | 0.9090 | same |
 | per-family table (slide 8) | all seven rows | same |
-| hook image, clean / noise | primary 0.9995 / **0.0166**; ours 0.9999 / **0.9986** | live UI + CLI, reproduced above |
-| UI stress panel on the degraded image | 17/20, LOW, 84.9%, worst 0.413 at blur_s1.0 | live UI, reproduced above |
+| hook image, clean / JPEG q30 | primary 0.9995 / **0.0191**; ours 0.9999 / **0.9458** | live UI + CLI, reproduced above |
+| UI stress panel on the compressed image | 18/20, MEDIUM, 94.9%, worst 0.349 at resize_0.25 | live UI, reproduced above |
 | batch interface | 2 scored, 0 failed | `scripts/infer_dir.py`, reproduced above |
 | certificate: degraded / clean | 17/20 LOW 84.9% · 20/20 HIGH 99.1% | `results/robustness/retention-signal.json` |
 | retention beats reliability head | 0.8696 vs 0.7206 | same |

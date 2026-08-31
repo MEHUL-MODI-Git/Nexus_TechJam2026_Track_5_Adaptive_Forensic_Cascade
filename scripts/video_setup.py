@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PY = sys.executable
 CLEAN = "deliverables/video-assets/bird_clean.png"
-NOISY = "deliverables/video-assets/bird_noise_s010.png"
+JPEG = "deliverables/video-assets/bird_jpeg_q30.png"
 URL = "http://127.0.0.1:7860"
 
 OK, BAD, DOT = "\033[32m✓\033[0m", "\033[31m✗\033[0m", "\033[90m·\033[0m"
@@ -47,7 +47,7 @@ def main() -> int:
     print(f"  {OK} port {URL.rsplit(':', 1)[1]} is free")
 
     step("2. Checking the two images are where the script expects them")
-    for rel in (CLEAN, NOISY):
+    for rel in (CLEAN, JPEG):
         if (ROOT / rel).exists():
             print(f"  {OK} {rel}")
         else:
@@ -70,13 +70,13 @@ def main() -> int:
     checks = []
 
     a = run([PY, "scripts/predict.py", CLEAN, "--json"])
-    b = run([PY, "scripts/predict.py", NOISY, "--json"])
+    b = run([PY, "scripts/predict.py", JPEG, "--json"])
     if a.returncode == 0 and b.returncode == 0:
         da, db = json.loads(a.stdout), json.loads(b.stdout)
         print(f"  {OK} predict.py")
         print(f"      {DOT} clean : detector alone {da['router']['primary_p_fake']:.4f}"
               f"  ours {da['p_fake']:.4f}")
-        print(f"      {DOT} noisy : detector alone \033[31m{db['router']['primary_p_fake']:.4f}"
+        print(f"      {DOT} jpeg  : detector alone \033[31m{db['router']['primary_p_fake']:.4f}"
               f"\033[0m  ours \033[32m{db['p_fake']:.4f}\033[0m   <- the whole story")
         checks.append(True)
     else:
@@ -118,6 +118,18 @@ def main() -> int:
         print(f"  {BAD} the UI did not come up — see {log}")
         problems.append("gradio app")
 
+    step("6. Verifying every number in the guide against the live system")
+    v = run([PY, "scripts/verify_video_claims.py"])
+    if v.returncode == 0:
+        n = [ln for ln in v.stdout.splitlines() if "CHECKS PASSED" in ln]
+        print(f"  {OK} {n[0].strip() if n else 'all claims verified'}")
+    else:
+        print(f"  {BAD} the guide and the system disagree:")
+        for ln in v.stdout.splitlines():
+            if "✗" in ln:
+                print(f"      {ln.strip()}")
+        problems.append("guide/system mismatch")
+
     print("\n" + "─" * 62)
     if problems:
         print(f"\033[31mNOT READY\033[0m — fix these first: {', '.join(problems)}")
@@ -148,8 +160,8 @@ if __name__ == "__main__":
         from src.pipeline.transforms import apply_transform
         src = ROOT / "data/corpus/canonical/fully_synthetic/45b84a4682e7a640.jpg"
         d = decode_image(src)
-        for cond in ("clean", "noise_s0.10"):
-            p = ROOT / "deliverables/video-assets" / f"bird_{cond.replace('.', '')}.png"
+        for cond, nm in (("clean", "bird_clean"), ("jpeg_q30", "bird_jpeg_q30")):
+            p = ROOT / "deliverables/video-assets" / f"{nm}.png"
             apply_transform(d.image, cond, d.sha256).save(p)
             print(f"{OK} rebuilt {p.name}")
         raise SystemExit(0)
