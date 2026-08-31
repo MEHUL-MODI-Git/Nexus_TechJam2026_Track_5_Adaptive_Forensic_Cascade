@@ -105,17 +105,25 @@ checkout cannot run will pass in a clean checkout whether or not the system work
 
 ## 4. Usage
 
+Two sample images ship in `samples/` so every command below runs immediately,
+with no files of your own. Both are AI-generated; the second is the same image
+saved as an ordinary quality-70 JPEG.
+
 **Score one image**
 
 ```bash
-.venv/bin/python scripts/predict.py path/to/image.jpg
-.venv/bin/python scripts/predict.py path/to/image.jpg --transform jpeg_q30 --json
+.venv/bin/python scripts/predict.py samples/ai_generated_jpeg_q70.png
+.venv/bin/python scripts/predict.py samples/ai_generated_clean.png --transform jpeg_q30 --json
 ```
+
+The first prints `AI-GENERATED`, and the panel shows the frozen detector scoring
+it **0.0993 alone** — below 0.5, so by itself it would call this a real
+photograph — corrected to **0.9062** by the router.
 
 **Score a directory** (the batch interface required by the brief)
 
 ```bash
-.venv/bin/python scripts/infer_dir.py INPUT_DIR --output predictions.json
+.venv/bin/python scripts/infer_dir.py samples --output predictions.json
 ```
 
 Every row carries `image_path` and `pred` — `pred` is a probability in `[0,1]`,
@@ -163,9 +171,9 @@ board_jpeg_q70.png                     AI-GENERATED   0.9062   0.0993    0.927  
 **Full forensic report for one image** (audit mode)
 
 ```bash
-.venv/bin/python scripts/audit_image.py path/to/image.jpg
-.venv/bin/python scripts/audit_image.py path/to/image.jpg --json
-.venv/bin/python scripts/audit_image.py path/to/image.jpg --no-audit   # fast path
+.venv/bin/python scripts/audit_image.py samples/ai_generated_jpeg_q70.png
+.venv/bin/python scripts/audit_image.py samples/ai_generated_jpeg_q70.png --json
+.venv/bin/python scripts/audit_image.py samples/ai_generated_clean.png --no-audit   # fast path
 ```
 
 Prints the verdict, **what the raw detector alone would have said**, the
