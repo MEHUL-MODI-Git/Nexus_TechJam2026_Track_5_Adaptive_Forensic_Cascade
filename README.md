@@ -198,9 +198,22 @@ The check verifies **both** — an artifact that still matches while its inputs
 moved is worse than a mismatch, because it looks like agreement. On this
 repository it reports:
 
+**On a fresh clone of this repository it reports:**
+
 ```
-11 verified, 0 verified with absent inputs, 0 drifted, 0 missing
+2 verified, 9 verified with absent inputs, 0 drifted, 0 missing
 ```
+
+**`0 drifted, 0 missing` is the result that matters** — every published artifact
+matches its recorded hash. The nine "absent inputs" are expected and not a
+failure: those tables were computed from the feature caches and the sealed
+prediction dump, which are hundreds of megabytes and therefore git-ignored. The
+checker verifies each artifact's own hash but cannot re-hash inputs that are not
+in the clone, and it says so rather than quietly counting them as verified.
+
+On a machine that also holds those caches — ours, and anyone who rebuilds them
+with `scripts/build_feature_cache.py` — the same command reports
+`11 verified, 0 verified with absent inputs, 0 drifted, 0 missing`.
 
 Entries are labelled `input-bound` (artifact and inputs both hashed) or
 `artifact-only` — the latter for the ops measurement and the clean-checkout
