@@ -1,5 +1,10 @@
 # RECORDING CHEAT SHEET — Track 5
 
+> **Version 3 · snowboarder hook · 11 moments.** If your Moment 3 does not say
+> `board_jpeg_q70.png` and `0.0993`, you are looking at a stale copy — close the file and
+> reopen it from disk. This is the only recording document; `video-script.md` and
+> `RECORD-THE-VIDEO.md` were deleted so nothing can compete with it.
+
 **Read this file only.** Ten MOMENTS. Record each one as its own clip, splice in CapCut.
 A fumbled take costs one moment, not the video.
 
