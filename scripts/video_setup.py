@@ -41,10 +41,24 @@ def main() -> int:
     print("\033[1mGetting ready to record\033[0m  (about 40 seconds)")
     problems = []
 
-    step("1. Stopping anything already running on the demo port")
+    step("1. Restarting clean on the CURRENT build")
     run(["pkill", "-f", "src.app"])
     time.sleep(1)
-    print(f"  {OK} port {URL.rsplit(':', 1)[1]} is free")
+    print(f"  {OK} any previous server stopped — the take will run the build you have now")
+    # State reset is a MOVE-ASIDE, never a delete: a bad reset must be recoverable.
+    assets = ROOT / "deliverables" / "video-assets"
+    stash = ROOT / "deliverables" / "video-assets" / "_previous-takes"
+    moved = 0
+    for f in assets.glob("predictions.json"):
+        stash.mkdir(exist_ok=True)
+        f.replace(stash / f"{f.stem}-{int(time.time())}{f.suffix}")
+        moved += 1
+    for f in (ROOT / "predictions.json",):
+        if f.exists():
+            stash.mkdir(exist_ok=True)
+            f.replace(stash / f"predictions-{int(time.time())}.json")
+            moved += 1
+    print(f"  {OK} demo state reset ({moved} file(s) moved aside to _previous-takes, nothing deleted)")
 
     step("2. Checking the two images are where the script expects them")
     for rel in (CLEAN, JPEG):
@@ -138,8 +152,8 @@ def main() -> int:
     print(f"""
   1. Open the slides         deliverables/video-slides.html   (press F for fullscreen)
   2. Open the demo           {URL}
-  3. Open the guide and follow it, top to bottom:
-                             deliverables/RECORD-THE-VIDEO.md
+  3. Read ONLY this, top to bottom:
+                             deliverables/RECORDING-CHEAT-SHEET.md
 
   When you are completely finished recording, stop the server with:
       .venv/bin/python scripts/video_setup.py --stop

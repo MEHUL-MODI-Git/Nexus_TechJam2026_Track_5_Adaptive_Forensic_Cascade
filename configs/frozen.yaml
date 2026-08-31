@@ -45,7 +45,7 @@ tables:
     artifact: results/internal-test/abstention.json
     artifact_sha256: 93c184daa04ec213ea61b9c7532b9c7ea848812612c0579fac8bd455a420d1cf
     regenerable: true
-    command: 'python scripts/abstention_report.py'
+    command: 'python scripts/evaluate_abstention.py'
     inputs:
       - path: data/feature_cache/internal-test-v2/rows.jsonl
         sha256: 854035d228a7e0e7f81e05812d111d3afd0897cb08e7a265198152c599949778
@@ -85,7 +85,7 @@ tables:
     artifact: results/probe-ablation/dev-results.json
     artifact_sha256: 6fe38c6646567cc10caf130123b8d581a621cb774f1faa5e7d2e43fe9ff7336a
     regenerable: true
-    command: 'python scripts/probe_ablation.py'
+    command: 'python scripts/probe_budget_ablation.py'
     inputs:
       - path: data/feature_cache/fitting-v2/rows.jsonl
         sha256: b7593b3070c377c9b7c8de1121d119b693086019492a651718efa9e302f72b23

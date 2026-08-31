@@ -22,7 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-GUIDE = ROOT / "deliverables" / "RECORD-THE-VIDEO.md"
+GUIDE = ROOT / "deliverables" / "RECORDING-CHEAT-SHEET.md"
 SLIDES = ROOT / "deliverables" / "video-slides.html"
 CLEAN = ROOT / "deliverables" / "video-assets" / "bird_clean.png"
 JPEG = ROOT / "deliverables" / "video-assets" / "bird_jpeg_q30.png"
@@ -145,10 +145,41 @@ def main() -> int:
     check("run_eval --config exits 0", r.returncode == 0, r.stderr[-200:])
     check("run_eval reports 0 drifted", "0 drifted" in r.stdout, r.stdout[-200:])
 
+    # ---------- slide EXPECT phrases must exist in the deck ----------
+    print("\n\033[1mSlide EXPECT phrases vs the deck\033[0m")
+    slide_phrases = [
+        "Canonical decode", "Frozen expert", "Damage descriptors",
+        "Reliability router", "Verdict + confidence grade",
+        "We handicapped ourselves, and still report the smaller number",
+        "On the organizers' own data, it beat our own numbers",
+        "A score you can price is worth more than a score you can",
+        "21,814,571 parameters", "+49.2 points",
+    ]
+    for ph in slide_phrases:
+        check(f"deck contains {ph[:44]!r}", ph in slides)
+
+    # ---------- every MOMENT has all three parts ----------
+    print("\n\033[1mCheat-sheet structure\033[0m")
+    moments = re.findall(r"\n## MOMENT (\d+)[^\n]*\n(.*?)(?=\n## |\n# POST)", guide, re.DOTALL)
+    check("ten moments", len(moments) == 10, f"found {len(moments)}")
+    for num, body in moments:
+        for part in ("**DO:**", "**SAY:**", "**EXPECT"):
+            has = part in body or (part == "**SAY:**" and "**SAY (" in body)
+            check(f"moment {num} has {part.strip('*:')}", has)
+
+    # ---------- overlays must be short and artifact-backed ----------
+    print("\n\033[1mPost-production overlays\033[0m")
+    rows = re.findall(r"\| *\d+ *\| *[^|]+\| *`([^`]+)` *\| *([^|]+)\|", guide)
+    check("16 overlays defined", len(rows) == 16, f"found {len(rows)}")
+    for text, src in rows:
+        check(f"overlay <=8 words: {text[:34]!r}", len(text.split()) <= 8,
+              f"{len(text.split())} words")
+        check(f"overlay cites a source: {text[:28]!r}", src.strip() != "")
+
     # ---------- runtime budget ----------
     print("\n\033[1mRuntime budget\033[0m")
     words = sum(len(l[1:].split()) for l in guide.split("\n") if l.startswith(">"))
-    seconds = words / 145 * 60 + 47      # 47s of measured, unavoidable waits
+    seconds = words / 145 * 60 + 26      # 26s of measured IN-CLIP waits (splices cut the rest)
     check(f"under the 5:00 cap ({seconds:.0f}s, {words} words)", seconds < 300,
           f"{seconds:.0f}s")
 
