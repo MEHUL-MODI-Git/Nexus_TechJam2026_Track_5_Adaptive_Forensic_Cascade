@@ -5,19 +5,17 @@ TikTok TechJam 2026 — Track 5.
 
 **▶ Demo video: https://youtu.be/KUedfboxC-Q**
 
-> **Status (31 Aug 2026).** The **frozen cascade ships and is served on every
-> path** — CLI, batch and UI all call one `PredictionService` with the frozen
-> router, one threshold (0.4667367651) and abstention. It has been evaluated once
-> on an untouched 3,000-source internal test (§7), confirmed on a second holdout,
-> and scored once on the organizers' sealed reference subset after the freeze.
+> **The frozen cascade ships and is served on every path** — the CLI, the batch
+> script and the demo UI all call one `PredictionService`, with one threshold
+> (0.4667367651) that is never tuned per condition.
 >
-> **What is not finished is release, not engineering:** the demo video, the MIT
-> licence approval, and the clean remote-history push are the owner's decisions,
-> and a peer review gate remains open against the reproduction and provenance
-> surfaces — not against the measured results, which were independently checked
-> and not rejected. Every number here has a
-> committed artifact behind it, and the ones that went against us are in §7 and
-> §8 beside the ones that did not.
+> It was evaluated **once** on an untouched 3,000-source internal test (§7),
+> confirmed on a second holdout acquired afterwards, and scored **once** on the
+> organizers' sealed reference subset after the architecture was frozen.
+>
+> **Every number here has a committed artifact behind it**, re-checkable with a
+> single command (§5). The results that went against us are in §7 and §8 beside
+> the ones that did not — including a constraint we set ourselves and missed.
 
 ---
 
@@ -30,10 +28,12 @@ targets it directly.
 
 The central problem is not simply that accuracy drops after a transformation.
 It is that a fixed detector **does not know when it has stopped being reliable**.
-We measured this on our own smoke set: under a Gaussian blur of σ=2.0, our
-primary detector's AUROC falls to 0.647 — near chance — while its false-positive
-rate rises to 0.640. The model does not become uncertain. It becomes
-*confidently wrong*, labelling genuine photographs as AI-generated.
+
+Measured on 3,000 images the system had never seen: a state-of-the-art open
+detector catches **71.1%** of AI-generated images when they are clean, and
+**0.7%** of the same images after Gaussian noise at σ=0.10 — a change invisible
+to the eye. It does not become uncertain; it becomes *confidently wrong*, scoring
+real photographs 0.9996 and AI images 0.0001 (§7, §8).
 
 The target architecture builds a system around frozen detectors rather than
 fine-tuning another detector:
@@ -45,19 +45,20 @@ image
   -> frozen expert detector(s)          <- downloaded, never fine-tuned
   -> mild self-probes on the primary    <- how fragile is this score, here?
   -> OUR reliability/fusion router       <- trained, frozen, and SERVED (§7)
-       reliable  -> calibrated verdict
-       uncertain -> behavioural rescue -> rescued verdict
-  -> calibrated score + reliability readout
+  -> calibrated score + reliability grade + abstention
 ```
 
-**The router and the reliability layer are our proposed contribution.** The expert
-detectors are public, frozen checkpoints; we do not claim them. What we claim
-today is their implementation and the evaluation protocol that makes every
-performance claim checkable. The app serves the trained router, its frozen
-threshold and the abstention decision (§7). It does **not** serve a rescue path:
-that was built, measured and cut on evidence (§7).
+A second-model "rescue" for low-confidence images was built, measured and **cut on
+evidence** — two candidates failed for the same structural reason (§7). Escalation
+goes to a human instead.
 
-## 2. What is built today
+**The router and the reliability layer are our contribution.** The expert detector
+is a public, frozen checkpoint and we do not claim it — 21,811,969 of the
+21,814,571 parameters we ship are downloaded, not trained. What is ours is the
+1,827-parameter correction layer, the confidence grade, and the evaluation
+protocol that makes every claim on this page checkable.
+
+## 2. What is built
 
 | Component | Status |
 |---|---|
@@ -71,7 +72,7 @@ that was built, measured and cut on evidence (§7).
 | Reliability head + abstention (defer to human) | ✅ fitted in a frozen second stage; policy pre-registered on dev, verified on the test |
 | Adaptive rescue to a heavier second model | ❌ built and measured; **failed its gate**, reported as a negative result (§7) |
 | Router (7-rung ladder: quality-only → static avg → prob mean → fixed weights → logistic → MLP → +worst-group) | ✅ implemented, repaired; fitted, frozen and shipped as `results/router-fitting-v2/router_reliability.pt` (1,827 params total, **of which** 17 are the second-stage reliability head, 18 KB) — the artifact `configs/predict.yaml` loads; `router.pt` is the earlier stage-1 checkpoint, kept for provenance |
-| Full-grid baseline run (8,000 predictions) | ✅ complete |
+| Early 400-source diagnostic grid (8,000 predictions) | ✅ complete — **superseded**; it used a placeholder threshold and a corpus comparison we later disowned, so no published number comes from it (§5) |
 | Evaluation harness | ✅ diagnostic and headline paths exercised; one-shot internal test + full ablation ladder |
 | Second expert | ❌ **two** candidates integrated and both rejected on measured evidence (LOTA, PGC) — see §7 |
 | Protected 15,000-source corpus, format-canonicalized, contamination-audited, split 12k fitting / 3k untouched test | ✅ built and verified |
