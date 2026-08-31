@@ -214,8 +214,8 @@ gain +70.3.
 > "It also runs over a whole folder, which is how you'd use it in bulk.
 > And every table in this video re-checks itself against the file it came from, in one command."
 
-**EXPECT:** `found 3 image(s)`, then `3 scored, 0 failed`. Then ten lines beginning `OK`, and
-`10 verified, 0 verified with absent inputs, 0 drifted, 0 missing`.
+**EXPECT:** `found 3 image(s)`, then `3 scored, 0 failed`. Then eleven lines beginning `OK`, and
+`11 verified, 0 verified with absent inputs, 0 drifted, 0 missing`.
 
 ---
 
@@ -258,7 +258,7 @@ Every line below is reproducible from a tracked artifact in the repo.
 | 13 | M8 | `Overall accuracy 90.9%` | same |
 | 14 | M9 | `174,380 tests, 0 failures` | `results/sealed/reference-results.json` |
 | 15 | M9, after | `Sealed set: 87.9% on hardest damage` | same |
-| 16 | M10, on the last line | `10 of 10 published tables verified` | `configs/frozen.yaml` |
+| 16 | M10, on the last line | `11 of 11 published tables verified` | `configs/frozen.yaml` |
 | 17 | M11 | `21,814,571 params = 1.09% of limit` | `results/ops/ops-evidence.json` |
 
 **Do not add any overlay not on this list.** If you want another number on screen, ask me and I

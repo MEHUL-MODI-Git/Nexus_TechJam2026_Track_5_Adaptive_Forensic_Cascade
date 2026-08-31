@@ -130,3 +130,67 @@ def test_the_published_document_records_row_identity_not_only_the_manifest():
     doc = json.loads(results.read_text())
     assert len(doc.get("cache_rows_sha256", "")) == 64
     assert doc.get("expert_revision") == "6076002bf0d9dd37537f965ee2f06f826c333b61"
+
+
+# --------------------------------------------------------------------------
+# B-033 finding 1: `family` is metric-bearing, so it must be derived from
+# condition_id, never trusted from the row. Codex relabelled the 4,500 fake
+# noise rows as `blur`; the reporter returned rc=0 and moved worst-family recall
+# from 0.8258 to 0.8864 by silently dropping noise out of the set of families.
+# --------------------------------------------------------------------------
+
+def _rows_of(real_cache):
+    with (real_cache / "rows.jsonl").open() as fh:
+        return [json.loads(line) for line in fh]
+
+
+def _cache_from(tmp_path, real_cache, rows, name="cache"):
+    cache = tmp_path / name
+    cache.mkdir()
+    shutil.copy(real_cache / "manifest.json", cache / "manifest.json")
+    (cache / "rows.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+    return cache
+
+
+def test_refuses_rows_whose_family_contradicts_their_condition(tmp_path, real_cache):
+    """Codex's reproduction, exactly: relabel every fake noise row as blur."""
+    rows = _rows_of(real_cache)
+    n = 0
+    for r in rows:
+        if r["label"] == 1 and r["condition_id"].startswith("noise_"):
+            r["family"] = "blur"
+            n += 1
+    assert n == 4500, f"expected 4,500 fake noise rows, found {n}"
+    proc = _run(_cache_from(tmp_path, real_cache, rows), tmp_path / "out.json")
+    assert proc.returncode == 2, "the relabelled cache was accepted"
+    assert "contradicts their condition_id" in proc.stderr
+
+
+def test_the_headline_is_computed_from_condition_id_not_the_stored_family():
+    """Even if a mislabelled row slipped past, the metric must not read it."""
+    src = SCRIPT.read_text()
+    assert 'fams = np.array([FAMILY_OF[r["condition_id"]] for r in rows])' in src
+    assert 'r.get("family") or FAMILY_OF' not in src, "the trusting form is back"
+
+
+def test_requires_every_row_to_be_the_test_split(tmp_path, real_cache):
+    rows = _rows_of(real_cache)
+    rows[0]["dataset_split"] = "train"
+    proc = _run(_cache_from(tmp_path, real_cache, rows), tmp_path / "out.json")
+    assert proc.returncode == 2
+    assert "dataset_split='test'" in proc.stderr
+
+
+def test_refuses_rows_that_did_not_come_from_this_extraction(tmp_path, real_cache):
+    """The manifest header is not evidence about the rows beneath it.
+
+    feature-cache-row.v2 records no per-row expert revision, so the binding used
+    is `cache_key` -- a digest over the extraction inputs, expert included. Rows
+    carrying a foreign key were produced by a different extraction and must not be
+    scored under this manifest."""
+    rows = _rows_of(real_cache)
+    for r in rows[:50]:
+        r["cache_key"] = "0" * 64
+    proc = _run(_cache_from(tmp_path, real_cache, rows), tmp_path / "out.json")
+    assert proc.returncode == 2
+    assert "not produced by this extraction" in proc.stderr

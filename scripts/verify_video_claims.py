@@ -167,6 +167,12 @@ def main() -> int:
                        cwd=ROOT, capture_output=True, text=True, check=False)
     check("run_eval --config exits 0", r.returncode == 0, r.stderr[-200:])
     check("run_eval reports 0 drifted", "0 drifted" in r.stdout, r.stdout[-200:])
+    # the table count is spoken AND on screen in Moment 10, so bind it too
+    import yaml as _yaml
+    n_tables = len(_yaml.safe_load((ROOT / "configs" / "frozen.yaml").read_text())["tables"])
+    check(f"run_eval reports {n_tables} verified",
+          f"{n_tables} verified" in r.stdout, r.stdout[-200:])
+    check(f"sheet's EXPECT says {n_tables} verified", f"{n_tables} verified" in guide)
 
     # ---------- slide EXPECT phrases must exist in the deck ----------
     print("\n\033[1mSlide EXPECT phrases vs the deck\033[0m")

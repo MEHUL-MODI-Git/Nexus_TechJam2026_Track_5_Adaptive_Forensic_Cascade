@@ -19,7 +19,7 @@
     "probes_config_sha256": "22adbc3f2bd2d8eaaad11032769afc8f3666f1ba6a0e909c1e5ef30a7ee68662",
     "predict_config_sha256": "238f1c6402a1d38ef4c8dd65ebb580b12a426ae45e9c4621f7bf6c4ae84f262e",
     "pipeline_version": "0.1.0",
-    "summary_code_revision": "592d23c8fec14667b2933db0ceffb105df25789f",
+    "summary_code_revision": "86f25d5f34db54f51501b4ddb733cdcf6af92cc0",
     "one_run_rule": "the sealed subset is scored exactly once; this report is a SUMMARY of the preserved dump and never re-invokes the model",
     "binding": {
       "bound_to_the_rows": [

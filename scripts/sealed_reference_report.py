@@ -265,6 +265,24 @@ def main() -> int:
               f"dump {got!r} vs manifest {want!r}", file=sys.stderr)
         return 2
 
+    # B-033 finding 2: the reporter's own positive fixture contained only REAL
+    # sources, so fake_recall and AUROC were mathematically undefined -- and it
+    # returned 0 while writing bare `NaN`, which is not even valid JSON. Every
+    # metric this report publishes needs both strata present.
+    labels_seen = {int(r["label"]) for r in rows}
+    if labels_seen != {0, 1}:
+        have = "only real images" if labels_seen == {0} else "only AI images"
+        print(f"REFUSING: the dump contains {have}. Fake recall, false-positive rate and "
+              "AUROC are undefined without both, and a report of NaN is not a result.",
+              file=sys.stderr)
+        return 2
+    for cid in sorted({r["condition_id"] for r in rows}):
+        strata = {int(r["label"]) for r in rows if r["condition_id"] == cid}
+        if strata != {0, 1}:
+            print(f"REFUSING: condition {cid!r} has no {'AI' if strata == {0} else 'real'} "
+                  "images; its per-condition metrics would be undefined", file=sys.stderr)
+            return 2
+
     frozen = load_frozen_threshold(args.threshold_artifact)   # validates or raises
     thr = float(frozen.value)
     sha = np.array([r["sha256"] for r in rows])
@@ -427,8 +445,27 @@ def main() -> int:
         "unit": "unique image (never file), per A-029",
     }
 
+    def _nonfinite(node, path=""):
+        bad = []
+        if isinstance(node, dict):
+            for k, v in node.items():
+                bad += _nonfinite(v, f"{path}/{k}")
+        elif isinstance(node, list):
+            for i, v in enumerate(node):
+                bad += _nonfinite(v, f"{path}[{i}]")
+        elif isinstance(node, float) and not math.isfinite(node):
+            bad.append(path or "<root>")
+        return bad
+
+    offenders = _nonfinite(doc)
+    if offenders:
+        print(f"REFUSING: {len(offenders)} non-finite value(s) in the summary, e.g. "
+              f"{offenders[0]}. A NaN is not a measurement.", file=sys.stderr)
+        return 2
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(doc, indent=2) + "\n")
+    # allow_nan=False: json.dumps would otherwise emit bare NaN, which no strict
+    # JSON reader accepts and which every lenient one silently swallows.
+    args.out.write_text(json.dumps(doc, indent=2, allow_nan=False) + "\n")
 
     d = doc["conventions"]["deduplicated"]
     pf = doc["conventions"]["per_file"]

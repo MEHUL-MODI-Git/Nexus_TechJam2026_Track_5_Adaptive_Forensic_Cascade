@@ -21,6 +21,7 @@ tables:
     artifact: results/internal-test/results.json
     artifact_sha256: 76449a477629760467d27b8ea5aeb42296d3498c967faa7b104c124df55318ed
     regenerable: true
+    verification: input-bound     # artifact AND every input it was computed from are hashed
     command: 'python scripts/evaluate_internal_test.py --cache data/feature_cache/internal-test-v2 --checkpoint results/router-fitting-v2/router_reliability.pt --threshold-artifact results/router-fitting-v2/threshold-artifact.v1.json'
     inputs:
       - path: data/feature_cache/internal-test-v2/rows.jsonl
@@ -34,6 +35,7 @@ tables:
     artifact: results/internal-test/ablation.json
     artifact_sha256: e42912b65e8c5acd4c733e6d59695effc90ba6e2d8969076193817f06b8ddbec
     regenerable: true
+    verification: input-bound     # artifact AND every input it was computed from are hashed
     command: 'python scripts/ablation_matrix.py'
     inputs:
       - path: data/feature_cache/fitting-v2/rows.jsonl
@@ -45,6 +47,7 @@ tables:
     artifact: results/internal-test/abstention.json
     artifact_sha256: 93c184daa04ec213ea61b9c7532b9c7ea848812612c0579fac8bd455a420d1cf
     regenerable: true
+    verification: input-bound     # artifact AND every input it was computed from are hashed
     command: 'python scripts/evaluate_abstention.py'
     inputs:
       - path: data/feature_cache/internal-test-v2/rows.jsonl
@@ -56,6 +59,7 @@ tables:
     artifact: results/internal-test/fpr-matched-baseline.json
     artifact_sha256: 8a38ce2704e1e7ffa130ec69a8e8170ad0bb81081ef54393196de72535956d00
     regenerable: true
+    verification: input-bound     # artifact AND every input it was computed from are hashed
     command: 'python scripts/diagnostics/fpr_matched_baseline.py'
     inputs:
       - path: data/feature_cache/internal-test-v2/rows.jsonl
@@ -65,6 +69,7 @@ tables:
     artifact: results/holdout/validation.json
     artifact_sha256: c6aa11f0b91f7b6f8129f0bb1c3c4385bb70c496cb3c812fbe7c7ae064a33a25
     regenerable: true
+    verification: input-bound     # artifact AND every input it was computed from are hashed
     command: 'python scripts/validate_on_holdout.py'
     inputs:
       - path: data/feature_cache/holdout-v1/rows.jsonl
@@ -76,6 +81,7 @@ tables:
     artifact: results/robustness/retention-signal.json
     artifact_sha256: 0f3bfe4ecef145ab630283164356df7617c6f0c450b5bc9b614c38ea81596827
     regenerable: true
+    verification: input-bound     # artifact AND every input it was computed from are hashed
     command: 'python scripts/diagnostics/retention_signal.py'
     inputs:
       - path: data/feature_cache/internal-test-v2/rows.jsonl
@@ -85,6 +91,7 @@ tables:
     artifact: results/probe-ablation/dev-results.json
     artifact_sha256: 6fe38c6646567cc10caf130123b8d581a621cb774f1faa5e7d2e43fe9ff7336a
     regenerable: true
+    verification: input-bound     # artifact AND every input it was computed from are hashed
     command: 'python scripts/probe_budget_ablation.py'
     inputs:
       - path: data/feature_cache/fitting-v2/rows.jsonl
@@ -94,18 +101,31 @@ tables:
     artifact: results/ops/ops-evidence.json
     artifact_sha256: cccfe648dd696b0d4f6e6d2dc3fa9098b0fb5aff560b320a0804960841adefa2
     regenerable: false
+    verification: artifact-only   # measures THIS machine (latency, a clean clone); there is no tracked input to bind it to, so its hash is checked but not re-derived
     command: 'python scripts/measure_ops.py'
 
   - name: clean_checkout
     artifact: results/clean-checkout/verification.json
     artifact_sha256: ea4f5882210e1009104af536c77e4e939a1ce34a3dec86bdbd0e1a026c29455a
     regenerable: false
+    verification: artifact-only   # measures THIS machine (latency, a clean clone); there is no tracked input to bind it to, so its hash is checked but not re-derived
     command: 'python scripts/verify_clean_checkout.py'
+
+  - name: rescue_second_expert
+    artifact: results/pgc/rescue.json
+    artifact_sha256: 2eca4a9cbbf89f0d600e283aa300da472ed5f98a7ce0d3ff179faf14e284f83d
+    regenerable: true
+    verification: input-bound     # artifact AND every input it was computed from are hashed
+    command: 'python scripts/analyze_rescue.py'
+    inputs:
+      - path: results/pgc/test_deferred.jsonl
+        sha256: cc00a5cc535278e461981007174001028ff1c3b5e5cd065afd1faa1e669a7a16
 
   - name: sealed_reference
     artifact: results/sealed/reference-results.json
-    artifact_sha256: ecf49f08146f915d5676eac18223ce5daa07830a89ff9fe582b4a86fdf7522b9
+    artifact_sha256: 65c1e607eb35c3727381c145fe83fc0748dcffb432635af88d2812363537e5f2
     regenerable: true
+    verification: input-bound     # artifact AND every input it was computed from are hashed
     sealed: true
     summary_only: true   # reads the preserved dump; never model inference
     command: 'python scripts/sealed_reference_report.py'

@@ -198,8 +198,34 @@ def validate_evaluation_cache(rows, manifest, expert_id):
         errors.append(f"{len(bad_labels)} row(s) carry a label that is not 0 or 1, "
                       f"e.g. {bad_labels[0]!r}")
     splits = {r.get("dataset_split") for r in rows}
-    if splits - {"test", None}:
-        errors.append(f"rows carry unexpected dataset_split values {sorted(s for s in splits if s)}")
+    if splits != {"test"}:
+        errors.append(f"every row must carry dataset_split='test'; found {sorted(str(x) for x in splits)}")
+
+    # A stored family that disagrees with its own condition_id is a corrupted row,
+    # even though nothing downstream reads it any more (B-033).
+    mislabelled = [(r["condition_id"], r["family"]) for r in rows
+                   if r.get("family") and r["family"] != FAMILY_OF.get(r["condition_id"])]
+    if mislabelled:
+        cid, fam = mislabelled[0]
+        errors.append(f"{len(mislabelled)} row(s) carry a family that contradicts their "
+                      f"condition_id, e.g. {cid} labelled {fam!r} "
+                      f"(canonical: {FAMILY_OF.get(cid)!r})")
+
+    # B-033 asked for same-entry expert binding. The rows do not carry a per-row
+    # model_version, so the strongest binding actually available is `cache_key`,
+    # which is a digest over the extraction inputs INCLUDING the expert identity.
+    # Requiring every row to carry the manifest's key stops a mixed or
+    # foreign-provenance rows file being scored under this manifest's header.
+    # Stated plainly rather than implied: per-row expert revision is NOT recorded
+    # in feature-cache-row.v2, so this is a cache-level, not a row-level, guarantee.
+    manifest_key = manifest.get("cache_key")
+    if not manifest_key:
+        errors.append("manifest carries no cache_key to bind the rows to")
+    else:
+        foreign = sum(1 for r in rows if r.get("cache_key") != manifest_key)
+        if foreign:
+            errors.append(f"{foreign} row(s) carry a cache_key that is not the manifest's "
+                          f"{manifest_key[:12]}: these rows were not produced by this extraction")
 
     # the expert score every metric is built on must exist and be finite
     missing, nonfinite = 0, 0
@@ -266,7 +292,12 @@ def main() -> int:
         return 2
     rows_sha256 = _sha256(rows_path)
     labels = np.array([r["label"] for r in rows])
-    fams = np.array([r.get("family") or FAMILY_OF.get(r["condition_id"], "clean") for r in rows])
+    # B-033: family is DERIVED from condition_id, never read from the row. A stored
+    # `family` is metric-bearing -- worst-family recall is a minimum over families --
+    # so a row that mislabels its own family silently moves the headline. Codex
+    # relabelled the 4,500 fake noise rows as `blur` and the reporter returned rc=0
+    # with worst-family 0.8258 -> 0.8864, having quietly dropped noise from the set.
+    fams = np.array([FAMILY_OF[r["condition_id"]] for r in rows])
     conds = np.array([r["condition_id"] for r in rows])
     srcs = np.array([r["source_id"] for r in rows])
     print(f"internal test: {len(rows)} rows, {len(set(srcs))} sources", file=sys.stderr)

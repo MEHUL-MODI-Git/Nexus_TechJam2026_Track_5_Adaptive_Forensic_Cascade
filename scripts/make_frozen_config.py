@@ -50,6 +50,11 @@ TABLES = [
      "python scripts/measure_ops.py", False),
     ("clean_checkout", "results/clean-checkout/verification.json", [],
      "python scripts/verify_clean_checkout.py", False),
+    # B-033 finding 3: the +/-rescue evidence is published in README section 7 but
+    # was absent from this index, so the "every published table" claim excluded it.
+    ("rescue_second_expert", "results/pgc/rescue.json",
+     ["results/pgc/test_deferred.jsonl"],
+     "python scripts/analyze_rescue.py", True),
     ("sealed_reference", "results/sealed/reference-results.json",
      ["results/sealed/predictions.jsonl",
       "data/manifests/sealed_files.json",
@@ -104,6 +109,13 @@ def main() -> int:
         lines.append(f"    artifact: {artifact}")
         lines.append(f"    artifact_sha256: {a_sha}")
         lines.append(f"    regenerable: {str(regenerable).lower()}")
+        if not inputs:
+            lines.append("    verification: artifact-only   # measures THIS machine (latency, a "
+                         "clean clone); there is no tracked input to bind it to, so its hash is "
+                         "checked but not re-derived")
+        else:
+            lines.append("    verification: input-bound     # artifact AND every input it was "
+                         "computed from are hashed")
         if name == SEALED:
             lines.append("    sealed: true")
             lines.append("    summary_only: true   # reads the preserved dump; never model inference")

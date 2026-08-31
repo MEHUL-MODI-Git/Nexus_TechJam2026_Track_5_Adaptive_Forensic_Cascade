@@ -46,10 +46,33 @@ def _manifest_for(rows, path: Path) -> Path:
 
 @pytest.fixture
 def head_rows():
+    """One REAL source and one AI source, 20 conditions each.
+
+    B-033 finding 2: this fixture used to be the first 40 lines of the dump, which
+    are all COCO reals. Every "valid input" test in this file was therefore
+    exercising a dump on which fake recall and AUROC are undefined -- and the
+    reporter passed it. A positive fixture that cannot produce the metrics under
+    test is not a positive fixture.
+    """
     if not DUMP.exists():
         pytest.skip("sealed dump not present (it is git-ignored)")
+    by_label = {0: {}, 1: {}}
     with DUMP.open() as fh:
-        return [next(fh) for _ in range(40)]
+        for line in fh:
+            r = json.loads(line)
+            lab = int(r["label"])
+            chosen = by_label[lab]
+            if not chosen:
+                chosen["sha"] = r["sha256"]
+                chosen["rows"] = []
+            if r["sha256"] == chosen["sha"]:
+                chosen["rows"].append(line)
+            if all(v.get("rows") and len(v["rows"]) == 20 for v in by_label.values()):
+                break
+    for lab, v in by_label.items():
+        if len(v.get("rows", [])) != 20:
+            pytest.skip(f"could not assemble a complete label={lab} source from the dump")
+    return by_label[0]["rows"] + by_label[1]["rows"]
 
 
 def test_refuses_incomplete_condition_coverage(tmp_path, head_rows):
@@ -256,3 +279,64 @@ def test_the_real_dump_still_passes_every_strict_check(tmp_path, head_rows):
     p.write_text("".join(head_rows))
     proc = _run(p, tmp_path / "out.json", manifest)
     assert proc.returncode == 0, proc.stderr
+
+
+# --------------------------------------------------------------------------
+# B-033 finding 2: the reporter's own 40-row fixture contained only REAL
+# sources. Fake recall and AUROC are undefined without both strata, and it
+# returned rc=0 while writing bare `NaN` -- which is not valid JSON, and which
+# lenient readers accept in silence.
+# --------------------------------------------------------------------------
+
+def test_refuses_a_dump_with_no_ai_images(tmp_path, head_rows):
+    rows = [json.loads(x) for x in head_rows]
+    for r in rows:
+        r["label"] = 0
+    manifest = _manifest_for(rows, tmp_path / "m.json")   # manifest AFTER the edit,
+    # so the stratum guard is what fires rather than the manifest cross-check
+    p = tmp_path / "reals_only.jsonl"
+    p.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    proc = _run(p, tmp_path / "out.json", manifest)
+    assert proc.returncode == 2
+    assert "only real images" in proc.stderr
+    assert "NaN is not a result" in proc.stderr
+
+
+def test_refuses_a_dump_with_no_real_images(tmp_path, head_rows):
+    rows = [json.loads(x) for x in head_rows]
+    for r in rows:
+        r["label"] = 1
+    manifest = _manifest_for(rows, tmp_path / "m.json")
+    p = tmp_path / "fakes_only.jsonl"
+    p.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    proc = _run(p, tmp_path / "out.json", manifest)
+    assert proc.returncode == 2
+    assert "only AI images" in proc.stderr
+
+
+def test_refuses_a_condition_missing_one_stratum(tmp_path, head_rows):
+    """Per-condition metrics are published too, so each condition needs both."""
+    rows = [json.loads(x) for x in head_rows]
+    manifest = _manifest_for(rows, tmp_path / "m.json")
+    for r in rows:
+        if r["condition_id"] == "jpeg_q30":
+            r["label"] = 1
+    p = tmp_path / "onesided.jsonl"
+    p.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    proc = _run(p, tmp_path / "out.json", manifest)
+    assert proc.returncode == 2
+    assert "would be undefined" in proc.stderr or "conflicting labels" in proc.stderr
+
+
+def test_a_nan_can_never_reach_the_committed_artifact():
+    src = SCRIPT.read_text()
+    assert "allow_nan=False" in src
+    assert "_nonfinite(doc)" in src
+
+
+def test_the_committed_sealed_artifact_holds_no_nan():
+    if not ARTIFACT.exists():
+        pytest.skip("sealed artifact not present")
+    raw = ARTIFACT.read_text()
+    assert "NaN" not in raw and "Infinity" not in raw
+    json.loads(raw)   # strict parse: would raise on bare NaN
