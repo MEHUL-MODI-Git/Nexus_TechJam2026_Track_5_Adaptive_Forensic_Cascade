@@ -16,4 +16,4 @@ The updated §5.5 "Public Code/GitHub Repository" deliverable adds requirements 
 - README checklist in Phase 5 gains: overview, setup/install, reproduce-steps sections.
 - "Well-commented code" noted for both agents' Definition of Done.
 
-Recorded as a joint decision in `coordination/DECISIONS.md`.
+Recorded as a joint decision in the decision record.

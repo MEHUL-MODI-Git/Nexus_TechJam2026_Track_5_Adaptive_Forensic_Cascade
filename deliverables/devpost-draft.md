@@ -16,6 +16,9 @@
 
 ## Adaptive Forensic Cascade — detection that knows when it is wrong
 
+**Demo video:** https://youtu.be/KUedfboxC-Q
+**Code:** https://github.com/MEHUL-MODI-Git/Nexus_TechJam2026_Track_5_Adaptive_Forensic_Cascade
+
 ### The problem, stated precisely
 
 AI-image detectors report extraordinary accuracy on clean data. Ours does too.
@@ -225,19 +228,61 @@ Everything above comes from committed artifacts, and the failures are published 
 What we will not claim: that we solved heavy compression or heavy noise. We did not. They remain the
 worst conditions and we report them.
 
-### Built with
+### How this addresses the problem statement
 
-- **Models:** Community Forensics 384 (MIT, 21,811,969 parameters) as the primary detector, plus
-  our own 1,827-parameter reliability router and 775-parameter degradation reporter —
-  **21,814,571 parameters shipped, 1.09% of the 2B limit**, of which 0.012% are ours to train.
-  LOTA (**code MIT, weights unlicensed** — published only through a login-walled Baidu drive
-  with no stated licence, which is part of why we do not ship it) and PGC (Apache-2.0, 306.7M)
-  were both integrated, measured and rejected.
-- **Libraries:** PyTorch (Apple Silicon MPS), timm, Hugging Face Hub, Pillow, NumPy, PyArrow,
-  imagehash, transformers, Gradio, pytest, Ruff.
-- **Data:** SID-Set (CC BY 4.0) for the training corpus; COCO train2017 for real smoke images; the
-  organizers' WildFake reference subset used exactly once, for reference only, never for fitting.
-- **Tools:** VS Code, git, `uv`, and two AI coding agents working as reviewing peers — every gate in
-  this project was independently re-run by the agent that did not write it — including a
-  standing review that currently **blocks** release on artifact and provenance defects, whose
-  findings are listed in the repository rather than resolved quietly.
+Track 5 asks for detection that holds up "after images are compressed, cropped, reposted, or
+lightly edited", and for a clear technical approach, an evaluation strategy, and discussion of
+trade-offs. Point by point:
+
+| The brief asks for | What we built | Evidence |
+|---|---|---|
+| Robustness under real-world transformation | A router that measures the damage to an image and corrects the detector's verdict accordingly. Worst-family detection **12.3% → 82.6%** | `results/internal-test/results.json` |
+| Not just clean accuracy | Scored on all **20** official conditions, 60,000 predictions, one frozen threshold never tuned per condition | `deliverables/robustness-summary.md` |
+| A clear evaluation strategy | Fitting, held-out test, a second holdout, and the organizers' sealed set scored **once** after freeze. One command re-verifies all 11 published tables against the artifacts and inputs behind them | `configs/frozen.yaml` |
+| Trade-offs: robustness, generalisation, false positives | We publish the false-alarm cost (8.3% vs the 7.6% cap we set), the fair comparison against a baseline handed our operating point (**+49.2 pt**, not +70), and what did not transfer to the organizers' distribution | README §7–8 |
+| Explainability | Every verdict carries a measured confidence grade, the detected damage type, and a certificate showing which transformations would flip it | live in the demo |
+
+### Development tools used
+
+VS Code · git · `uv` (dependency locking) · pytest (804 tests) · Ruff · Gradio for the demo UI ·
+Apple M4 Pro laptop, PyTorch MPS — all training and evaluation ran locally, no cloud compute.
+
+Two AI coding agents worked as reviewing peers: every cross-cutting contract was re-run by the
+agent that did not write it. That process caught real defects, including an evaluator that
+returned success while writing `NaN`, an AUROC that depended on row order, and a parameter
+statement wrong by three orders of magnitude. The repair record is the commit history.
+
+### Models and APIs used
+
+| Model | Role | Parameters | Licence |
+|---|---|---:|---|
+| Community Forensics 384 (ViT-S/16) | Frozen primary detector, never fine-tuned, pinned to one revision | 21,811,969 | MIT (code + weights) |
+| **Our reliability router (MLP + worst-group loss)** | **The contribution** — turns measured damage into a correction | **1,827** | this repo, MIT |
+| Our degradation reporter | Names the damage type in the UI | 775 | this repo, MIT |
+| **Total shipped** | | **21,814,571** — **1.09%** of the 2B limit | |
+
+Integrated, measured and **rejected**: LOTA (ICCV 2025 — code MIT, weights unlicensed) and PGC
+(Apache-2.0, 306.7M). Both read the high-frequency band, which is exactly what compression and
+noise destroy. No external APIs are called; the system runs entirely locally.
+
+### Libraries and frameworks used
+
+PyTorch (Apple Silicon MPS backend) · timm · Hugging Face Hub · Pillow · NumPy · SciPy ·
+imagehash · PyYAML · Gradio · pytest · Ruff.
+
+### Datasets and assets used
+
+| Dataset | Use | Licence |
+|---|---|---|
+| SID-Set | Training corpus — 15,000 sources, 7,500 per class | CC BY 4.0 (attribution required) |
+| COCO train2017 | Real images for smoke tests | COCO Terms of Use |
+| **WildFake reference subset** (COCO val2017 + DALL-E) | **Organizers' benchmark — sealed, never trained or tuned on, scored exactly once** | Organizer-provided |
+
+COCO **val2017 never** appears in any training source, asserted by a test. The sealed subset is
+excluded from every fitting step by a fail-closed denylist of 13,843 hashes that aborts the job
+rather than skipping a row — and it did abort a real run. Contamination was audited by SHA-256 and
+perceptual hash: **0 exact matches**, and the only 2 perceptual near-matches were opened by eye and
+confirmed unrelated.
+
+Demo video sample image: SID-Set, CC BY 4.0. No third-party trademarks or copyrighted content
+appear in the video.

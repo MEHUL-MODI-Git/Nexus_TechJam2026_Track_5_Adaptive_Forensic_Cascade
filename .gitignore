@@ -95,3 +95,30 @@ data/manifests/sealed_files.json
 
 # video take backups: kept locally so a reset is recoverable, never shipped
 deliverables/video-assets/_previous-takes/
+
+# --- agent working files: kept on disk, never shipped -------------------
+# Two AI agents built this as reviewing peers. Their rulebooks, dashboard,
+# message channel and per-workstream logs are process, not product. The
+# substance a reader needs is in the README and the commit history; the
+# threshold-provenance disclosure they produced lives in docs/.
+CLAUDE.md
+AGENTS.md
+STATUS.md
+coordination/
+workstreams/
+handoffs/
+teaching/
+specs/
+06-build-plan.md
+docs/09-webinar-questions-2026-08-28.md
+deliverables/SUBMISSION-CHECKLIST.md
+deliverables/RECORDING-CHEAT-SHEET.md
+deliverables/video-slides.html
+deliverables/video-assets/
+techjam_track5_lota_update.md
+
+# Error-analysis case images: these are third-party photographs from the source
+# datasets, and two carry prominent corporate liveries. The error-analysis note
+# describes every case by id, condition and score, which is what a reader needs;
+# republishing the photographs themselves is an IP risk we do not need to take.
+results/robustness/cases/

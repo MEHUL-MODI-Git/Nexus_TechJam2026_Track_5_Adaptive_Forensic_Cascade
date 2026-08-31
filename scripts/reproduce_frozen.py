@@ -3,7 +3,7 @@
     scripts/run_eval.py --config configs/frozen.yaml      # the build plan's literal command
     scripts/reproduce_frozen.py --config configs/frozen.yaml [--regenerate]
 
-B-032 P0, Codex Phase-4 exit audit: `06-build-plan.md` line 118 requires this command to
+B-032 P0, Codex Phase-4 exit audit: the build plan requires this command to
 reproduce every reported table from the feature cache, and neither `configs/frozen.yaml` nor
 `run_eval.py --config` existed. README §5 documented only the old 8,000-row placeholder smoke
 diagnostic, not the protected tables actually published.

@@ -3,6 +3,8 @@
 **Robust detection of AI-generated images under real-world transformations.**
 TikTok TechJam 2026 — Track 5.
 
+**▶ Demo video: https://youtu.be/KUedfboxC-Q**
+
 > **Status (31 Aug 2026).** The **frozen cascade ships and is served on every
 > path** — CLI, batch and UI all call one `PredictionService` with the frozen
 > router, one threshold (0.4667367651) and abstention. It has been evaluated once
@@ -11,9 +13,9 @@ TikTok TechJam 2026 — Track 5.
 >
 > **What is not finished is release, not engineering:** the demo video, the MIT
 > licence approval, and the clean remote-history push are the owner's decisions,
-> and a peer review gate (`coordination/CHANNEL.md`, B-032) is open against the
-> reproduction and provenance surfaces — not against the measured results, which
-> Codex has independently checked and not rejected. Every number here has a
+> and a peer review gate remains open against the reproduction and provenance
+> surfaces — not against the measured results, which were independently checked
+> and not rejected. Every number here has a
 > committed artifact behind it, and the ones that went against us are in §7 and
 > §8 beside the ones that did not.
 
@@ -189,7 +191,7 @@ all of them:
 .venv/bin/python scripts/run_eval.py --config configs/frozen.yaml
 ```
 
-This is the Phase-4 exit test from `06-build-plan.md`. `configs/frozen.yaml`
+This is the Phase-4 exit test from the build plan. `configs/frozen.yaml`
 records, for each of the **11 published tables**, the artifact and its SHA-256,
 the inputs it was computed from and theirs, and the command that regenerates it.
 The check verifies **both** — an artifact that still matches while its inputs
@@ -275,7 +277,7 @@ evaluation honest:
   reference runners have no fitting path at all.
 
   **This is a deviation from our own frozen protocol, found by peer review and
-  recorded rather than quietly fixed.** `specs/phase0-eval.md` required threshold
+  recorded rather than quietly fixed.** our evaluation protocol required threshold
   fitting on held-out dev only; `scripts/freeze_router.py` passed the *train*
   split to `select_threshold`, so `threshold-artifact.v1.json` records
   `n_dev_sources: 8998` — the training split — while these docs said dev.
@@ -283,7 +285,7 @@ evaluation honest:
   0.4636303604 against the frozen 0.4667367651 (dev worst-family 0.81565 vs
   0.81444). **We did not change the threshold**, because the sealed reference set
   may be scored only once and has already been scored at the frozen value.
-  Full record: `coordination/DEVIATION-2026-08-29-threshold-split.md`.
+  Full record: `docs/threshold-deviation.md`.
 - **Objective:** maximise the bootstrap-mean worst *transformation-family* fake
   recall over the six families, subject to clean false-positive rate and
   balanced accuracy staying within one point of baseline. The worst individual
@@ -861,5 +863,10 @@ Solo entry (Mehul Modi), built with two AI coding agents working as peers under
 a written protocol: one owning the detection pipeline, experts, and training
 components; the other owning evaluation, the demo application, and repository
 mechanics. Every cross-cutting contract was reviewed by the agent that did not
-write it, and those reviews are preserved in `coordination/CHANNEL.md` — several
-substantive bugs in this codebase were caught that way.
+write it. **The review record is the commit history:** each repair commit names
+the finding it answers, the reproduction that demonstrated it, and what the fix
+changed — including the cases where a published number was wrong. Several
+substantive bugs were caught that way, among them an evaluator that returned
+success while writing `NaN`, an AUROC that depended on row order, a parameter
+statement wrong by three orders of magnitude, and a documented exit test that had
+never been runnable.

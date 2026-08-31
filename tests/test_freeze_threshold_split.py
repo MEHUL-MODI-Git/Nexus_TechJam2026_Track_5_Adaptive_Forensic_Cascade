@@ -1,12 +1,12 @@
 """A future freeze fits the threshold on held-out dev, or it fails closed.
 
-S1, Codex review 2026-08-29. `specs/phase0-eval.md` requires threshold/calibration fitting on
+Peer review, 2026-08-29. The evaluation protocol requires threshold/calibration fitting on
 held-out dev only. The 2026-08-28 freeze passed TRAIN rows to `select_threshold`, so the shipped
 artifact's `n_dev_sources: 8998` are in fact the fitting split's train half.
 
 The shipped threshold is deliberately NOT changed -- the sealed reference set was scored once at
 it, and refitting would leave our only official benchmark describing a system we do not ship. The
-deviation is recorded in `coordination/DEVIATION-2026-08-29-threshold-split.md`. What these tests
+deviation is recorded in `docs/threshold-deviation.md`. What these tests
 lock is that the *code path* can no longer do it silently: dev is the default, and train requires
 someone to say so out loud.
 """
@@ -54,7 +54,7 @@ def test_train_without_acknowledgement_fails_closed():
         FREEZE.resolve_threshold_rows("train", TRAIN_ROWS, TRAIN_SCORES, DEV_ROWS, DEV_SCORES)
     msg = str(exc.value)
     assert "held-out dev" in msg
-    assert "DEVIATION-2026-08-29-threshold-split.md" in msg
+    assert "docs/threshold-deviation.md" in msg
 
 
 def test_train_is_reachable_only_by_saying_so():

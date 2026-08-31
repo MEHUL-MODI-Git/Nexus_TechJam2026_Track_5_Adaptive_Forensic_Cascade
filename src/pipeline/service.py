@@ -47,7 +47,7 @@ class PredictionError(Exception):
 
 @dataclass
 class PredictionRecord:
-    """`prediction.v1` -- matches specs/phase0-product.md §2 field-for-field."""
+    """`prediction.v1` -- matches the product spec field-for-field."""
 
     schema_version: str
     image: dict[str, Any]

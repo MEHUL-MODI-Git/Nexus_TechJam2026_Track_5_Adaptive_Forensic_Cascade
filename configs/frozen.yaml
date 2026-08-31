@@ -33,7 +33,7 @@ tables:
 
   - name: ablation_ladder
     artifact: results/internal-test/ablation.json
-    artifact_sha256: e42912b65e8c5acd4c733e6d59695effc90ba6e2d8969076193817f06b8ddbec
+    artifact_sha256: b5533053b965a1776f78452177122e9a6bad2118f058fbd397af23c1c8097651
     regenerable: true
     verification: input-bound     # artifact AND every input it was computed from are hashed
     command: 'python scripts/ablation_matrix.py'

@@ -1,7 +1,7 @@
 {
   "schema_version": "ablation-matrix.v1",
-  "note": "every rung refit with the freeze seed/split, then scored ONCE on the untouched internal test at its own threshold, FITTED ON THE TRAIN HALF exactly as the shipped freeze did (see coordination/DEVIATION-2026-08-29-threshold-split.md); no selection happens here",
-  "code_revision": "592d23c8fec14667b2933db0ceffb105df25789f",
+  "note": "every rung refit with the freeze seed/split, then scored ONCE on the untouched internal test at its own threshold, FITTED ON THE TRAIN HALF exactly as the shipped freeze did (see docs/threshold-deviation.md); no selection happens here",
+  "code_revision": "ac5e1890281fd49b6dd1af2be80ff4b4a9f4b5a2",
   "rungs": {
     "quality_only": {
       "threshold": 0.49680385179817677,

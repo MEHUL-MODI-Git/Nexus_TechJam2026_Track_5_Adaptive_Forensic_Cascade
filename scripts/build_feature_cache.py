@@ -1,4 +1,4 @@
-"""Feature cache CLI (Phase 2) — see `specs/phase2-feature-cache.md` v2.
+"""Feature cache CLI (Phase 2) — see the feature-cache row contract.
 
     python scripts/build_feature_cache.py --manifest data/manifests/router_corpus_v1.json \
         --out data/feature_cache/v1 --denylist data/manifests/sealed_denylist.txt

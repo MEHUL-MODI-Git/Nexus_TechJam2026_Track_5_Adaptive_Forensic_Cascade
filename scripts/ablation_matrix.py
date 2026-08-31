@@ -143,7 +143,7 @@ def main() -> int:
 
     doc = {"schema_version": "ablation-matrix.v1",
            "note": "every rung refit with the freeze seed/split, then scored ONCE on the "
-                   "untouched internal test at its own threshold, FITTED ON THE TRAIN HALF exactly as the shipped freeze did (see coordination/DEVIATION-2026-08-29-threshold-split.md); no selection happens here",
+                   "untouched internal test at its own threshold, FITTED ON THE TRAIN HALF exactly as the shipped freeze did (see docs/threshold-deviation.md); no selection happens here",
            "code_revision": code_rev, "rungs": table}
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(doc, indent=2) + "\n")

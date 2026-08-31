@@ -3,7 +3,7 @@
 Primary expert: ViT-Small/16 @384, 21.8M params, MIT (code + weights),
 `OwensLab/commfor-model-384`. Paper: Park & Owens, CVPR 2025 (arXiv:2411.04125).
 Preprocessing and output semantics verified against the upstream `main` branch
-in handoffs/2026-08-26_commfor-integration.md.
+against the upstream reference implementation; see README section 9 for the measured parameter count.
 
 Three upstream traps this adapter exists to neutralize:
 

@@ -1,4 +1,4 @@
-# Transform protocol v1 -- FROZEN 2026-08-26 (specs/phase0-core.md v2 §2, §7).
+# Transform protocol v1 -- FROZEN 2026-08-26 (the frozen core spec).
 #
 # THIS FILE IS THE SINGLE AUTHORITATIVE SOURCE for every numeric transform
 # parameter (review note: "avoid duplicating transform numeric parameters
@@ -19,7 +19,7 @@ library_pins:
   torch: "2.13"
   torchvision: "0.28"
 
-# Global numeric conventions (specs/phase0-core.md "Global decisions").
+# Global numeric conventions (the frozen core spec "Global decisions").
 conventions:
   float_dtype: float32
   float_range: [0.0, 1.0]

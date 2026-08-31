@@ -1,15 +1,15 @@
 """DegradePrint / quality-correction PILOT harness — A-023/A-024/B-020.
 
-Implements `specs/degradeprint-pilot.md` exactly, with one addition the spec's
+Implements the DegradePrint pilot spec exactly, with one addition the spec's
 author flagged after freeze: arm **Q**.
 
-    NOT A HEADLINE RESULT. See `specs/degradeprint-pilot.md` "Preliminary result
+    NOT A HEADLINE RESULT. See the DegradePrint pilot spec "Preliminary result
     boundary". Even on the protected cache this script is meant to run against,
     a single pilot run selects nothing by itself — it feeds the keep/park gate
     decision that Claude and Codex both record in DECISIONS.md.
 
 This script is PURE CPU/numpy over an already-extracted `feature-cache-row.v2`
-JSONL cache (see `specs/phase2-feature-cache.md`). It never decodes an image,
+JSONL cache (see the feature-cache row contract). It never decodes an image,
 never loads a torch model, and never imports `src.experts` — a 9-hour GPU
 extraction job may be running concurrently and must not be touched.
 
@@ -33,7 +33,7 @@ disclaims.
     C   B + probe-response features (DegradePrint), fit on inner-train.
     D   primary + probe-response features, NO quality, fit on inner-train.
     Q   quality descriptors ONLY, no primary score at all, fit on inner-train.
-        <-- not in specs/degradeprint-pilot.md; added per task brief.
+        <-- not in the DegradePrint pilot spec; added per task brief.
         RATIONALE: our corpus lets plain image statistics (blur, blockiness,
         noise, clipping, ...) separate real vs. AI-generated at roughly 0.95
         AUROC on their own -- these are heavily generator-fingerprinted

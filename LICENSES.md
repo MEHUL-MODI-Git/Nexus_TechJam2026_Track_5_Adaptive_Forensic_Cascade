@@ -54,7 +54,7 @@ The checkpoint is fetched automatically from the Hugging Face Hub on first use.
 |---|---|---|---|
 | COCO **train2017** | Real images, smoke set | [COCO Terms of Use](https://cocodataset.org/#termsofuse) | No — fetched by script; raw images git-ignored |
 | SID-Set (`label=1`) | Synthetic images, smoke set | CC BY 4.0 (attribution required) | No — streamed by script; raw images git-ignored |
-| SID-Set (`label=0` and `label=1`) | Router-corpus manifest (same-source pipeline for both classes) | CC BY 4.0 (attribution required) | Manifest only; raw images absent from clean local history. The 14,999-row acquisition is underfilled and not approved for fitting. |
+| SID-Set (`label=0` and `label=1`) | Router-corpus manifest (same-source pipeline for both classes) | CC BY 4.0 (attribution required) | Manifest only; raw images absent from clean local history. 15,000 sources, 7,500 per class, split into a 12,000-source fitting half and an untouched 3,000-source internal test. |
 | WildFake reference subset | **Sealed** organizer reference | Organizer-provided | No — and never used for any fitting |
 
 Row-level terms, revisions, and redistribution policy: `data/manifests/LICENSES.md`.

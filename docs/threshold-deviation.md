@@ -5,7 +5,7 @@
 
 ## What the protocol required
 
-`specs/phase0-eval.md` §47: *"Threshold/calibration fitting occurs only on held-out dev;
+our evaluation protocol: *"Threshold/calibration fitting occurs only on held-out dev;
 test/external/sealed runners never expose a fitting path."*
 
 ## What the code did

@@ -1,4 +1,4 @@
-"""Feature cache tests — `specs/phase2-feature-cache.md` v2.
+"""Feature cache tests — the feature-cache row contract.
 
 Weighted toward the failure modes that would silently corrupt Phase 2: a stale
 cache being reused, a sealed image entering a fitting corpus, and any form of

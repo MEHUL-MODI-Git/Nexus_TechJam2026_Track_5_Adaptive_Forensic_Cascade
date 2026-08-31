@@ -1,4 +1,4 @@
-"""Feature cache builder (Phase 2 backbone) — `specs/phase2-feature-cache.md` v2.
+"""Feature cache builder (Phase 2 backbone) — the feature-cache row contract.
 
 The router trains on features, not images. Producing them means running every
 expert and every probe over the corpus × the transform grid: hours of compute

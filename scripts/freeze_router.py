@@ -46,10 +46,10 @@ def resolve_threshold_rows(split, train_rows, train_scores, dev_rows, dev_scores
                            acknowledge_deviation=False):
     """Return the (rows, scores) the threshold is fitted on. Held-out dev, or fail closed.
 
-    `specs/phase0-eval.md` requires threshold/calibration fitting on held-out dev only. The
+    Our evaluation protocol requires threshold/calibration fitting on held-out dev only. The
     2026-08-28 freeze passed TRAIN rows here, which Codex found in review R2/S1; the shipped
     threshold was left unchanged because the sealed set had already been scored at it, and the
-    deviation is recorded in `coordination/DEVIATION-2026-08-29-threshold-split.md`.
+    deviation is recorded in `docs/threshold-deviation.md`.
 
     This function is the guard that stops it happening silently again: `dev` is the default, and
     `train` is reachable only by explicitly acknowledging that it deviates from the spec (which
@@ -60,9 +60,9 @@ def resolve_threshold_rows(split, train_rows, train_scores, dev_rows, dev_scores
     if split == "train":
         if not acknowledge_deviation:
             raise ThresholdSplitError(
-                "refusing to fit the threshold on TRAIN: specs/phase0-eval.md requires held-out "
+                "refusing to fit the threshold on TRAIN: the evaluation protocol requires held-out "
                 "dev. This reproduces the 2026-08-28 freeze's deviation (see "
-                "coordination/DEVIATION-2026-08-29-threshold-split.md); pass "
+                "docs/threshold-deviation.md); pass "
                 "--acknowledge-train-threshold-deviation if that is genuinely what you want.")
         return train_rows, train_scores
     raise ThresholdSplitError(f"unknown threshold split {split!r}: expected 'dev' or 'train'")
@@ -101,7 +101,7 @@ def main() -> int:
                          "acknowledged explicitly.")
     ap.add_argument("--acknowledge-train-threshold-deviation", action="store_true",
                     help="required with --threshold-split train; see "
-                         "coordination/DEVIATION-2026-08-29-threshold-split.md")
+                         "docs/threshold-deviation.md")
     args = ap.parse_args()
 
     # Provenance the threshold artifact must carry. `load_frozen_threshold` refuses an
