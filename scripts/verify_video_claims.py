@@ -178,7 +178,9 @@ def main() -> int:
 
     # ---------- runtime budget ----------
     print("\n\033[1mRuntime budget\033[0m")
-    words = sum(len(l[1:].split()) for l in guide.split("\n") if l.startswith(">"))
+    # only the SAY blocks are spoken; EXPECT notes are also blockquotes and must not count
+    words = sum(sum(len(x[1:].split()) for x in m.group(1).splitlines())
+                for m in re.finditer(r"\*\*SAY[^*]*\*\*\s*\n((?:>.*\n)+)", guide))
     seconds = words / 145 * 60 + 26      # 26s of measured IN-CLIP waits (splices cut the rest)
     check(f"under the 5:00 cap ({seconds:.0f}s, {words} words)", seconds < 300,
           f"{seconds:.0f}s")
