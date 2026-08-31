@@ -151,6 +151,16 @@ def main() -> int:
                        cwd=ROOT, capture_output=True, text=True, check=False)
     check("infer_dir.py exits 0", r.returncode == 0, r.stderr[-200:])
     check("infer_dir.py reports 0 failed", "0 failed" in r.stdout + r.stderr)
+    # the COUNT is on screen in Moment 10, so it is a claim like any other.
+    # It was wrong once: the sheet said 4 while the folder held 3, and checking
+    # only "0 failed" let that through.
+    n_png = len(list((ROOT / "deliverables" / "video-assets").glob("*.png")))
+    combined = r.stdout + r.stderr
+    check(f"infer_dir.py finds exactly {n_png} image(s)",
+          f"found {n_png} image(s)" in combined, combined[:160])
+    check(f"sheet's EXPECT says found {n_png} image(s)",
+          f"found {n_png} image(s)" in guide)
+    check(f"sheet's EXPECT says {n_png} scored", f"{n_png} scored, 0 failed" in guide)
     out.unlink(missing_ok=True)
 
     r = subprocess.run([sys.executable, "scripts/run_eval.py", "--config", "configs/frozen.yaml"],
@@ -165,7 +175,7 @@ def main() -> int:
         "Reliability router", "Verdict + confidence grade",
         "We handicapped ourselves, and still report the smaller number",
         "On the organizers' own data, it beat our own numbers",
-        "A score you can price is worth more than a score you can",
+        "It holds up. And when it can't, it says so.",
         "21,814,571 parameters", "+49.2 points",
     ]
     for ph in slide_phrases:

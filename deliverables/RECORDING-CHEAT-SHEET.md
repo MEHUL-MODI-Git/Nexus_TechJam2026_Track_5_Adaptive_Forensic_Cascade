@@ -76,10 +76,10 @@ boxes fit together, which is the frame that matters most.
 **SAY:**
 > "Now the same photo, saved as a normal JPEG — the compression every app applies. You cannot see any
 > difference.
-> But the standard detector on its own has dropped to zero point zero nine. Under a half means
-> 'real', so it has been fooled — it now thinks this is a genuine photograph.
-> Ours doesn't fall for it: we take that same broken score, notice the picture was compressed, and
-> correct it back to ninety-one percent AI-generated — confidently, with no hedging."
+> But the standard detector has dropped to zero point zero nine. Under a half means 'real', so it has
+> been fooled — it now thinks this is a genuine photograph.
+> Ours doesn't fall for it: we take that broken score, notice the picture was compressed, and correct
+> it back to ninety-one percent AI-generated — confidently, with no hedging."
 
 **EXPECT:** **AI-GENERATED**, `p_fake` **0.9062**. The line
 `Primary CF-384 alone: 0.0993 → after router correction: 0.9062 (+0.8069)`.
@@ -97,7 +97,7 @@ boxes fit together, which is the frame that matters most.
 > the way here'.
 > So before judging we measure the damage — how blurry, how compressed, how noisy. The frozen expert
 > gives its opinion, and our correction layer of one thousand eight hundred and twenty-seven numbers
-> combines the two and corrects the verdict."
+> corrects the verdict."
 
 **EXPECT:** five numbered rows: Canonical decode, Frozen expert — Community Forensics 384, Damage
 descriptors, **Reliability router — the contribution**, Verdict + confidence grade. The bottom two
@@ -143,8 +143,7 @@ order): `clean` · `jpeg_q90` `q70` `q50` `q30` · `blur_s0.5` `s1.0` `s2.0` · 
 **SAY:**
 > "One more, compressed much harder. Here it does something different.
 > It still answers — ninety-five percent AI — but it knows heavy compression is where its answers are
-> least reliable, so it refuses to stand behind this one and asks for a human.
-> That's the difference between confident and merely loud."
+> least reliable, so it refuses to stand behind this one and asks for a human."
 
 **EXPECT:** **AI-GENERATED**, `p_fake` **0.9458**, `Self-assessed reliability: 0.788`, and a
 **yellow DEFERRED box**: "The system declines to decide this image and recommends human review",
@@ -181,7 +180,7 @@ with `reliability 0.7885 below the frozen policy threshold 0.8661`.
 
 **SAY:**
 > "Every kind of damage, including where we help least. Compression and noise are where the standard
-> detector collapses, and where we gain most. Overall accuracy, ninety-one percent."
+> detector collapses, and where we gain most. Overall accuracy: ninety-one percent."
 
 **EXPECT:** a seven-row table. The bottom row `noise` is highlighted orange and reads 12.3% → 82.6%,
 gain +70.3.
@@ -196,7 +195,7 @@ gain +70.3.
 > "The organisers gave every team a reference set. We sealed it on day one and never tuned on it — a
 > score on data you've tuned against means nothing.
 > We ran it once, after the freeze: a hundred and seventy-four thousand tests, zero failures. It beat
-> our own numbers — eighty-eight percent on the hardest damage."
+> our own numbers — eighty-eight percent on the hardest."
 
 **EXPECT:** heading "On the organizers' own data, it beat our own numbers", then three boxes:
 **0.9964**, **87.9%**, **1.58%**.
@@ -215,7 +214,7 @@ gain +70.3.
 > "It also runs over a whole folder, which is how you'd use it in bulk.
 > And every table in this video re-checks itself against the file it came from, in one command."
 
-**EXPECT:** `found 4 image(s)`, then `4 scored, 0 failed`. Then ten lines beginning `OK`, and
+**EXPECT:** `found 3 image(s)`, then `3 scored, 0 failed`. Then ten lines beginning `OK`, and
 `10 verified, 0 verified with absent inputs, 0 drifted, 0 missing`.
 
 ---
@@ -225,10 +224,11 @@ gain +70.3.
 **DO:** Press **→** to slide 8.
 
 **SAY:**
-> "Twenty-two million parameters, one percent of the size limit, a tenth of a second per image.
-> A score you can price is worth more than a score you can't."
+> "Twenty-two million parameters, one percent of the size limit, fast enough to run on every upload.
+> We started with a detector that went blind and didn't know it. Ours holds up — and where it can't,
+> it says so, so a human sees only those."
 
-**EXPECT:** heading "A score you can price is worth more than a score you can't", footer
+**EXPECT:** heading "It holds up. And when it can't, it says so.", footer
 `21,814,571 parameters · 1.09% of the 2B cap · ~135 ms per image on a laptop`.
 
 **FINAL CARD (add in CapCut, not recorded):** your public repo link, and on its own line:
