@@ -338,10 +338,12 @@
         <div class="b">LOTA and PGC both read the <strong>high-frequency band</strong> — exactly what
           noise and compression destroy. You cannot rescue noise-destroyed evidence with a detector
           that reads the noise band. So we escalate to a human.</div></div>
-      <div class="card dead"><div class="h">Found in our own data</div>
-        <div class="b">Every real image was JPEG, every fake PNG — <strong>file format alone predicted
-          the label for 100% of 15,000 images</strong>. We found it, re-encoded everything, and added
-          a baseline that uses no detector at all.</div></div>
+      <div class="card"><div class="h">Is it just reading JPEG artifacts?</div>
+        <div class="b">We asked that first. In our source data every real image was a JPEG and every
+          fake a PNG — <strong>format alone predicted the label 100% of the time</strong>. So we
+          re-encoded everything to one container and added a control using <strong>no detector at
+          all</strong>: it reaches 54% recall only by calling <strong>44% of real photos fake</strong>.
+          Statistics cannot do this job.</div></div>
     </div>
     <p class="lede">Two AI agents built this as reviewing peers: every gate was independently re-run by
       the agent that did not write it, and the review that currently <strong>blocks release</strong>

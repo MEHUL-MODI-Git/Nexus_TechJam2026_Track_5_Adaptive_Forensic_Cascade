@@ -262,10 +262,14 @@ checks. Then expand the results table.
 **SAY:**
 > "Three things worth checking us on.
 >
-> We found a serious flaw in our own training data — every real image was saved as a JPEG and every
-> fake as a PNG, so the file type alone gave away the answer every single time. We found it
-> ourselves, fixed it, and added a test that uses no detector at all so nobody can be fooled by that
-> again.
+> First — you should ask whether this thing is just reading JPEG compression instead of anything
+> real. We asked that too. And we found that in our source data, every real image happened to be a
+> JPEG and every fake a PNG, so the file type alone gave away the answer.
+>
+> So we re-saved everything into one single format, and we added a control that uses **no detector
+> at all** — just plain image statistics. That control only reaches fifty-four percent, and it gets
+> there by calling **forty-four percent of real photographs fake**. Statistics can't do this job.
+> The detector is doing the work.
 >
 > We tried two state-of-the-art second opinions and rejected both, for the same reason: they both
 > read the fine detail in an image, and fine detail is exactly what noise and compression destroy.

@@ -257,9 +257,13 @@ produced it.
 ## 4:40–5:00 — Rigour and close · SLIDES 11–12
 
 > "Three things we'd want a reviewer to check.
-> We found a flaw in our own training data — every real image stored as JPEG, every fake as PNG, so
-> file format alone predicted the label a hundred percent of the time. We found it, fixed it, and
-> added a baseline that uses no detector at all.
+> First, the question you should be asking: is this reading JPEG compression rather than anything
+> real? We asked it too — and found that in our source data every real image was a JPEG and every
+> fake a PNG, so format alone predicted the label a hundred percent of the time. We canonicalised
+> every file into one container, and added a control rung that uses **no detector at all**. It
+> reaches 0.5402 worst-family recall only at a **43.9% clean false-alarm rate**. Plain statistics
+> cannot substitute for the detector at any usable operating point — which is what makes the
+> headline attributable to the detector rather than to a shortcut.
 > We tried two state-of-the-art second experts and rejected both, for the same structural reason:
 > they read the high-frequency band, which is exactly what noise and compression destroy. You can't
 > rescue noise-destroyed evidence with a detector that reads the noise band. So we escalate to a
