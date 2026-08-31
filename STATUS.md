@@ -17,8 +17,8 @@
 |---|---|---|---|
 | core | Claude | ✅ Phase 0 green; post-LOTA candidate work gated | STATE refreshed; PGC preflight only after repair gate |
 | training | Claude | 🔴 B-018 repair `f9c6ecb` BLOCKED by Codex B-024 re-review | Heavy correction spec → lighter implementation → heavy verification, then Codex re-review; 2R.2 corpus repair remains gated |
-| eval | Codex | 🔴 Phase-4 exit BLOCKED by B-032 | canonical frozen reproducer + strict internal/sealed reporters |
-| product | Codex | 🔴 release blocked by B-032 + owner actions | pin CF revision; current-state prose sweep; owner approvals remain |
+| eval | Codex | 🔴 Phase-4 exit BLOCKED by B-033 | bind internal family; finite sealed summary; executable complete frozen index |
+| product | Codex | 🔴 release blocked by B-033 + owner actions | technical gate + public-history/MIT/video/livery approvals |
 
 **Relay:** Mehul invoked PROTOCOL §6 on 27 Aug because Codex is near its limit. Claude may continue
 Codex-owned eval/product tasks as `[relay]`; changes remain Codex-review-first on return.
@@ -29,7 +29,7 @@ Codex-owned eval/product tasks as `[relay]`; changes remain Codex-review-first o
 | Phase-4 exit audit at `53680dd` | Codex | ✅ REVIEW COMPLETE — **BLOCK** in B-032; six-item repair packet |
 | A-033/A-034 re-review: R1–R8 repair packet through `ea959ef` | Codex | ✅ REVIEW COMPLETE — **BLOCK remains** in B-030; S1–S4 repair required |
 | S1–S4 repair packet (B-030) | Claude | ⚠️ B-031 accepts S1/S3; narrow S2 schema + S4 shareable-doc follow-up required |
-| A-037 focused re-review: B-031 + B-032 six-item repair | Codex | 🔄 IN PROGRESS — reviewing local committed HEAD; checkout has no configured Git remote |
+| A-037 focused re-review: B-031 + B-032 six-item repair | Codex | ✅ REVIEW COMPLETE — **BLOCK remains** in B-033; three-item fail-closed packet |
 | A-035/A-036 focused S1–S4 + clean-checkout re-review | Codex | ✅ REVIEW COMPLETE — B-031; **BLOCK remains narrowly on S2/S4** |
 | post-LOTA strategy reconciliation + mutable plan refresh | Codex + Claude | ✅ joint plan adopted A-023/A-024/B-020; active overlay written |
 | LOTA checkpoint availability replan | Codex + Claude | ✅ joint position B-028: bounded negative/challenger, outside 15k cache; licence-gated |
@@ -58,6 +58,12 @@ Codex-owned eval/product tasks as `[relay]`; changes remain Codex-review-first o
 | 0.8 Gradio v0 | Codex | ✅ done 00:45 (live local server + parity tests) |
 
 ## Log (newest first)
+- **2026-08-31 — A-037 RE-REVIEW: BLOCK REMAINS NARROWLY (B-033).** Accepted the sealed
+  type regressions, live CF revision pin, seven-rung ablation/provenance and release prose. Three
+  fail-closed defects remain: internal `family` tampering moves worst-family 0.8258 → 0.8864 with
+  rc=0; the sealed summary accepts a real-only fixture and writes NaN with rc=0; the frozen index
+  names two nonexistent generators and omits published PGC rescue evidence. **787 passed**;
+  preserved internal/sealed hashes unchanged; no sealed inference.
 - **2026-08-31 — B-031 + B-032 REPAIRED: THE PHASE-4 EXIT TEST NOW EXISTS.** The build plan's `run_eval.py --config configs/frozen.yaml` had never been runnable — no config, no flag. It now verifies **10 published tables, artifact hashes AND input hashes, 10/10 with 0 drift**, with the sealed entry `summary_only` and refused if not. Also: the one-shot evaluator no longer returns 0 with **NaN** headlines on a truncated cache (Codex's 39-row reproduction is a regression); CF-384 is **pinned** with a resolved-vs-requested check; the sealed reporter type-checks every metric-bearing field; the ablation runs all **7** rungs and shows `static_average` = `probability_mean` = `fixed_weights` to every decimal (one-expert degeneracy, measured not asserted); README/handoff/checklist no longer contradict the shipped system. **787 passed** (+18). No refit, no reselection, sealed untouched, **no published number moved**.
 - **2026-08-30 — A CLEAN CLONE IS NOW PROVEN TO RUN, NOT ASSERTED.** The R1 repair for B-029's finding 1 was verified by a test that asserts artifacts are *tracked* — which runs inside the working tree and never scores an image, so it could not detect the condition it was answering. `scripts/verify_clean_checkout.py` clones the repo into a scratch tree and runs the suite, `predict.py` and `infer_dir.py` from inside the clone: at `578efa7` every step rc=0, **756 passed / 14 skipped / 0 failed**, 87.3 MB checkpoint pulled into the clone's own empty cache, 6 images scored with 0 failures. The 14 skips are the point — they need the git-ignored caches, so a skipping suite passes whether or not the system works. A double-counting bug in the script's own size figure (174.6 MB for an 87 MB checkpoint) was caught and fixed before it reached the README. Evidence in A-036; clears no gate.
 - **2026-08-29 — S1–S4 REPAIRED; NO PUBLISHED NUMBER MOVED.** Codex's B-030 accepted R1/R4/R5/R7 and blocked on four. All repaired without invoking the model or refitting anything: future freezes now fit the threshold on **held-out dev or fail closed** (shipped threshold untouched); the sealed reporter got a **tie-group-aware weighted AUROC** (18 fields moved by ≤2.4e-6, **no 4-dp figure changed**), exact per-`(sha,condition)` coverage, non-bool 0/1 labels, a row-by-row cross-check against `sealed_files.json`, and a ledger that states which hashes are **not** bound to the rows; R6's drift is locked as values (550 rows / 0.298885 / 2 verdicts) and the NIMS parity claim is scoped to cache/live; LOTA's MIT **code** is separated from its unlicensed **weights**. **769 passed** (+19), Ruff clean on touched files. A-035 requests re-review.

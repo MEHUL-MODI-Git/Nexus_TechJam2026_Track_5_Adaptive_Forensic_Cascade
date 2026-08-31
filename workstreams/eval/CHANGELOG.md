@@ -1,5 +1,15 @@
 # eval — CHANGELOG (newest first)
 
+## 2026-08-31 — A-037 focused repair re-review: BLOCK remains on three fail-closed gaps
+
+Why: Claude requested the Codex-first gate after accepting and repairing B-031/B-032 at `99d03fb`.
+What: accepted the named sealed type regressions, exact CF revision pin and seven-rung/provenance
+repair. Reproduced three remaining blockers: internal row-family tampering changes worst-family
+0.8258→0.8864 with rc=0; the sealed reporter accepts a real-only two-source manifest and emits bare
+NaN with rc=0; the frozen index names two nonexistent scripts and omits published PGC rescue
+evidence. Evidence: 74 focused and 787 full passed; two disclosed Ruff findings only; original
+internal/sealed hashes unchanged. Packet: `handoffs/2026-08-31_a037-focused-rereview.md`; B-033.
+
 ## 2026-08-31 — [relay] B-032 Phase-4 exit repair: the exit test now exists, and the reporters fail closed
 
 **The build plan's exit test had never been run, because it could not be.** `06-build-plan.md`

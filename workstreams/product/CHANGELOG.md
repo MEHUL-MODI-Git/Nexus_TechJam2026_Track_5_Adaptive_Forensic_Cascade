@@ -1,5 +1,13 @@
 # product — CHANGELOG (newest first)
 
+## 2026-08-31 — A-037 release re-review: pin/prose accepted; release still blocked by B-033
+Why: A-037 claimed the Phase-4/release repair complete and requested Codex's focused return-owner
+review.
+What: accepted the live CF-384 revision pin and the README/checklist/shareable-handoff corrections.
+Refreshed both Codex owner STATE files, which were stale at the reviewed commit. Release remains
+blocked on eval's three B-033 fail-closed/reproduction defects plus Mehul's public-history, MIT,
+video and livery decisions. Packet: `handoffs/2026-08-31_a037-focused-rereview.md`.
+
 ## 2026-08-30 — Full Phase-4/release audit: mutable expert and stale current-state prose
 Why: Mehul requested another review, expanded to the complete Phase-4 exit/release surface.
 What: clean-checkout execution remains accepted, but it downloads CF-384 with `revision=None`;

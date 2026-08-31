@@ -96,7 +96,7 @@ release gate can claim the repo is current.
 - Literal frozen verification: **10 verified, 0 skipped, 0 drifted, 0 missing**.
 - Ruff on touched boundaries: only the two pre-existing `tests/test_service_parity.py` findings
   already disclosed in A-037 (BLE001 line 27, PLW1510 line 118).
-- Full-suite result is recorded in B-033/CHANGELOG after completion.
+- Full suite: **787 passed, 1 skipped, 9 warnings**.
 - Original internal rows and sealed prediction hashes were checked after review; neither was
   modified.
 
@@ -105,7 +105,10 @@ release gate can claim the repo is current.
 1. Canonically bind internal-test family/split/expert revision, with the family-tamper regression.
 2. Make the sealed summary reject missing metric strata/non-finite output.
 3. Repair and test the frozen command/index, including the published rescue artifact.
-4. Refresh both owner STATE files after the repair.
+
+The stale owner STATE files at reviewed commit `99d03fb` are a P1 incompleteness in A-037's prose
+sweep, but Codex refreshed them while recording this gate; no Claude repair is requested for that
+mechanical owner-state update.
 
 No published number is numerically rejected by this review. The gate remains blocked because
 malformed metadata can still move a headline and the claimed reproduction packet is not executable
