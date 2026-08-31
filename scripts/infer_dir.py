@@ -117,7 +117,7 @@ def run(
     recursive: bool = True,
     progress_every: int = 25,
     service: PredictionService | None = None,
-    detailed: bool = False,
+    detailed: bool = True,
 ) -> tuple[list[dict], int]:
     """Score a directory. Returns (rows, failure_count)."""
     input_dir = input_dir.resolve()
@@ -189,7 +189,9 @@ def _print_summary(rows) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Score every image in a directory; emit JSON {image_path, pred}."
+        description="Score every image in a directory. Emits a JSON array that always "
+                    "carries {image_path, pred} per image, plus a detailed report by "
+                    "default (use --minimal for the bare two-key form)."
     )
     parser.add_argument("input_dir", type=Path)
     parser.add_argument("--output", type=Path, default=Path("predictions.json"))
@@ -197,20 +199,21 @@ def main() -> int:
                         help="how to handle files that cannot be scored (default: null)")
     parser.add_argument("--no-recursive", action="store_true",
                         help="score only the top level of INPUT_DIR")
-    parser.add_argument("--detailed", action="store_true",
-                        help="add EXTRA keys per image (verdict, the raw detector score and the "
-                             "router's correction to it, reliability, whether the system defers "
-                             "to a human, detected damage, image metadata). `image_path` and "
-                             "`pred` are always present either way.")
+    parser.add_argument("--minimal", action="store_true",
+                        help="emit ONLY the two keys the brief requires, {image_path, pred}. "
+                             "The default output is a superset: it always contains those two, "
+                             "plus the verdict, the raw detector score and the router's "
+                             "correction to it, reliability, whether the system defers to a "
+                             "human, the detected damage and image metadata.")
     args = parser.parse_args()
 
     try:
         rows, _failures = run(
             args.input_dir, args.output,
             errors=args.errors, recursive=not args.no_recursive,
-            detailed=args.detailed,
+            detailed=not args.minimal,
         )
-        if args.detailed:
+        if not args.minimal:
             _print_summary(rows)
     except (DecodeError, PredictionError) as exc:   # only reachable under --errors strict
         print(f"strict mode: aborting on {exc}", file=sys.stderr)

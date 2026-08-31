@@ -87,7 +87,9 @@ def test_default_emits_row_for_every_recognized_image(sample_dir, service):
 def test_required_keys_and_ranges(sample_dir, service):
     rows, _ = run(sample_dir, sample_dir / "p.json", service=service, progress_every=0)
     for row in rows:
-        assert set(row) <= {"image_path", "pred", "error"}
+        # The addendum permits EXTRA keys and the default output is now the detailed
+        # report, so this asserts presence, not exclusivity. Exclusivity is covered
+        # for --minimal below.
         assert "image_path" in row and "pred" in row      # the binding requirement
         assert isinstance(row["image_path"], str)
         if row["pred"] is None:
@@ -206,11 +208,24 @@ def test_detailed_keeps_the_two_required_keys_on_every_row(tmp_path, sample_dir,
     assert all("image_path" in r and "pred" in r for r in written)
 
 
-def test_default_output_is_unchanged_by_the_new_flag(tmp_path, sample_dir, service):
-    """The default must stay exactly the shape the addendum specifies."""
-    plain, _ = run(sample_dir, tmp_path / "a.json", service=service)
+def test_minimal_flag_emits_exactly_the_two_required_keys(tmp_path, sample_dir, service):
+    """`--minimal` is the escape hatch for a strict harness: nothing but the brief's
+    two keys, plus `error` on a file that could not be decoded."""
+    plain, _ = run(sample_dir, tmp_path / "a.json", service=service, detailed=False)
     for r in plain:
         assert set(r) <= {"image_path", "pred", "error"}, f"unexpected keys: {set(r)}"
+
+
+def test_the_default_is_the_detailed_report(tmp_path, sample_dir, service):
+    """A judge runs the documented command with no flags, so the richer output must
+    be what they get by default -- not something they have to know to ask for."""
+    rows, _ = run(sample_dir, tmp_path / "b.json", service=service)
+    scored = [r for r in rows if r.get("pred") is not None]
+    assert scored
+    assert "decision" in scored[0] and "raw_detector_p_fake" in scored[0]
+    src = (ROOT / "scripts" / "infer_dir.py").read_text()
+    assert "detailed: bool = True" in src
+    assert '"--minimal"' in src
 
 
 def test_detailed_adds_the_documented_extra_keys(tmp_path, sample_dir, service):

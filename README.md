@@ -118,25 +118,38 @@ checkout cannot run will pass in a clean checkout whether or not the system work
 .venv/bin/python scripts/infer_dir.py INPUT_DIR --output predictions.json
 ```
 
-Emits a JSON array of `{"image_path": ..., "pred": ...}`, where `pred` is a
-probability in `[0,1]` and higher means more likely AI-generated. One row is
-emitted per recognised image, ordered deterministically. A file that cannot be
-decoded receives `"pred": null` with an `"error"` field — never an invented
-score — so the output can always be zipped back to the input list. Use
-`--errors strict` to fail loudly instead.
+Every row carries `image_path` and `pred` — `pred` is a probability in `[0,1]`,
+higher meaning more likely AI-generated. One row per recognised image, ordered
+deterministically. A file that cannot be decoded gets `"pred": null` with an
+`"error"` field — never an invented score — so the output always zips back to the
+input list. Use `--errors strict` to fail loudly instead.
 
-Add `--detailed` for a full report per image. The brief's addendum binds
-`image_path` and `pred` to be present for every image and permits reliability
-fields as **extra keys**, so `--detailed` adds them alongside — a harness reading
-only the two required keys is unaffected:
+**By default each row is a full report.** The brief's addendum binds `image_path`
+and `pred` to be present for every image and permits reliability fields as
+**extra keys**, so the detail sits alongside them:
 
-```bash
-.venv/bin/python scripts/infer_dir.py INPUT_DIR --output predictions.json --detailed
+```json
+{
+  "image_path": "board_jpeg_q70.png",
+  "pred": 0.9062,
+  "decision": "AI-GENERATED",
+  "raw_detector_p_fake": 0.0993,
+  "router_correction": 0.8069,
+  "reliability": 0.927,
+  "deferred_to_human": false,
+  "threshold": 0.4667367651127279,
+  "image": {"sha256": "...", "width": 1024, "height": 1024, "format": "PNG"},
+  "detected_image_history": "JPEG compression",
+  "warnings": []
+}
 ```
 
-Each row then also carries the verdict, the **raw detector score and the router's
-correction to it**, the self-assessed reliability, whether the system defers to a
-human, any detected damage, and image metadata. It prints a digest to stderr:
+`raw_detector_p_fake` is what the frozen detector said **alone** and
+`router_correction` is what our layer changed it by — on this image the detector
+was fooled at 0.0993 and the correction rescued the verdict.
+
+Pass `--minimal` for the bare `{image_path, pred}` form if you are feeding a
+strict harness. It also prints a digest to stderr:
 
 ```
 image                                       verdict    score      raw  reliab.
