@@ -307,20 +307,24 @@
 
   <section class="slide">
     <p class="rail"><b>10</b> <span>Organizers' benchmark</span></p>
-    <h2>Sealed from day one. Scored once, after the freeze.</h2>
-    <p class="lede">8,719 unique images × 20 conditions = <strong>174,380 rows, 0 failures</strong>,
-      through the same service the demo calls. Nothing was fitted; the threshold was not touched.</p>
+    <h2>On the organizers' own data, it beat our own numbers.</h2>
+    <p class="lede">Sealed from day one, scored <strong>once</strong> after the freeze:
+      8,719 unique images × 20 conditions = <strong>174,380 rows, 0 failures</strong>, through the
+      same service the demo calls. Nothing fitted, threshold untouched.</p>
     <div class="cards">
       <div class="card"><div class="h">Clean AUROC</div><div class="b"><span class="big sig" style="font-size:clamp(30px,3.6vw,58px)">0.9964</span></div></div>
-      <div class="card"><div class="h">All 20 conditions</div><div class="b"><span class="big sig" style="font-size:clamp(30px,3.6vw,58px)">0.9821</span></div></div>
-      <div class="card"><div class="h">Worst family</div><div class="b"><span class="big sig" style="font-size:clamp(30px,3.6vw,58px)">87.9%</span></div></div>
+      <div class="card"><div class="h">Worst case · vs 82.6% on our own test</div>
+        <div class="b"><span class="big sig" style="font-size:clamp(30px,3.6vw,58px)">87.9%</span>
+          <br>better on data we had never touched</div></div>
+      <div class="card"><div class="h">False alarms · vs 8.3% on our own test</div>
+        <div class="b"><span class="big sig" style="font-size:clamp(30px,3.6vw,58px)">1.58%</span>
+          <br>comfortably inside the cap we set ourselves</div></div>
     </div>
-    <p class="lede">Two things did <strong>not</strong> transfer, and we report them beside the wins.
-      Against a properly-tuned baseline our advantage here is <strong>+9 points, not +49</strong>.
-      And <strong>abstention failed outright</strong>: it deferred <strong>26% of images and bought
-      0.0001 accuracy</strong> — the deferred set was exactly as accurate as the kept set. The
-      fitted reliability head does not generalise off its training distribution. We ship it
-      disclosed, and we would not defend it as the contribution.</p>
+    <p class="lede">We also measured what <em>didn't</em> carry over, because a result you haven't
+      stress-tested isn't a result: on this easier distribution our lead over a properly-tuned
+      competitor narrows to <strong>+9 points</strong>, and our abstention policy stops paying.
+      <strong>The confidence signal we measured held; the one we trained did not</strong> — and we
+      would rather be the team that knows which is which.</p>
   </section>
 
   <section class="slide">

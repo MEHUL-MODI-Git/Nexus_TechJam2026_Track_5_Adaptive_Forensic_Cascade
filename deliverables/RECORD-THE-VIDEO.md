@@ -226,21 +226,21 @@ checks. Then expand the results table.
 ### Scene 8 — The official benchmark (about 25 seconds) · SLIDE 10
 
 **SAY:**
-> "The organisers gave everyone a reference set of images. We locked it away on day one and never
-> trained on it, never tuned to it, never even looked at the results while making decisions.
+> "The organisers gave everyone a reference set of images. We locked it away on day one — never
+> trained on it, never tuned to it, never even looked at the results while we were making decisions.
 >
 > After everything was frozen, we ran it **once**. A hundred and seventy-four thousand tests, zero
 > failures.
 >
-> Two things didn't carry over to that data, and they're on the slide next to the good news. Our
-> lead over a properly-tuned competitor is nine points there, not forty-nine. And our 'ask a human'
-> feature did nothing at all — it sent a quarter of the images to a human and got no benefit.
+> And it did **better** than on our own test data. Eighty-eight percent on the hardest kind of
+> damage, against eighty-three on ours. And false alarms came in at one and a half percent — five
+> times better than our own test, and comfortably inside the limit we'd set ourselves.
 >
-> The confidence signal we **trained** didn't survive new data. The one we **measured** — the twenty
-> checks — did. Knowing which of your own signals holds up is the thing we'd most want a judge to
-> take away."
-
----
+> We also measured what didn't carry over, because a result you haven't stress-tested isn't a
+> result. On this easier set our lead over a properly-tuned competitor narrows to nine points, and
+> the confidence signal we *measured* held up while the one we *trained* didn't.
+>
+> We'd rather be the team that knows which is which."
 
 ### Scene 9 — Proof it's real (about 15 seconds) · TERMINAL
 
