@@ -44,7 +44,7 @@ boxes fit together, which is the frame that matters most.
 > upload.
 > We tested one of the best open detectors on three thousand images it had never seen. On clean ones
 > it catches seventy-one of every hundred AI fakes. After mild noise: fewer than one in a hundred.
-> It doesn't get unsure. It goes blind."
+> It goes blind."
 
 **EXPECT:** two large numbers, **71.1%** left and **0.7%** in orange right, with an arrow between.
 
@@ -75,8 +75,8 @@ boxes fit together, which is the frame that matters most.
 3. **Scroll so the verdict card is centred.** Then start speaking.
 
 **SAY:**
-> "Now the same photo, saved as a normal JPEG — the everyday compression every app applies. You
-> cannot see any difference.
+> "Now the same photo, saved as a normal JPEG — the compression every app applies. You cannot see any
+> difference.
 > But look at the standard detector on its own: it has dropped to zero point zero nine. Under a half
 > means 'real', so it has been fooled — it now thinks this is a genuine photograph.
 > Ours doesn't fall for it. We take that same broken score, notice the picture was compressed, and
@@ -118,12 +118,19 @@ are brighter.
 > "A detector that's confidently wrong is dangerous — you can't tell a good answer from a bad one.
 > So the system checks itself: it makes twenty damaged versions of this picture, re-runs its verdict
 > on each, and counts how many still agree.
-> Eighteen of twenty. It grades itself medium confidence, and tells you what that's worth: answers
-> this solid were right ninety-five percent of the time."
+> The twenty are the organisers' own list: four JPEG qualities, three blurs, three noise levels, two
+> resizes, six colour shifts, a crop, and the original.
+> Eighteen survive. It grades itself medium confidence, and tells you what that's worth: answers this
+> solid were right ninety-five percent of the time."
 
 **EXPECT:** `Verdict retention 18 / 20 stress conditions`, `Forensic reliability: MEDIUM — verdicts at
 this retention were correct for 94.9% of held-out sources`, a bar chart, and in the table exactly two
 rows marked **FLIPPED**: `resize_0.25` and `bright_+20`.
+
+**The 20 conditions, if you are asked** (they are the official grid, and the table lists them in this
+order): `clean` · `jpeg_q90` `q70` `q50` `q30` · `blur_s0.5` `s1.0` `s2.0` · `resize_0.5` `0.25` ·
+`noise_s0.02` `s0.05` `s0.10` · `bright_-20` `+20` · `contrast_-20` `+20` · `saturation_-20` `+20` ·
+`crop_0.8`.
 
 ---
 
@@ -187,8 +194,8 @@ gain +70.3.
 **SAY:**
 > "The organisers gave every team a reference set. We sealed it on day one and never tuned on it — a
 > score on data you've tuned against means nothing.
-> We ran it once, after everything was frozen. A hundred and seventy-four thousand tests, zero
-> failures — and it beat our own numbers: eighty-eight percent on the hardest damage."
+> We ran it once, after the freeze. A hundred and seventy-four thousand tests, zero failures — and it
+> beat our own numbers: eighty-eight percent on the hardest damage."
 
 **EXPECT:** heading "On the organizers' own data, it beat our own numbers", then three boxes:
 **0.9964**, **87.9%**, **1.58%**.
