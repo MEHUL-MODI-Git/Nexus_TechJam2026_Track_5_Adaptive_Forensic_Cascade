@@ -122,3 +122,5 @@ techjam_track5_lota_update.md
 # describes every case by id, condition and score, which is what a reader needs;
 # republishing the photographs themselves is an IP risk we do not need to take.
 results/robustness/cases/
+
+deliverables/*.zip
