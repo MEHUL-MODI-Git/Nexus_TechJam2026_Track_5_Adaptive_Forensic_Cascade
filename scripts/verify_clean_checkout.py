@@ -71,8 +71,10 @@ def main() -> int:
                          "documented path; passing an existing venv verifies the CODE and "
                          "ARTIFACTS rather than dependency resolution, and the artifact "
                          "records which was done.")
-    ap.add_argument("--images", type=Path, default=REPO / "data" / "smoke" / "images",
-                    help="directory of real/ and fake/ subfolders to draw sample images from")
+    ap.add_argument("--images", type=Path, default=REPO / "samples",
+                    help="directory to draw sample images from. Defaults to the tracked "
+                         "`samples/`, so this works from a clean clone; `data/smoke/images` "
+                         "(real/ and fake/ subfolders) is also accepted when present.")
     ap.add_argument("--n-images", type=int, default=3)
     ap.add_argument("--out", type=Path,
                     default=REPO / "results" / "clean-checkout" / "verification.json")
@@ -106,13 +108,27 @@ def main() -> int:
             missing = [n for n, ok in artifacts.items() if not ok]
             raise RuntimeError(f"clone is missing configured artifacts: {missing}")
 
-        # sample images come from OUTSIDE the clone, as a user's would
+        # Sample images come from OUTSIDE the clone, as a user's would. Accept either
+        # a flat directory (samples/) or one with real/ and fake/ subfolders
+        # (data/smoke/images), because the smoke set is git-ignored and therefore
+        # absent from exactly the clean clone this script exists to verify.
         indir.mkdir()
         picked = []
-        for sub in ("real", "fake"):
-            for f in sorted((args.images / sub).glob("*"))[:args.n_images]:
-                shutil.copy(f, indir / f"{sub}_{f.name}")
-                picked.append(f"{sub}_{f.name}")
+        subdirs = [d for d in ("real", "fake") if (args.images / d).is_dir()]
+        if subdirs:
+            for sub in subdirs:
+                for f in sorted((args.images / sub).glob("*"))[:args.n_images]:
+                    shutil.copy(f, indir / f"{sub}_{f.name}")
+                    picked.append(f"{sub}_{f.name}")
+        else:
+            for f in sorted(args.images.glob("*")):
+                if f.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"}:
+                    shutil.copy(f, indir / f.name)
+                    picked.append(f.name)
+        if not picked:
+            print(f"REFUSING: no images found under {args.images}. Pass --images at a "
+                  "directory containing some, or use the tracked `samples/`.", file=sys.stderr)
+            return 2
 
         steps["pytest"] = _run([args.python, "-m", "pytest", "tests/", "-q"], cwd=clone)
         steps["predict"] = _run([args.python, "scripts/predict.py",
