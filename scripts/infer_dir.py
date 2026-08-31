@@ -83,6 +83,33 @@ def _atomic_write_json(payload, path: Path) -> None:
         raise
 
 
+def _detail_keys(record, service) -> dict:
+    """The EXTRA keys the brief addendum permits.
+
+    Its binding text is that the file carries `image_path` and `pred` for every
+    image, and that "any abstention/reliability fields go in EXTRA keys". So
+    detail is added ALONGSIDE those two, never in place of them: a judge harness
+    reading only the two required keys is unaffected by --detailed.
+    """
+    router = record.router or {}
+    primary = router.get("primary_p_fake")
+    detail = {
+        "decision": record.decision,
+        "raw_detector_p_fake": primary,
+        "router_correction": (round(record.p_fake - primary, 6)
+                              if primary is not None else None),
+        "reliability": record.reliability,
+        "deferred_to_human": bool(getattr(record, "abstain", False)),
+        "threshold": getattr(service, "threshold", None),
+        "image": {k: record.image.get(k) for k in ("sha256", "width", "height", "format")},
+        "warnings": record.image.get("warnings") or [],
+    }
+    history = router.get("degradation") or router.get("image_history")
+    if history:
+        detail["detected_image_history"] = history
+    return detail
+
+
 def run(
     input_dir: Path,
     output: Path,
@@ -90,6 +117,7 @@ def run(
     recursive: bool = True,
     progress_every: int = 25,
     service: PredictionService | None = None,
+    detailed: bool = False,
 ) -> tuple[list[dict], int]:
     """Score a directory. Returns (rows, failure_count)."""
     input_dir = input_dir.resolve()
@@ -121,7 +149,10 @@ def run(
             # with a null rather than an invented score.
             rows.append({"image_path": rel, "pred": None, "error": reason})
             continue
-        rows.append({"image_path": rel, "pred": record.p_fake})
+        row = {"image_path": rel, "pred": record.p_fake}
+        if detailed:
+            row.update(_detail_keys(record, service))
+        rows.append(row)
         if progress_every and (i % progress_every == 0 or i == len(images)):
             print(f"  [{i}/{len(images)}] scored", file=sys.stderr)
 
@@ -129,6 +160,31 @@ def run(
     scored = sum(1 for r in rows if r.get("pred") is not None)
     print(f"wrote {output} -- {scored} scored, {failures} failed", file=sys.stderr)
     return rows, failures
+
+
+def _print_summary(rows) -> None:
+    """A readable digest for a human running this by hand."""
+    scored = [r for r in rows if r.get("pred") is not None]
+    if not scored:
+        return
+    ai = [r for r in scored if r.get("decision") == "AI-GENERATED"]
+    deferred = [r for r in scored if r.get("deferred_to_human")]
+    corrected = [r for r in scored
+                 if r.get("raw_detector_p_fake") is not None
+                 and (r["raw_detector_p_fake"] >= r["threshold"]) != (r["pred"] >= r["threshold"])]
+    print(f"\n{'image':<44}{'verdict':>16}{'score':>9}{'raw':>9}{'reliab.':>9}",
+          file=sys.stderr)
+    for r in scored[:20]:
+        raw = r.get("raw_detector_p_fake")
+        rel = r.get("reliability")
+        flag = "  <- corrected" if r in corrected else ("  <- defer" if r.get("deferred_to_human") else "")
+        print(f"{r['image_path'][:42]:<44}{r.get('decision', ''):>16}{r['pred']:>9.4f}"
+              f"{(raw if raw is not None else float('nan')):>9.4f}"
+              f"{(rel if rel is not None else float('nan')):>9.3f}{flag}", file=sys.stderr)
+    if len(scored) > 20:
+        print(f"... and {len(scored) - 20} more", file=sys.stderr)
+    print(f"\n{len(scored)} scored | {len(ai)} AI-generated | {len(corrected)} rescued by the "
+          f"router | {len(deferred)} deferred to a human", file=sys.stderr)
 
 
 def main() -> int:
@@ -141,13 +197,21 @@ def main() -> int:
                         help="how to handle files that cannot be scored (default: null)")
     parser.add_argument("--no-recursive", action="store_true",
                         help="score only the top level of INPUT_DIR")
+    parser.add_argument("--detailed", action="store_true",
+                        help="add EXTRA keys per image (verdict, the raw detector score and the "
+                             "router's correction to it, reliability, whether the system defers "
+                             "to a human, detected damage, image metadata). `image_path` and "
+                             "`pred` are always present either way.")
     args = parser.parse_args()
 
     try:
-        _, _failures = run(
+        rows, _failures = run(
             args.input_dir, args.output,
             errors=args.errors, recursive=not args.no_recursive,
+            detailed=args.detailed,
         )
+        if args.detailed:
+            _print_summary(rows)
     except (DecodeError, PredictionError) as exc:   # only reachable under --errors strict
         print(f"strict mode: aborting on {exc}", file=sys.stderr)
         return 2

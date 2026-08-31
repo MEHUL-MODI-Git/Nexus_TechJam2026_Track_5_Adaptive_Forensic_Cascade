@@ -123,6 +123,28 @@ decoded receives `"pred": null` with an `"error"` field — never an invented
 score — so the output can always be zipped back to the input list. Use
 `--errors strict` to fail loudly instead.
 
+Add `--detailed` for a full report per image. The brief's addendum binds
+`image_path` and `pred` to be present for every image and permits reliability
+fields as **extra keys**, so `--detailed` adds them alongside — a harness reading
+only the two required keys is unaffected:
+
+```bash
+.venv/bin/python scripts/infer_dir.py INPUT_DIR --output predictions.json --detailed
+```
+
+Each row then also carries the verdict, the **raw detector score and the router's
+correction to it**, the self-assessed reliability, whether the system defers to a
+human, any detected damage, and image metadata. It prints a digest to stderr:
+
+```
+image                                       verdict    score      raw  reliab.
+bird_jpeg_q30.png                      AI-GENERATED   0.9458   0.0191    0.788  <- corrected
+board_clean.png                        AI-GENERATED   0.9625   0.7070    0.956
+board_jpeg_q70.png                     AI-GENERATED   0.9062   0.0993    0.927  <- corrected
+
+3 scored | 3 AI-generated | 2 rescued by the router | 1 deferred to a human
+```
+
 **Full forensic report for one image** (audit mode)
 
 ```bash
@@ -160,26 +182,63 @@ forward passes (~3.0 s); `--no-audit` and `infer_dir.py` stay on the fast path.
 
 ## 5. Reproducing our results
 
-Every public aggregate number must come from a committed artifact. To regenerate
-the current diagnostic after acquiring the git-ignored smoke images:
+Every public number must come from a committed artifact, and one command checks
+all of them:
 
 ```bash
-# 1. Adapter sanity + backend consistency check
-.venv/bin/python scripts/sanity_check.py --manifest data/manifests/smoke_v1.json
+.venv/bin/python scripts/run_eval.py --config configs/frozen.yaml
+```
 
-# 2. Full 20-condition grid  (400 sources x 20 conditions = 8,000 predictions)
-.venv/bin/python scripts/run_grid.py \
-    --manifest data/manifests/smoke_v1.json \
-    --output results/grid-smoke-v1/prediction_rows.jsonl
+This is the Phase-4 exit test from `06-build-plan.md`. `configs/frozen.yaml`
+records, for each of the **11 published tables**, the artifact and its SHA-256,
+the inputs it was computed from and theirs, and the command that regenerates it.
+The check verifies **both** — an artifact that still matches while its inputs
+moved is worse than a mismatch, because it looks like agreement. On this
+repository it reports:
 
-# 3. Transform-protocol golden tests (fail if any transform changed)
+```
+11 verified, 0 verified with absent inputs, 0 drifted, 0 missing
+```
+
+Entries are labelled `input-bound` (artifact and inputs both hashed) or
+`artifact-only` — the latter for the ops measurement and the clean-checkout
+proof, which describe *this machine* and have no tracked input to bind to.
+
+Add `--regenerate` to re-run each regenerable command and report any artifact
+whose hash moves. Drift is reported as a finding, not smoothed over.
+
+**The sealed reference entry is `summary_only` and the verifier refuses any
+sealed entry that is not.** The organizers' subset is scored exactly once and
+already was; a reproduction tool that *could* re-run inference on it would be a
+defect, not a convenience.
+
+```bash
+# Transform-protocol golden tests (fail if any transform changed)
 .venv/bin/pytest tests/test_transforms_golden.py -q
 
-# 4. Placeholder-threshold diagnostic (cannot emit a headline result)
-.venv/bin/python scripts/run_eval.py \
-    --rows results/grid-smoke-v1/prediction_rows.jsonl \
-    --diagnostic
+# Prove a fresh clone runs: clones, runs the suite, scores images
+.venv/bin/python scripts/verify_clean_checkout.py
 ```
+
+<details>
+<summary>Rebuilding a protected table from raw data (needs the git-ignored caches)</summary>
+
+The commands are recorded per table in `configs/frozen.yaml`. For example the
+headline internal-test result:
+
+```bash
+.venv/bin/python scripts/evaluate_internal_test.py \
+    --cache data/feature_cache/internal-test-v2 \
+    --checkpoint results/router-fitting-v2/router_reliability.pt \
+    --threshold-artifact results/router-fitting-v2/threshold-artifact.v1.json
+```
+
+The feature caches are git-ignored (hundreds of MB) and rebuilt with
+`scripts/build_feature_cache.py`. The early 400-source smoke grid
+(`results/grid-smoke-v1/`) is retained for history only — it used a placeholder
+threshold and a since-disowned corpus comparison, and **no published number
+comes from it**.
+</details>
 
 The smoke dataset can be rebuilt with `scripts/download_smoke_sources.py` and
 `scripts/prepare_smoke_dataset.py`; use each command's `--help` for paths. Its

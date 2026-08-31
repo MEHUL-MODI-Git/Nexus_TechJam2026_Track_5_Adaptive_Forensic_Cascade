@@ -92,3 +92,6 @@ logs/
 # Regenerate with the enumeration step in scripts/sealed_reference_run.py's docstring.
 # The hashes themselves are already published in data/manifests/sealed_denylist.txt.
 data/manifests/sealed_files.json
+
+# video take backups: kept locally so a reset is recoverable, never shipped
+deliverables/video-assets/_previous-takes/
