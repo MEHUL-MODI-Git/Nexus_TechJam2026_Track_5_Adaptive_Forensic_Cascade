@@ -24,8 +24,9 @@ sys.path.insert(0, str(ROOT))
 
 GUIDE = ROOT / "deliverables" / "RECORDING-CHEAT-SHEET.md"
 SLIDES = ROOT / "deliverables" / "video-slides.html"
-CLEAN = ROOT / "deliverables" / "video-assets" / "bird_clean.png"
 JPEG = ROOT / "deliverables" / "video-assets" / "bird_jpeg_q30.png"
+BCLEAN = ROOT / "deliverables" / "video-assets" / "board_clean.png"
+BJPEG = ROOT / "deliverables" / "video-assets" / "board_jpeg_q70.png"
 
 ok, fail = [], []
 
@@ -44,7 +45,7 @@ def plain(html):
 def main() -> int:
     print("\033[1mVerifying every video claim against the live system\033[0m\n")
 
-    for p in (CLEAN, JPEG):
+    for p in (JPEG, BCLEAN, BJPEG):
         check(f"asset exists: {p.name}", p.exists())
     if fail:
         return 1
@@ -58,18 +59,30 @@ def main() -> int:
     slides = SLIDES.read_text()
 
     # ---------- the hook image, as the guide instructs him to upload it ----------
-    print("\n\033[1mScene 1 — the compressed image in the UI\033[0m")
-    card = plain(analyze_image(str(JPEG), svc)[0])
-    for claim in ("0.0191", "0.9458", "JPEG compression (99% confidence)", "DEFERRED"):
-        check(f"UI card shows {claim!r}", claim in card, f"card={card[:160]}")
-        check(f"guide quotes {claim!r}", claim in guide)
+    print("\n\033[1mMoment 2 — the easy case (board_clean)\033[0m")
+    bc = plain(analyze_image(str(BCLEAN), svc)[0])
+    for claim in ("0.9625", "0.7070"):
+        check(f"UI shows {claim!r}", claim in bc, f"card={bc[:170]}")
+        check(f"sheet quotes {claim!r}", claim in guide)
+    check("easy case does NOT defer", "DEFERRED" not in bc, bc[:170])
 
-    clean_card = plain(analyze_image(str(CLEAN), svc)[0])
-    check("clean image reads 0.9995 for the raw detector", "0.9995" in clean_card)
+    print("\n\033[1mMoment 3 — the confident win (board_jpeg_q70)\033[0m")
+    bj = plain(analyze_image(str(BJPEG), svc)[0])
+    for claim in ("0.0993", "0.9062", "0.927", "JPEG compression (91% confidence)"):
+        check(f"UI shows {claim!r}", claim in bj, f"card={bj[:200]}")
+        check(f"sheet quotes {claim!r}", claim in guide)
+    check("MOMENT 3 MUST NOT DEFER — the first example is a clean win",
+          "DEFERRED" not in bj, bj[:200])
+
+    print("\n\033[1mMoment 6 — the deferral, shown later on purpose\033[0m")
+    card = plain(analyze_image(str(JPEG), svc)[0])
+    for claim in ("0.9458", "0.788", "DEFERRED"):
+        check(f"UI shows {claim!r}", claim in card, f"card={card[:180]}")
+        check(f"sheet quotes {claim!r}", claim in guide)
 
     # ---------- the stress panel ----------
     print("\n\033[1mScene 4 — the stress panel\033[0m")
-    s = stress_test_image(str(JPEG), svc)
+    s = stress_test_image(str(BJPEG), svc)
     cert = plain(s[0])
     for claim in ("18 / 20", "MEDIUM", "94.9%"):
         check(f"certificate shows {claim!r}", claim in cert, f"cert={cert[:200]}")
@@ -80,9 +93,9 @@ def main() -> int:
     flips = [plain(r).split()[0] for r in re.findall(r"<tr>(.*?)</tr>", s[2], re.DOTALL)
              if "FLIPPED" in r]
     check("exactly 2 conditions flip", len(flips) == 2, f"got {flips}")
-    check("they are blur_s2.0 and resize_0.25", set(flips) == {"blur_s2.0", "resize_0.25"},
+    check("they are resize_0.25 and bright_+20", set(flips) == {"resize_0.25", "bright_+20"},
           f"got {flips}")
-    for f in ("blur_s2.0", "resize_0.25"):
+    for f in ("resize_0.25", "bright_+20"):
         check(f"guide names {f}", f in guide)
 
     # ---------- claims that must NOT appear any more ----------
@@ -161,7 +174,7 @@ def main() -> int:
     # ---------- every MOMENT has all three parts ----------
     print("\n\033[1mCheat-sheet structure\033[0m")
     moments = re.findall(r"\n## MOMENT (\d+)[^\n]*\n(.*?)(?=\n## |\n# POST)", guide, re.DOTALL)
-    check("ten moments", len(moments) == 10, f"found {len(moments)}")
+    check("eleven moments", len(moments) == 11, f"found {len(moments)}")
     for num, body in moments:
         for part in ("**DO:**", "**SAY:**", "**EXPECT"):
             has = part in body or (part == "**SAY:**" and "**SAY (" in body)
@@ -170,7 +183,7 @@ def main() -> int:
     # ---------- overlays must be short and artifact-backed ----------
     print("\n\033[1mPost-production overlays\033[0m")
     rows = re.findall(r"\| *\d+ *\| *[^|]+\| *`([^`]+)` *\| *([^|]+)\|", guide)
-    check("16 overlays defined", len(rows) == 16, f"found {len(rows)}")
+    check("17 overlays defined", len(rows) == 17, f"found {len(rows)}")
     for text, src in rows:
         check(f"overlay <=8 words: {text[:34]!r}", len(text.split()) <= 8,
               f"{len(text.split())} words")
@@ -181,7 +194,7 @@ def main() -> int:
     # only the SAY blocks are spoken; EXPECT notes are also blockquotes and must not count
     words = sum(sum(len(x[1:].split()) for x in m.group(1).splitlines())
                 for m in re.finditer(r"\*\*SAY[^*]*\*\*\s*\n((?:>.*\n)+)", guide))
-    seconds = words / 145 * 60 + 26      # 26s of measured IN-CLIP waits (splices cut the rest)
+    seconds = words / 145 * 60 + 33      # 33s of measured IN-CLIP waits (splices cut the rest)
     check(f"under the 5:00 cap ({seconds:.0f}s, {words} words)", seconds < 300,
           f"{seconds:.0f}s")
 

@@ -22,7 +22,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PY = sys.executable
-CLEAN = "deliverables/video-assets/bird_clean.png"
+CLEAN = "deliverables/video-assets/board_clean.png"
+BJPEG = "deliverables/video-assets/board_jpeg_q70.png"
 JPEG = "deliverables/video-assets/bird_jpeg_q30.png"
 URL = "http://127.0.0.1:7860"
 
@@ -61,7 +62,7 @@ def main() -> int:
     print(f"  {OK} demo state reset ({moved} file(s) moved aside to _previous-takes, nothing deleted)")
 
     step("2. Checking the two images are where the script expects them")
-    for rel in (CLEAN, JPEG):
+    for rel in (CLEAN, BJPEG, JPEG):
         if (ROOT / rel).exists():
             print(f"  {OK} {rel}")
         else:
@@ -80,29 +81,21 @@ def main() -> int:
         return 2
     print(f"  {OK} model loaded and warm ({time.time() - t:.0f}s)")
 
-    step("4. Running the three terminal shots once, to confirm they work")
+    step("4. Running the filmed commands once, to confirm they work")
     checks = []
 
     a = run([PY, "scripts/predict.py", CLEAN, "--json"])
-    b = run([PY, "scripts/predict.py", JPEG, "--json"])
+    b = run([PY, "scripts/predict.py", BJPEG, "--json"])
     if a.returncode == 0 and b.returncode == 0:
         da, db = json.loads(a.stdout), json.loads(b.stdout)
         print(f"  {OK} predict.py")
         print(f"      {DOT} clean : detector alone {da['router']['primary_p_fake']:.4f}"
               f"  ours {da['p_fake']:.4f}")
-        print(f"      {DOT} jpeg  : detector alone \033[31m{db['router']['primary_p_fake']:.4f}"
+        print(f"      {DOT} q70   : detector alone \033[31m{db['router']['primary_p_fake']:.4f}"
               f"\033[0m  ours \033[32m{db['p_fake']:.4f}\033[0m   <- the whole story")
         checks.append(True)
     else:
         print(f"  {BAD} predict.py failed"); problems.append("predict.py"); checks.append(False)
-
-    au = run([PY, "scripts/audit_image.py", CLEAN])
-    if au.returncode == 0 and "20 / 20" in au.stdout:
-        print(f"  {OK} audit_image.py  {DOT} clean image scores 20 / 20, grade HIGH")
-        checks.append(True)
-    else:
-        print(f"  {BAD} audit_image.py did not print the expected 20 / 20")
-        problems.append("audit_image.py"); checks.append(False)
 
     out = ROOT / "deliverables" / "video-assets" / "_setup_check.json"
     inf = run([PY, "scripts/infer_dir.py", "deliverables/video-assets", "--output", str(out)])
@@ -172,11 +165,15 @@ if __name__ == "__main__":
         sys.path.insert(0, str(ROOT))
         from src.pipeline.decode import decode_image
         from src.pipeline.transforms import apply_transform
-        src = ROOT / "data/corpus/canonical/fully_synthetic/45b84a4682e7a640.jpg"
-        d = decode_image(src)
-        for cond, nm in (("clean", "bird_clean"), ("jpeg_q30", "bird_jpeg_q30")):
-            p = ROOT / "deliverables/video-assets" / f"{nm}.png"
-            apply_transform(d.image, cond, d.sha256).save(p)
-            print(f"{OK} rebuilt {p.name}")
+        srcs = {"data/corpus/canonical/fully_synthetic/795c89b02a08e993.jpg":
+                    (("clean", "board_clean"), ("jpeg_q70", "board_jpeg_q70")),
+                "data/corpus/canonical/fully_synthetic/45b84a4682e7a640.jpg":
+                    (("jpeg_q30", "bird_jpeg_q30"),)}
+        for rel, pairs in srcs.items():
+            d = decode_image(ROOT / rel)
+            for cond, nm in pairs:
+                p = ROOT / "deliverables/video-assets" / f"{nm}.png"
+                apply_transform(d.image, cond, d.sha256).save(p)
+                print(f"{OK} rebuilt {p.name}")
         raise SystemExit(0)
     raise SystemExit(main())
